@@ -24,6 +24,7 @@ typedef std::vector<SymbolNumber> SymbolVector;
 typedef std::vector<std::string> KeyTable;
 typedef std::map<std::string, SymbolNumber> StringSymbolMap;
 typedef short ValueNumber;
+typedef float Weight;
 
 // Forward declarations to typedef some more containers
 class TransitionIndex;
@@ -36,6 +37,7 @@ typedef std::vector<FlagDiacriticOperation> OperationVector;
 
 const SymbolNumber NO_SYMBOL_NUMBER = USHRT_MAX;
 const TransitionTableIndex NO_TABLE_INDEX = UINT_MAX;
+const Weight INFINITE_WEIGHT = static_cast<float>(NO_TABLE_INDEX);
 
 // This is 2^31, hopefully equal to UINT_MAX/2 rounded up.
 // For some profound reason it can't be replaced with (UINT_MAX+1)/2.
@@ -100,8 +102,10 @@ class TransducerHeader
       val = fread(&number_of_input_symbols,sizeof(SymbolNumber),1,f);
       val = fread(&number_of_symbols,sizeof(SymbolNumber),1,f);
 
-      val = fread(&size_of_transition_index_table,sizeof(TransitionTableIndex),1,f);
-      val = fread(&size_of_transition_target_table,sizeof(TransitionTableIndex),1,f);
+      val = fread(&size_of_transition_index_table,
+		  sizeof(TransitionTableIndex),1,f);
+      val = fread(&size_of_transition_target_table,
+		  sizeof(TransitionTableIndex),1,f);
 
       val = fread(&number_of_states,sizeof(TransitionTableIndex),1,f);
       val = fread(&number_of_transitions,sizeof(TransitionTableIndex),1,f);
@@ -118,10 +122,10 @@ class TransducerHeader
       read_property(has_unweighted_input_epsilon_cycles,f);
 
       // For ospell: demand weightedness
-/*      if (!weighted) {
+      if (!weighted) {
 	  std::cerr << "Transducers must be weighted!\n" << std::endl;
 	  exit(1);
-	  }*/
+      }
     }
 
   SymbolNumber symbol_count(void)
@@ -139,15 +143,24 @@ class TransducerHeader
   bool probe_flag(HeaderFlag flag)
   {
     switch (flag) {
-    case Weighted: return weighted;
-    case Deterministic: return deterministic;
-    case Input_deterministic: return input_deterministic;
-    case Minimized: return minimized;
-    case Cyclic: return cyclic;
-    case Has_epsilon_epsilon_transitions: return has_epsilon_epsilon_transitions;
-    case Has_input_epsilon_transitions: return has_input_epsilon_transitions;
-    case Has_input_epsilon_cycles: return has_input_epsilon_cycles;
-    case Has_unweighted_input_epsilon_cycles: return has_unweighted_input_epsilon_cycles;
+    case Weighted:
+	return weighted;
+    case Deterministic:
+	return deterministic;
+    case Input_deterministic:
+	return input_deterministic;
+    case Minimized:
+	return minimized;
+    case Cyclic:
+	return cyclic;
+    case Has_epsilon_epsilon_transitions:
+	return has_epsilon_epsilon_transitions;
+    case Has_input_epsilon_transitions:
+	return has_input_epsilon_transitions;
+    case Has_input_epsilon_cycles:
+	return has_input_epsilon_cycles;
+    case Has_unweighted_input_epsilon_cycles:
+	return has_unweighted_input_epsilon_cycles;
     }
     return false;
   }
@@ -160,7 +173,9 @@ class FlagDiacriticOperation
   SymbolNumber feature;
   ValueNumber value;
  public:
- FlagDiacriticOperation(FlagDiacriticOperator op, SymbolNumber feat, ValueNumber val):
+ FlagDiacriticOperation(FlagDiacriticOperator op,
+			SymbolNumber feat,
+			ValueNumber val):
   operation(op), feature(feat), value(val) {}
 
   // dummy constructor
@@ -320,6 +335,11 @@ class TransitionIndex
   {
     return first_transition_index == 1;
   }
+
+    Weight final_weight(void)
+  {
+    return static_cast<Weight>(first_transition_index);
+  }
   
   SymbolNumber get_input(void)
   {
@@ -332,22 +352,31 @@ class Transition
  protected:
   SymbolNumber input_symbol;
   SymbolNumber output_symbol;
-
-  TransitionTableIndex target_index;
+    TransitionTableIndex target_index;
+    Weight transition_weight;
 
  public:
 
   // Each transition has an input symbol an output symbol and 
   // a target index.
   static const size_t SIZE = 
-    2 * sizeof(SymbolNumber) + sizeof(TransitionTableIndex);
+      2 * sizeof(SymbolNumber) + sizeof(TransitionTableIndex) + sizeof(Weight);
 
  Transition(SymbolNumber input,
 	    SymbolNumber output,
-	    TransitionTableIndex target):
+	    TransitionTableIndex target,
+	    Weight w):
     input_symbol(input),
     output_symbol(output),
-    target_index(target)
+    target_index(target),
+    transition_weight(w)
+    {}
+
+    Transition():
+	input_symbol(NO_SYMBOL_NUMBER),
+    output_symbol(NO_SYMBOL_NUMBER),
+    target_index(NO_TABLE_INDEX),
+    transition_weight(INFINITE_WEIGHT)
     {}
 
   bool matches(SymbolNumber s);
@@ -366,10 +395,19 @@ class Transition
   {
     return input_symbol;
   }
-  
+
+    Weight get_weight(void)
+  {
+    return transition_weight;
+  }
+
   bool final(void)
   {
-    return target_index == 1;
+    if (input_symbol != NO_SYMBOL_NUMBER)
+      return false;
+    if (output_symbol != NO_SYMBOL_NUMBER)
+      return false;
+    return transition_weight != INFINITE_WEIGHT;
   }
 };
 

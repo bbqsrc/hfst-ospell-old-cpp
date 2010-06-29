@@ -90,9 +90,13 @@ void TransitionTableReader::get_transition_vector(void)
 	(SymbolNumber*)(TableTransitions + j + sizeof(SymbolNumber));
       TransitionTableIndex * target = 
        (TransitionTableIndex*)(TableTransitions + j + 2 * sizeof(SymbolNumber));
+      Weight * weight =
+	  (Weight*)(TableTransitions + j + 2 * sizeof(SymbolNumber) + sizeof(TransitionTableIndex));
+      
       transitions.push_back(new Transition(*input,
 					   *output,
-					   *target));
+					   *target,
+					   *weight));
       
     }
 }

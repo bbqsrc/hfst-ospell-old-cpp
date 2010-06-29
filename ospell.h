@@ -19,7 +19,30 @@
 #define EXIT_FAILURE 1
 #define DEBUG 1
 
-typedef std::pair<TransitionTableIndex, SymbolNumber> IndexSymbolPair;
+class STransition{
+public:
+    TransitionTableIndex index;
+    SymbolNumber symbol;
+    Weight weight;
+
+    STransition(TransitionTableIndex i,
+		    SymbolNumber s):
+	index(i),
+	symbol(s),
+	weight(0.0)
+	{}
+
+    STransition(TransitionTableIndex i,
+		SymbolNumber s,
+		Weight w):
+	index(i),
+	symbol(s),
+	weight(w)
+	{}
+
+};
+
+//typedef std::pair<TransitionTableIndex, SymbolNumber> IndexSymbolPair;
 
 class Transducer
 {
@@ -53,13 +76,13 @@ protected:
   
     TransitionTableIndex try_epsilon_indices(TransitionTableIndex i);
   
-    IndexSymbolPair try_epsilon_transitions(TransitionTableIndex i);
+    STransition try_epsilon_transitions(TransitionTableIndex i);
   
     TransitionTableIndex find_index(SymbolNumber input,
 				    TransitionTableIndex i);
   
-    IndexSymbolPair find_transitions(SymbolNumber input,
-				     TransitionTableIndex i);
+    STransition find_transitions(SymbolNumber input,
+				 TransitionTableIndex i);
   
 public:
     Transducer(FILE * f):
@@ -115,9 +138,13 @@ public:
 	    alphabet.free_temporary();
 	}
 
-    IndexSymbolPair take_epsilons(TransitionTableIndex i);
-    IndexSymbolPair take_non_epsilons(TransitionTableIndex i,
-				      SymbolNumber symbol);
+    STransition take_epsilons(TransitionTableIndex i);
+    STransition take_non_epsilons(TransitionTableIndex i,
+				  SymbolNumber symbol);
+    TransitionTableIndex next(TransitionTableIndex i,
+			      SymbolNumber symbol);
+    bool has_transitions(TransitionTableIndex i,
+			 SymbolNumber symbol);
     bool is_final(TransitionTableIndex i);
 
 };
@@ -130,17 +157,20 @@ public:
     TransitionTableIndex mutator_state;
     TransitionTableIndex lexicon_state;
     FlagDiacriticState flag_state;
+    Weight weight;
 
     TreeNode(SymbolVector prev_string,
 	     unsigned int i,
 	     TransitionTableIndex mutator,
 	     TransitionTableIndex lexicon,
-	     FlagDiacriticState state):
+	     FlagDiacriticState state,
+	     Weight w):
 	string(prev_string),
 	input_state(i),
 	mutator_state(mutator),
 	lexicon_state(lexicon),
-	flag_state(state)
+	flag_state(state),
+	weight(w)
 	{ }
 
     TreeNode(FlagDiacriticState start_state): // starting state node
@@ -148,25 +178,32 @@ public:
 	input_state(0),
 	mutator_state(0),
 	lexicon_state(0),
-	flag_state(start_state)
+	flag_state(start_state),
+	weight(0.0)
 	{ }
 
     bool compatible_with(FlagDiacriticOperation op);
 
     TreeNode update_lexicon(SymbolNumber next_symbol,
-			    TransitionTableIndex next_lexicon);
+			    TransitionTableIndex next_lexicon,
+			    Weight weight);
 
     TreeNode update_mutator(SymbolNumber next_symbol,
-			    TransitionTableIndex next_mutator);
+			    TransitionTableIndex next_mutator,
+			    Weight weight);
+
+    void increment_mutator(void);
 
     TreeNode update(SymbolNumber next_symbol,
 		    unsigned int next_input,
 		    TransitionTableIndex next_mutator,
-		    TransitionTableIndex next_lexicon);
+		    TransitionTableIndex next_lexicon,
+		    Weight weight);
 
     TreeNode update(SymbolNumber next_symbol,
 		    TransitionTableIndex next_mutator,
-		    TransitionTableIndex next_lexicon);
+		    TransitionTableIndex next_lexicon,
+		    Weight weight);
     
 };
 
@@ -188,12 +225,12 @@ public:
 
     bool initialize(Encoder * encoder, char * input, SymbolNumber other);
     
-    const unsigned int len(void)
+    unsigned int len(void)
 	{
 	    return s.size();
 	}
 
-    const SymbolNumber operator[](unsigned int i)
+    SymbolNumber operator[](unsigned int i)
 	{
 	    return s[i];
 	}
