@@ -9,14 +9,8 @@
 #include <deque>
 #include <cassert>
 #include "hfst-ol.h"
+#include "config.h"
 
-/* Just until we autotool */
-
-#define PACKAGE_NAME "hfst-ospell"
-#define PACKAGE_STRING "hfst-ospell beta"
-#define PACKAGE_BUGREPORT "hfst-bugs@ling.helsinki.fi"
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
 #define DEBUG 1
 
 class STransition{
@@ -243,6 +237,7 @@ public:
     Transducer mutator;
     Transducer lexicon;
     InputString input;
+    TreeNodeQueue queue;
     SymbolVector alphabet_translator;
     std::vector<const char*> * symbol_table;
     
@@ -250,6 +245,7 @@ public:
 	mutator(Transducer(mutator_file)),
 	lexicon(Transducer(lexicon_file)),
 	input(InputString()),
+	queue(TreeNodeQueue()),
 	alphabet_translator(SymbolVector()),
 	symbol_table(lexicon.get_symbol_table())
 	{
@@ -266,9 +262,9 @@ public:
 	}
 
     void build_alphabet_translator(void);
-    void lexicon_epsilons(TreeNodeQueue * queue);
-    void mutator_epsilons(TreeNodeQueue * queue);
-    void consume_input(TreeNodeQueue * queue);
+    void lexicon_epsilons(void);
+    void mutator_epsilons(void);
+    void consume_input(void);
     bool run(void);
     void output(SymbolVector string);
 };

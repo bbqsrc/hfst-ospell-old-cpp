@@ -117,9 +117,9 @@ TreeNode TreeNode::update(SymbolNumber next_symbol,
 		    }
 
 
-void Speller::lexicon_epsilons(TreeNodeQueue * queue)
+void Speller::lexicon_epsilons(void)
 {
-    TreeNode front = queue->front();
+    TreeNode front = queue.front();
     if (!lexicon.has_transitions(front.lexicon_state + 1, 0)) {
 	    return;
 	}
@@ -127,17 +127,17 @@ void Speller::lexicon_epsilons(TreeNodeQueue * queue)
     STransition i_s = lexicon.take_epsilons(next);
     
     while (i_s.symbol != NO_SYMBOL_NUMBER) {
-	queue->push_back(front.update_lexicon(i_s.symbol,
-					      i_s.index,
-					      i_s.weight));
+	queue.push_back(front.update_lexicon(i_s.symbol,
+					     i_s.index,
+					     i_s.weight));
 	++next;
 	i_s = lexicon.take_epsilons(next);
     }
 }
 
-void Speller::mutator_epsilons(TreeNodeQueue * queue)
+void Speller::mutator_epsilons(void)
 {
-    TreeNode front = queue->front();
+    TreeNode front = queue.front();
     if (!mutator.has_transitions(front.mutator_state + 1, 0)) {
 	    return;
 	}
@@ -146,7 +146,7 @@ void Speller::mutator_epsilons(TreeNodeQueue * queue)
    
     while (mutator_i_s.symbol != NO_SYMBOL_NUMBER) {
 	if (mutator_i_s.symbol == 0) {
-	    queue->push_back(front.update_mutator(mutator_i_s.symbol,
+	    queue.push_back(front.update_mutator(mutator_i_s.symbol,
 						  mutator_i_s.index,
 						  mutator_i_s.weight));
 	} else {
@@ -160,7 +160,7 @@ void Speller::mutator_epsilons(TreeNodeQueue * queue)
 								alphabet_translator[mutator_i_s.symbol]);
 	    
 	    while (lexicon_i_s.symbol != NO_SYMBOL_NUMBER) {
-		queue->push_back(front.update(lexicon_i_s.symbol,
+		queue.push_back(front.update(lexicon_i_s.symbol,
 					      mutator_i_s.index,
 					      lexicon_i_s.index,
 					      lexicon_i_s.weight + mutator_i_s.weight));
@@ -174,14 +174,14 @@ void Speller::mutator_epsilons(TreeNodeQueue * queue)
     }
 }
 
-void Speller::consume_input(TreeNodeQueue * queue)
+void Speller::consume_input(void)
 {
-    unsigned int input_state = queue->front().input_state;
+    unsigned int input_state = queue.front().input_state;
     if (input_state + 1 > input.len()) {
 	return; // not enough input to consume
     }
     
-    TreeNode front = queue->front();
+    TreeNode front = queue.front();
     if (!mutator.has_transitions(front.mutator_state + 1,
 				 input[input_state])) {
 	    return;
@@ -195,7 +195,7 @@ void Speller::consume_input(TreeNodeQueue * queue)
 
 	if (mutator_i_s.symbol == 0) {
 	    
-	    queue->push_back(front.update(
+	    queue.push_back(front.update(
 				 0,
 				 input_state + 1,
 				 mutator_i_s.index,
@@ -213,7 +213,7 @@ void Speller::consume_input(TreeNodeQueue * queue)
 								    alphabet_translator[mutator_i_s.symbol]);
 	    
 	    while (lexicon_i_s.symbol != NO_SYMBOL_NUMBER) {
-		queue->push_back(front.update(lexicon_i_s.symbol,
+		queue.push_back(front.update(lexicon_i_s.symbol,
 					      input_state + 1,
 					      mutator_i_s.index,
 					      lexicon_i_s.index,
@@ -302,21 +302,21 @@ bool Speller::run(void)
 	if (!init_input(str)) {
 	    continue; // no tokenization
 	}
-	TreeNodeQueue state_queue(1, start_node);
+	queue.assign(1, start_node);
 	
-	while (state_queue.size() > 0) {
-	    lexicon_epsilons(&state_queue);
-	    mutator_epsilons(&state_queue);
-	    if (state_queue.front().input_state == input.len()) {
-		TreeNode front = state_queue.front();
+	while (queue.size() > 0) {
+	    lexicon_epsilons();
+	    mutator_epsilons();
+	    if (queue.front().input_state == input.len()) {
+		TreeNode front = queue.front();
 		if (mutator.is_final(front.mutator_state) and
 		    lexicon.is_final(front.lexicon_state)) {
 		    output(front.string);
 		}
 	    } else {
-		consume_input(&state_queue);
+		consume_input();
 	    }
-	    state_queue.pop_front();
+	    queue.pop_front();
 	}
     }
     return EXIT_SUCCESS;
