@@ -9,9 +9,12 @@
 #include <deque>
 #include <cassert>
 #include "hfst-ol.h"
-#include "config.h"
 
 #define DEBUG 1
+#define PACKAGE_NAME "hfst-ospell"
+#define PACKAGE_STRING "hfst-ospell 0.1"
+#define PACKAGE_BUGREPORT "hfst-bugs@ling.helsinki.fi"
+
 
 class STransition{
 public:
