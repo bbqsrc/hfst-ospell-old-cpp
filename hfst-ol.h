@@ -55,12 +55,21 @@ enum HeaderFlag {Weighted, Deterministic, Input_deterministic, Minimized,
 		 Has_input_epsilon_transitions, Has_input_epsilon_cycles,
 		 Has_unweighted_input_epsilon_cycles};
 
-class AlphabetParsingException: public std::exception
+class TransducerParsingException: public std::exception
 {
 public:
     virtual const char* what() const throw()
 	{
 	    return("Parsing error while reading alphabet");
+	}
+};
+
+class UnweightedSpellerException: public std::exception
+{
+public:
+    virtual const char* what() const throw()
+	{
+	    return("Transducers for use in spellers must be weighted");
 	}
 };
 
@@ -100,8 +109,7 @@ class TransducerHeader
 	property = true;
 	return;
       }
-    std::cerr << "Could not parse transducer; wrong or corrupt file?" << std::endl;
-    exit(1);
+    throw TransducerParsingException();
   }
 
  public:
@@ -135,8 +143,7 @@ class TransducerHeader
 
       // For ospell: demand weightedness
       if (!weighted) {
-	  std::cerr << "Transducers must be weighted!\n" << std::endl;
-	  exit(1);
+	  throw UnweightedSpellerException();
       }
     }
 

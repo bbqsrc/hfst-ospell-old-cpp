@@ -10,8 +10,8 @@ and compile your project with
 
 	ospell.cc hfst-ol.cc
 
-The library lives in a namespace called hfst_ol. Pass Transducer pointers to
-the Speller constructor, eg.:
+The library lives in a namespace called hfst_ol. Pass (weighted!) Transducer
+pointers to the Speller constructor, eg.:
 
 	FILE * error_source = fopen(error_filename, "r");
 	FILE * lexicon = fopen(lexicon_filename, "r");
@@ -20,7 +20,7 @@ the Speller constructor, eg.:
 		hfst_ol::Transducer error(error_source);
 		hfst_ol::Transducer lexicon(lexicon);
 	}
-	catch (hfst_ol::AlphabetParsingException& e)
+	catch (hfst_ol::TransducerParsingException& e)
 		{
 			/* problem with transducer file, usually completely
 			different type of file - there's no magic number
@@ -30,8 +30,10 @@ the Speller constructor, eg.:
 
 And use the functions
 
+	// returns true if line is found in lexicon
 	bool hfst_ol::Speller::check(char * line);
-	hfst_ol::CorrectionQueue hfst_ol::Speller::correct(char * line);
+
 	// CorrectionQueue is a priority queue, sorted by weight
+	hfst_ol::CorrectionQueue hfst_ol::Speller::correct(char * line);
 
 to communicate with it. See main.cc for a concrete usage example.
