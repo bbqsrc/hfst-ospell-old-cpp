@@ -435,14 +435,6 @@ bool Speller::check(char * line)
     return false;
 }
 
-void Speller::output(SymbolVector string)
-{
-    for (SymbolVector::iterator it = string.begin(); it != string.end(); ++it) {
-	std::cout << symbol_table->operator[](*it);
-    }
-    std::cout << std::endl;
-}
-
 std::string Speller::stringify(SymbolVector symbol_vector)
 {
     std::string s;

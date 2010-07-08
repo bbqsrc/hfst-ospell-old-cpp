@@ -46,11 +46,11 @@ public:
 	{}
     
     bool operator() (StringWeightPair lhs, StringWeightPair rhs)
-	{
+	{ // return true when we want rhs to appear before lhs
 	    if (reverse) {
-		return (lhs.second > rhs.second);
-	    } else {
 		return (lhs.second < rhs.second);
+	    } else {
+		return (lhs.second > rhs.second);
 	    }
 	}
 };
@@ -289,7 +289,6 @@ public:
     void lexicon_consume(void);
     bool check(char * line);
     CorrectionQueue correct(char * line);
-    void output(SymbolVector string);
     std::string stringify(SymbolVector symbol_vector);
 };
 

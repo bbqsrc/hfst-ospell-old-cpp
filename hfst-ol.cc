@@ -10,8 +10,7 @@ void TransducerAlphabet::get_next_symbol(FILE * f, SymbolNumber k)
     {
 	if (byte == EOF)
 	{
-	    std::cerr << "Could not parse transducer; wrong or corrupt file?" << std::endl;
-	    exit(1);
+	    throw AlphabetParsingException();
 	}
 	*sym = byte;
 	++sym;

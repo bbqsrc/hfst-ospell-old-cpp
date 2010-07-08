@@ -55,6 +55,15 @@ enum HeaderFlag {Weighted, Deterministic, Input_deterministic, Minimized,
 		 Has_input_epsilon_transitions, Has_input_epsilon_cycles,
 		 Has_unweighted_input_epsilon_cycles};
 
+class AlphabetParsingException: public std::exception
+{
+public:
+    virtual const char* what() const throw()
+	{
+	    return("Parsing error while reading alphabet");
+	}
+};
+
 class TransducerHeader
 {
  private:

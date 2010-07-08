@@ -1,0 +1,37 @@
+Preliminary hfst-ospell library and toy commandline tester
+
+(for static compilation at this time)
+
+Usage:
+
+	#include ospell.h
+
+and compile your project with
+
+	ospell.cc hfst-ol.cc
+
+The library lives in a namespace called hfst_ol. Pass Transducer pointers to
+the Speller constructor, eg.:
+
+	FILE * error_source = fopen(error_filename, "r");
+	FILE * lexicon = fopen(lexicon_filename, "r");
+	try
+	{
+		hfst_ol::Transducer error(error_source);
+		hfst_ol::Transducer lexicon(lexicon);
+	}
+	catch (hfst_ol::AlphabetParsingException& e)
+		{
+			/* problem with transducer file, usually completely
+			different type of file - there's no magic number
+			in the header to check for this */
+		}
+	hfst_ol::Speller speller(&error, &lexicon);
+
+And use the functions
+
+	bool hfst_ol::Speller::check(char * line);
+	hfst_ol::CorrectionQueue hfst_ol::Speller::correct(char * line);
+	// CorrectionQueue is a priority queue, sorted by weight
+
+to communicate with it. See main.cc for a concrete usage example.

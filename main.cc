@@ -132,8 +132,8 @@ int main(int argc, char **argv)
 	    std::cerr << "Could not open file " << argv[(optind)] << std::endl;
 	    return 1;
 	}
-	hfst_ol::Transducer mutator = hfst_ol::Transducer(mutator_file);
-	hfst_ol::Transducer lexicon = hfst_ol::Transducer(lexicon_file);
+	hfst_ol::Transducer mutator(mutator_file);
+	hfst_ol::Transducer lexicon(lexicon_file);
 	hfst_ol::Speller speller(&mutator, &lexicon);
 	
 	char * str = (char*) malloc(2000);
