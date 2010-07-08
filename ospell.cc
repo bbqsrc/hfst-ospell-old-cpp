@@ -1,5 +1,7 @@
 #include "ospell.h"
 
+namespace hfst_ol {
+
 int nByte_utf8(unsigned char c)
 {
     /* utility function to determine how many bytes to peel off as
@@ -116,33 +118,108 @@ TreeNode TreeNode::update(SymbolNumber next_symbol,
 		    this->weight + weight);
 		    }
 
+bool TreeNode::compatible_with(FlagDiacriticOperation op)
+{
+    switch (op.Operation()) {
+	
+    case P: // positive set
+	flag_state[op.Feature()] = op.Value();
+	return true;
+	
+    case N: // negative set (literally, in this implementation)
+	flag_state[op.Feature()] = -1*op.Value();
+	return true;
+	
+    case R: // require
+	if (op.Value() == 0) { // "plain" require, return false if unset
+	    return (flag_state[op.Feature()] != 0);
+	}
+	return (flag_state[op.Feature()] == op.Value());
+	
+  case D: // disallow
+      if (op.Value() == 0) { // "plain" disallow, return true if unset
+	  return (flag_state[op.Feature()] == 0);
+      }
+      return (flag_state[op.Feature()] != op.Value());
+      
+  case C: // clear
+      flag_state[op.Feature()] = 0;
+      return true;
+      
+  case U: // unification
+    if (flag_state[op.Feature()] == 0 || // if the feature is unset or
+	flag_state[op.Feature()] == op.Value() || // the feature is at this value already or
+	(flag_state[op.Feature()] < 0 &&
+	 (flag_state[op.Feature()] * -1 != op.Value())) // the feature is negatively set to something else
+	) {
+	flag_state[op.Feature()] = op.Value();
+	return true;
+    }
+    return false;
+    }
+    
+    return false; // to make the compiler happy
+}
 
 void Speller::lexicon_epsilons(void)
 {
     TreeNode front = queue.front();
-    if (!lexicon.has_transitions(front.lexicon_state + 1, 0)) {
+    if (!lexicon->has_transitions(front.lexicon_state + 1, 0)) {
 	    return;
 	}
-    TransitionTableIndex next = lexicon.next(front.lexicon_state + 1, 0);
-    STransition i_s = lexicon.take_epsilons(next);
+    TransitionTableIndex next = lexicon->next(front.lexicon_state + 1, 0);
+    STransition i_s = lexicon->take_epsilons(next);
     
     while (i_s.symbol != NO_SYMBOL_NUMBER) {
-	queue.push_back(front.update_lexicon(i_s.symbol,
-					     i_s.index,
-					     i_s.weight));
+	// test for flag TODO
+//	if ((front.compatible_with(operations->operator[](i_s.symbol)))) {
+	    queue.push_back(front.update_lexicon(i_s.symbol,
+						 i_s.index,
+						 i_s.weight));
+//	}
 	++next;
-	i_s = lexicon.take_epsilons(next);
+	i_s = lexicon->take_epsilons(next);
     }
+}
+
+void Speller::lexicon_consume(void)
+{
+    TreeNode front = queue.front();
+    unsigned int input_state = front.input_state;
+    if (input_state + 1 > input.len() or
+	!lexicon->has_transitions(front.lexicon_state + 1, input[input_state])) {
+	    return;
+	}
+	
+    TransitionTableIndex next = lexicon->next(front.lexicon_state + 1,
+					      input[input_state]);
+    STransition i_s = lexicon->take_non_epsilons(next,
+						 input[input_state]);
+
+    while (i_s.symbol != NO_SYMBOL_NUMBER) {
+	    queue.push_back(front.update(
+				i_s.symbol,
+				input_state + 1,
+				front.mutator_state,
+				i_s.index,
+				i_s.weight));
+		
+	++next;
+	i_s = lexicon->take_non_epsilons(
+	    next,
+	    input[input_state]);
+    }
+    
 }
 
 void Speller::mutator_epsilons(void)
 {
     TreeNode front = queue.front();
-    if (!mutator.has_transitions(front.mutator_state + 1, 0)) {
+    if (!mutator->has_transitions(front.mutator_state + 1, 0)) {
 	    return;
 	}
-    TransitionTableIndex next_m = mutator.next(front.mutator_state + 1, 0);
-    STransition mutator_i_s = mutator.take_epsilons(next_m);
+    TransitionTableIndex next_m = mutator->next(front.mutator_state + 1, 0);
+    STransition mutator_i_s = mutator->take_epsilons(next_m);
    
     while (mutator_i_s.symbol != NO_SYMBOL_NUMBER) {
 	if (mutator_i_s.symbol == 0) {
@@ -150,27 +227,29 @@ void Speller::mutator_epsilons(void)
 						  mutator_i_s.index,
 						  mutator_i_s.weight));
 	} else {
-	    if (!lexicon.has_transitions(front.lexicon_state + 1, 0)) {
-		    return;
-		}
-		
-	    TransitionTableIndex next_l = lexicon.next(front.lexicon_state + 1,
+	    if (!lexicon->has_transitions(front.lexicon_state + 1,
+					  alphabet_translator[mutator_i_s.symbol])) {
+		++next_m;
+		mutator_i_s = mutator->take_epsilons(next_m);
+		continue;
+	    }
+	    TransitionTableIndex next_l = lexicon->next(front.lexicon_state + 1,
 						       alphabet_translator[mutator_i_s.symbol]);
-	    STransition lexicon_i_s = lexicon.take_non_epsilons(next_l,
+	    STransition lexicon_i_s = lexicon->take_non_epsilons(next_l,
 								alphabet_translator[mutator_i_s.symbol]);
 	    
 	    while (lexicon_i_s.symbol != NO_SYMBOL_NUMBER) {
 		queue.push_back(front.update(lexicon_i_s.symbol,
-					      mutator_i_s.index,
-					      lexicon_i_s.index,
-					      lexicon_i_s.weight + mutator_i_s.weight));
+				     mutator_i_s.index,
+				     lexicon_i_s.index,
+				     lexicon_i_s.weight + mutator_i_s.weight));
 		++next_l;
-		lexicon_i_s = lexicon.take_non_epsilons(next_l,
+		lexicon_i_s = lexicon->take_non_epsilons(next_l,
 							alphabet_translator[mutator_i_s.symbol]);
 	    }
 	}
 	++next_m;
-	mutator_i_s = mutator.take_epsilons(next_m);
+	mutator_i_s = mutator->take_epsilons(next_m);
     }
 }
 
@@ -182,13 +261,13 @@ void Speller::consume_input(void)
     }
     
     TreeNode front = queue.front();
-    if (!mutator.has_transitions(front.mutator_state + 1,
+    if (!mutator->has_transitions(front.mutator_state + 1,
 				 input[input_state])) {
 	    return;
 	}
-    TransitionTableIndex next_m = mutator.next(front.mutator_state + 1,
+    TransitionTableIndex next_m = mutator->next(front.mutator_state + 1,
 					       input[input_state]);
-    STransition mutator_i_s = mutator.take_non_epsilons(next_m,
+    STransition mutator_i_s = mutator->take_non_epsilons(next_m,
 							    input[input_state]);
     
     while (mutator_i_s.symbol != NO_SYMBOL_NUMBER) {
@@ -203,28 +282,32 @@ void Speller::consume_input(void)
 				 mutator_i_s.weight));
 		
 	} else {
-	    if (!lexicon.has_transitions(front.lexicon_state + 1,
+	    if (!lexicon->has_transitions(front.lexicon_state + 1,
 					 alphabet_translator[mutator_i_s.symbol])) {
-		    continue;
+		++next_m;
+		mutator_i_s = mutator->take_non_epsilons(
+		    next_m,
+		    input[input_state]);
+		continue;
 		}
-	    TransitionTableIndex next_l = lexicon.next(front.lexicon_state + 1,
+	    TransitionTableIndex next_l = lexicon->next(front.lexicon_state + 1,
 						       alphabet_translator[mutator_i_s.symbol]);
-	    STransition lexicon_i_s = lexicon.take_non_epsilons(next_l,
+	    STransition lexicon_i_s = lexicon->take_non_epsilons(next_l,
 								    alphabet_translator[mutator_i_s.symbol]);
 	    
 	    while (lexicon_i_s.symbol != NO_SYMBOL_NUMBER) {
 		queue.push_back(front.update(lexicon_i_s.symbol,
-					      input_state + 1,
-					      mutator_i_s.index,
-					      lexicon_i_s.index,
-					      lexicon_i_s.weight + mutator_i_s.weight));
+				     input_state + 1,
+				     mutator_i_s.index,
+				     lexicon_i_s.index,
+				     lexicon_i_s.weight + mutator_i_s.weight));
 		++next_l;
-		lexicon_i_s = lexicon.take_non_epsilons(next_l,
-							alphabet_translator[mutator_i_s.symbol]);
+		lexicon_i_s = lexicon->take_non_epsilons(next_l,
+							 alphabet_translator[mutator_i_s.symbol]);
 	    }
 	}
 	++next_m;
-	mutator_i_s = mutator.take_non_epsilons(
+	mutator_i_s = mutator->take_non_epsilons(
 	    next_m,
 	    input[input_state]);
     }
@@ -252,7 +335,7 @@ bool Transducer::has_transitions(TransitionTableIndex i,
 
 STransition Transducer::take_epsilons(TransitionTableIndex i)
 {
-    if (transitions[i]->get_input() != 0) { // not an epsilon transition
+    if (transitions[i]->get_input() != 0) {
 	return STransition(0,NO_SYMBOL_NUMBER);
     }
     return STransition(transitions[i]->target(),
@@ -280,6 +363,15 @@ bool Transducer::is_final(TransitionTableIndex i)
     }
 }
 
+Weight Transducer::final_weight(TransitionTableIndex i)
+{
+    if (i >= TRANSITION_TARGET_TABLE_START) {
+	return transitions[i - TRANSITION_TARGET_TABLE_START]->get_weight();
+    } else {
+	return indices[i]->final_weight();
+    }
+}
+
 void Transducer::set_symbol_table(void)
 {
   for(KeyTable::iterator it = keys->begin();
@@ -291,35 +383,56 @@ void Transducer::set_symbol_table(void)
     }
 }
 
-bool Speller::run(void)
+CorrectionQueue Speller::correct(char * line)
 {
-    char * str = (char*) malloc(2000);
-    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-
-    while (!std::cin.eof()) {
-	std::cin.getline(str, 2000);
-//	std::getline(std::cin, str);
-	if (!init_input(str)) {
-	    continue; // no tokenization
-	}
-	queue.assign(1, start_node);
-	
-	while (queue.size() > 0) {
-	    lexicon_epsilons();
-	    mutator_epsilons();
-	    if (queue.front().input_state == input.len()) {
-		TreeNode front = queue.front();
-		if (mutator.is_final(front.mutator_state) and
-		    lexicon.is_final(front.lexicon_state)) {
-		    output(front.string);
-		}
-	    } else {
-		consume_input();
-	    }
-	    queue.pop_front();
-	}
+    CorrectionQueue corrections;
+    if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
+	return corrections;
     }
-    return EXIT_SUCCESS;
+    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    queue.assign(1, start_node);
+
+    while (queue.size() > 0) {
+	lexicon_epsilons();
+	mutator_epsilons();
+	if (queue.front().input_state == input.len()) {
+	    TreeNode front = queue.front();
+	    if (mutator->is_final(front.mutator_state) and
+		lexicon->is_final(front.lexicon_state)) {
+		corrections.push(StringWeightPair(
+				     stringify(front.string),
+				     front.weight +
+				     lexicon->final_weight(front.lexicon_state) +
+				     mutator->final_weight(front.mutator_state)));
+	    }
+	} else {
+	    consume_input();
+	}
+	queue.pop_front();
+    }
+    return corrections;
+}
+
+bool Speller::check(char * line)
+{
+    if (!init_input(line,
+		    lexicon->get_encoder(),
+		    NO_SYMBOL_NUMBER)) {
+	return false;
+    }
+    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    queue.assign(1, start_node);
+
+    while (queue.size() > 0) {
+	if (queue.front().input_state == input.len() and
+	    lexicon->is_final(queue.front().lexicon_state)) {
+	    return true;
+	}
+	lexicon_epsilons();
+	lexicon_consume();
+	queue.pop_front();
+    }
+    return false;
 }
 
 void Speller::output(SymbolVector string)
@@ -330,15 +443,26 @@ void Speller::output(SymbolVector string)
     std::cout << std::endl;
 }
 
-bool Speller::init_input(char * str)
+std::string Speller::stringify(SymbolVector symbol_vector)
 {
-    return input.initialize(mutator.get_encoder(), str, mutator.get_other());
+    std::string s;
+    for (SymbolVector::iterator it = symbol_vector.begin(); it != symbol_vector.end(); ++it) {
+	s.append(symbol_table->operator[](*it));
+    }
+    return s;
+}
+
+bool Speller::init_input(char * str,
+			 Encoder * encoder,
+			 SymbolNumber other)
+{
+    return input.initialize(encoder, str, other);
 }
 
 void Speller::build_alphabet_translator(void)
 {
-    TransducerAlphabet * from = mutator.get_alphabet();
-    TransducerAlphabet * to = lexicon.get_alphabet();
+    TransducerAlphabet * from = mutator->get_alphabet();
+    TransducerAlphabet * to = lexicon->get_alphabet();
     KeyTable * from_keys = from->get_key_table();
     StringSymbolMap * to_symbols = to->get_string_to_symbol();
     alphabet_translator.push_back(0); // zeroth element is always epsilon
@@ -357,9 +481,5 @@ void Speller::build_alphabet_translator(void)
     }
 }
 
-void debug_print (char * str)
-{
-#if DEBUG
-    std::cerr << str << std::endl;
-#endif
-}
+} // namespace hfst_ol
+    

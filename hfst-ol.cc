@@ -1,18 +1,20 @@
 #include "hfst-ol.h"
 
+namespace hfst_ol {
+    
 void TransducerAlphabet::get_next_symbol(FILE * f, SymbolNumber k)
 {
-  int byte;
-  char * sym = line;
-  while ( (byte = fgetc(f)) != 0 )
+    int byte;
+    char * sym = line;
+    while ( (byte = fgetc(f)) != 0 )
     {
-      if (byte == EOF)
+	if (byte == EOF)
 	{
-	  std::cerr << "Could not parse transducer; wrong or corrupt file?" << std::endl;
-	  exit(1);
+	    std::cerr << "Could not parse transducer; wrong or corrupt file?" << std::endl;
+	    exit(1);
 	}
-      *sym = byte;
-      ++sym;
+	*sym = byte;
+	++sym;
     }
   if (k == 0) {
       return; // ignore epsilon
@@ -48,8 +50,8 @@ void TransducerAlphabet::get_next_symbol(FILE * f, SymbolNumber k)
 	      value_bucket[val] = val_num;
 	      ++val_num;
 	  }
-	  operations.push_back(FlagDiacriticOperation(op, feature_bucket[feat], value_bucket[val]));
-	  flags.insert(k);
+	  operations.insert(std::pair<SymbolNumber, FlagDiacriticOperation>(k,
+								       FlagDiacriticOperation(op, feature_bucket[feat], value_bucket[val])));
 	  kt->push_back(std::string(""));
 	  return;
       } else if (strlen(line) == 3 and line[1] == '?') { // other symbol
@@ -61,7 +63,6 @@ void TransducerAlphabet::get_next_symbol(FILE * f, SymbolNumber k)
 	  return;
       }
   }
-  operations.push_back(FlagDiacriticOperation()); // dummy flag
   kt->push_back(std::string(line));
   string_to_symbol[std::string(line)] = k;
 }
@@ -159,3 +160,4 @@ SymbolNumber Encoder::find_key(char ** p)
     return s;
 }
 
+} // namespace hfst_ol

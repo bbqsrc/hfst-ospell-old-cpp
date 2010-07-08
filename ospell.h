@@ -4,17 +4,13 @@
 #define HFST_OSPELL_OSPELL_H_
 
 #include <string>
-#include <utility>
 #include <getopt.h>
 #include <deque>
+#include <queue>
 #include <cassert>
 #include "hfst-ol.h"
 
-#define DEBUG 1
-#define PACKAGE_NAME "hfst-ospell"
-#define PACKAGE_STRING "hfst-ospell 0.1"
-#define PACKAGE_BUGREPORT "hfst-bugs@ling.helsinki.fi"
-
+namespace hfst_ol {
 
 class STransition{
 public:
@@ -39,7 +35,29 @@ public:
 
 };
 
-//typedef std::pair<TransitionTableIndex, SymbolNumber> IndexSymbolPair;
+typedef std::pair<std::string, Weight> StringWeightPair;
+
+class StringWeightComparison
+{
+    bool reverse;
+public:
+    StringWeightComparison(bool reverse_result=false):
+	reverse(reverse_result)
+	{}
+    
+    bool operator() (StringWeightPair lhs, StringWeightPair rhs)
+	{
+	    if (reverse) {
+		return (lhs.second > rhs.second);
+	    } else {
+		return (lhs.second < rhs.second);
+	    }
+	}
+};
+
+typedef std::priority_queue<StringWeightPair,
+			    std::vector<StringWeightPair>,
+			    StringWeightComparison> CorrectionQueue;
 
 class Transducer
 {
@@ -70,16 +88,7 @@ protected:
 	{
 	    return indices[i]->final();
 	}
-  
-    TransitionTableIndex try_epsilon_indices(TransitionTableIndex i);
-  
-    STransition try_epsilon_transitions(TransitionTableIndex i);
-  
-    TransitionTableIndex find_index(SymbolNumber input,
-				    TransitionTableIndex i);
-  
-    STransition find_transitions(SymbolNumber input,
-				 TransitionTableIndex i);
+
   
 public:
     Transducer(FILE * f):
@@ -130,6 +139,11 @@ public:
 	    return &alphabet;
 	}
 
+    OperationMap * get_operations(void)
+	{
+	    return alphabet.get_operation_map();
+	}
+
     void free_temporary(void)
 	{
 	    alphabet.free_temporary();
@@ -143,6 +157,7 @@ public:
     bool has_transitions(TransitionTableIndex i,
 			 SymbolNumber symbol);
     bool is_final(TransitionTableIndex i);
+    Weight final_weight(TransitionTableIndex i);
 
 };
 
@@ -201,13 +216,13 @@ public:
 		    TransitionTableIndex next_mutator,
 		    TransitionTableIndex next_lexicon,
 		    Weight weight);
-    
+
+
 };
 
 typedef std::deque<TreeNode> TreeNodeQueue;
 
 int nByte_utf8(unsigned char c);
-void debug_print(char * str);
 
 class InputString
 {
@@ -237,39 +252,47 @@ public:
 class Speller
 {
 public:
-    Transducer mutator;
-    Transducer lexicon;
+    Transducer * mutator;
+    Transducer * lexicon;
     InputString input;
     TreeNodeQueue queue;
     SymbolVector alphabet_translator;
+    OperationMap * operations;
     std::vector<const char*> * symbol_table;
     
-    Speller(FILE * mutator_file, FILE * lexicon_file):
-	mutator(Transducer(mutator_file)),
-	lexicon(Transducer(lexicon_file)),
+    Speller(Transducer * mutator_ptr, Transducer * lexicon_ptr):
+	mutator(mutator_ptr),
+	lexicon(lexicon_ptr),
 	input(InputString()),
 	queue(TreeNodeQueue()),
 	alphabet_translator(SymbolVector()),
-	symbol_table(lexicon.get_symbol_table())
+	operations(lexicon->get_operations()),
+	symbol_table(lexicon->get_symbol_table())
 	{
 	    build_alphabet_translator();
-	    mutator.free_temporary();
-	    lexicon.free_temporary();
+/*	    mutator->free_temporary();
+	    lexicon->free_temporary();*/
+	    // not ok if they need to be reused
 	}
     
-    bool init_input(char * str);
+    bool init_input(char * str, Encoder * encoder, SymbolNumber other);
 
     unsigned int get_state_size(void)
 	{
-	    return mutator.get_state_size();
+	    return mutator->get_state_size();
 	}
 
     void build_alphabet_translator(void);
     void lexicon_epsilons(void);
     void mutator_epsilons(void);
     void consume_input(void);
-    bool run(void);
+    void lexicon_consume(void);
+    bool check(char * line);
+    CorrectionQueue correct(char * line);
     void output(SymbolVector string);
+    std::string stringify(SymbolVector symbol_vector);
 };
 
+} // namespace hfst_ol
+    
 #endif // HFST_OSPELL_OSPELL_H_

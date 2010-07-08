@@ -16,15 +16,23 @@
   
 */
 
+/*
+  This is a toy commandline utility for testing spellers on standard io.
+ */
+
 #include "ospell.h"
+
+#define PACKAGE_NAME "hfst-ospell"
+#define PACKAGE_STRING "hfst-ospell 0.1"
+#define PACKAGE_BUGREPORT "hfst-bugs@ling.helsinki.fi"
 
 bool print_usage(void)
 {
     std::cerr <<
 	"\n" <<
 	"Usage: " << PACKAGE_NAME << " [OPTIONS] ERRORSOURCE LEXICON\n" <<
-	"Run a composition of ERRORSOURCE and LEXICON on standard input and " <<
-	"print corrected output.\n" <<
+	"Run a composition of ERRORSOURCE and LEXICON on standard input and" <<
+	"print corrected output\n" <<
 	"\n" <<
 	"  -h, --help                  Print this help message\n" <<
 	"  -V, --version               Print version information\n" <<
@@ -124,7 +132,31 @@ int main(int argc, char **argv)
 	    std::cerr << "Could not open file " << argv[(optind)] << std::endl;
 	    return 1;
 	}
-	Speller speller(mutator_file, lexicon_file);
-	return speller.run();
+	hfst_ol::Transducer mutator = hfst_ol::Transducer(mutator_file);
+	hfst_ol::Transducer lexicon = hfst_ol::Transducer(lexicon_file);
+	hfst_ol::Speller speller(&mutator, &lexicon);
+	
+	char * str = (char*) malloc(2000);
+	
+	while (!std::cin.eof()) {
+	    std::cin.getline(str, 2000);
+	    if (speller.check(str)) {
+		std::cout << "\"" << str << "\" is in the lexicon\n\n";
+	    } else {
+		hfst_ol::CorrectionQueue corrections = speller.correct(str);
+		if (corrections.size() > 0) {
+		    std::cout << "Corrections for \"" << str << "\":\n";
+		    while (corrections.size() > 0)
+		    {
+			std::cout << corrections.top().first << "\t" << corrections.top().second << std::endl;
+			corrections.pop();
+		    }
+		    std::cout << std::endl;
+		} else {
+		    std::cout << "Unable to correct \"" << str << "\"!\n\n";
+		}
+	    }
+	}
+	return EXIT_SUCCESS;
     }
 }

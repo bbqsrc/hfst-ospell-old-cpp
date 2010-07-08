@@ -6,6 +6,9 @@
  * in the actual ospell code.
  */
 
+#ifndef HFST_OSPELL_HFST_OL_H_
+#define HFST_OSPELL_HFST_OL_H_
+
 #include <vector>
 #include <map>
 #include <climits>
@@ -14,9 +17,9 @@
 #include <iostream>
 #include <cstring>
 #include <set>
+#include <utility>
 
-#ifndef HFST_OSPELL_HFST_OL_H_
-#define HFST_OSPELL_HFST_OL_H_
+namespace hfst_ol {
 
 typedef unsigned short SymbolNumber;
 typedef unsigned int TransitionTableIndex;
@@ -33,7 +36,7 @@ class FlagDiacriticOperation;
 
 typedef std::vector<TransitionIndex*> TransitionIndexVector;
 typedef std::vector<Transition*> TransitionVector;
-typedef std::vector<FlagDiacriticOperation> OperationVector;
+typedef std::map<SymbolNumber, FlagDiacriticOperation> OperationMap;
 
 const SymbolNumber NO_SYMBOL_NUMBER = USHRT_MAX;
 const TransitionTableIndex NO_TABLE_INDEX = UINT_MAX;
@@ -194,9 +197,8 @@ class TransducerAlphabet
 private:
     SymbolNumber number_of_symbols;
     KeyTable * kt;
-    OperationVector operations;
+    OperationMap operations;
     SymbolNumber other_symbol;
-    std::set<SymbolNumber> flags;
     StringSymbolMap string_to_symbol;
 
   void get_next_symbol(FILE * f, SymbolNumber k);
@@ -232,8 +234,8 @@ public:
     KeyTable * get_key_table(void)
 	{ return kt; }
     
-    OperationVector get_operation_vector(void)
-	{ return operations; }
+    OperationMap * get_operation_map(void)
+	{ return &operations; }
     
     SymbolNumber get_state_size(void)
 	{ return feature_bucket.size(); }
@@ -248,7 +250,6 @@ public:
 	    string_to_symbol.clear();
 	    feature_bucket.clear();
 	    value_bucket.clear();
-	    flags.clear();
 	}
 
     StringSymbolMap * get_string_to_symbol(void)
@@ -258,7 +259,7 @@ public:
 
     bool is_flag(SymbolNumber symbol)
 	{
-	    return flags.count(symbol) == 1;
+	    return operations.count(symbol) == 1;
 	}
   
 };
@@ -513,4 +514,6 @@ class TransitionTableReader
     }
 };
 
+} // namespace hfst_ol
+    
 #endif // HFST_OSPELL_HFST_OL_H_
