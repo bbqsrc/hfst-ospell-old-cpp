@@ -73,10 +73,6 @@ protected:
   
     std::vector<const char*> symbol_table;
   
-    TransitionIndexVector &indices;
-  
-    TransitionVector &transitions;
-  
     void set_symbol_table(void);
 
     bool final_transition(TransitionTableIndex i)
@@ -103,6 +99,10 @@ public:
 	{
 	    set_symbol_table();
 	}
+
+    TransitionIndexVector &indices;
+  
+    TransitionVector &transitions;
     
     KeyTable * get_key_table(void)
 	{
@@ -150,14 +150,18 @@ public:
 	}
 
     STransition take_epsilons(TransitionTableIndex i);
+    STransition take_epsilons_and_flags(TransitionTableIndex i);
     STransition take_non_epsilons(TransitionTableIndex i,
 				  SymbolNumber symbol);
     TransitionTableIndex next(TransitionTableIndex i,
 			      SymbolNumber symbol);
     bool has_transitions(TransitionTableIndex i,
 			 SymbolNumber symbol);
+    bool has_epsilons_or_flags(TransitionTableIndex i);
     bool is_final(TransitionTableIndex i);
     Weight final_weight(TransitionTableIndex i);
+    bool is_flag(SymbolNumber symbol)
+	{ return alphabet.is_flag(symbol); }
 
 };
 
@@ -194,7 +198,7 @@ public:
 	weight(0.0)
 	{ }
 
-    bool compatible_with(FlagDiacriticOperation op);
+    bool try_compatible_with(FlagDiacriticOperation op);
 
     TreeNode update_lexicon(SymbolNumber next_symbol,
 			    TransitionTableIndex next_lexicon,

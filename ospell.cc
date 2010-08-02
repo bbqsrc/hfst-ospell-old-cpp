@@ -118,7 +118,7 @@ TreeNode TreeNode::update(SymbolNumber next_symbol,
 		    this->weight + weight);
 		    }
 
-bool TreeNode::compatible_with(FlagDiacriticOperation op)
+bool TreeNode::try_compatible_with(FlagDiacriticOperation op)
 {
     switch (op.Operation()) {
 	
@@ -164,21 +164,23 @@ bool TreeNode::compatible_with(FlagDiacriticOperation op)
 void Speller::lexicon_epsilons(void)
 {
     TreeNode front = queue.front();
-    if (!lexicon->has_transitions(front.lexicon_state + 1, 0)) {
+    if (!lexicon->has_epsilons_or_flags(front.lexicon_state + 1)) {
 	    return;
 	}
     TransitionTableIndex next = lexicon->next(front.lexicon_state + 1, 0);
-    STransition i_s = lexicon->take_epsilons(next);
+    STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL_NUMBER) {
-	// test for flag TODO
-//	if ((front.compatible_with(operations->operator[](i_s.symbol)))) {
+	if ((lexicon->transitions[next]->get_input() == 0) or
+	    front.try_compatible_with( // this is terrible
+		operations->operator[](
+		    lexicon->transitions[next]->get_input()))) {
 	    queue.push_back(front.update_lexicon(i_s.symbol,
 						 i_s.index,
 						 i_s.weight));
-//	}
+	}
 	++next;
-	i_s = lexicon->take_epsilons(next);
+	i_s = lexicon->take_epsilons_and_flags(next);
     }
 }
 
@@ -333,9 +335,30 @@ bool Transducer::has_transitions(TransitionTableIndex i,
     }
 }
 
+bool Transducer::has_epsilons_or_flags(TransitionTableIndex i)
+{
+    if (i >= TRANSITION_TARGET_TABLE_START) {
+	return (transitions[i]->get_input() == 0 or
+		is_flag(transitions[i]->get_input()));
+    } else {
+	return (indices[i]->get_input() == 0);
+    }
+}
+
 STransition Transducer::take_epsilons(TransitionTableIndex i)
 {
     if (transitions[i]->get_input() != 0) {
+	return STransition(0,NO_SYMBOL_NUMBER);
+    }
+    return STransition(transitions[i]->target(),
+		       transitions[i]->get_output(),
+		       transitions[i]->get_weight());
+}
+
+STransition Transducer::take_epsilons_and_flags(TransitionTableIndex i)
+{
+    if (transitions[i]->get_input() != 0 and
+	!is_flag(transitions[i]->get_input())) {
 	return STransition(0,NO_SYMBOL_NUMBER);
     }
     return STransition(transitions[i]->target(),
