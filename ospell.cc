@@ -332,7 +332,7 @@ bool Transducer::has_transitions(TransitionTableIndex i,
 	return (transitions[i - TRANSITION_TARGET_TABLE_START]->get_input() == symbol);
     } else {
 	return (indices[i+symbol]->get_input() == symbol);
-	}*/
+	}
 }
 
 bool Transducer::has_epsilons_or_flags(TransitionTableIndex i)
