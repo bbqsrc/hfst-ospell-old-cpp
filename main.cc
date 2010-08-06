@@ -132,9 +132,21 @@ int main(int argc, char **argv)
 	    std::cerr << "Could not open file " << argv[(optind)] << std::endl;
 	    return 1;
 	}
-	hfst_ol::Transducer mutator(mutator_file);
-	hfst_ol::Transducer lexicon(lexicon_file);
-	hfst_ol::Speller speller(&mutator, &lexicon);
+	hfst_ol::Transducer * mutator;
+	hfst_ol::Transducer * lexicon;
+	try {
+	    mutator = new hfst_ol::Transducer(mutator_file);
+	} catch (hfst_ol::UnweightedSpellerException e) {
+	    std::cerr << "Error source was unweighted, exiting\n\n";
+	    return EXIT_FAILURE;
+	}
+	try {
+	    lexicon = new hfst_ol::Transducer(lexicon_file);
+	} catch (hfst_ol::UnweightedSpellerException e) {
+	    std::cerr << "Lexicon was unweighted, exiting\n\n";
+	    return EXIT_FAILURE;
+	}
+	hfst_ol::Speller speller(mutator, lexicon);
 	
 	char * str = (char*) malloc(2000);
 	

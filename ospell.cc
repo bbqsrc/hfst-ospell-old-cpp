@@ -167,7 +167,7 @@ void Speller::lexicon_epsilons(void)
     if (!lexicon->has_epsilons_or_flags(front.lexicon_state + 1)) {
 	    return;
 	}
-    TransitionTableIndex next = lexicon->next(front.lexicon_state + 1, 0);
+    TransitionTableIndex next = lexicon->next(front.lexicon_state, 0);
     STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL_NUMBER) {
@@ -193,19 +193,19 @@ void Speller::lexicon_consume(void)
 	    return;
 	}
 	
-    TransitionTableIndex next = lexicon->next(front.lexicon_state + 1,
+    TransitionTableIndex next = lexicon->next(front.lexicon_state,
 					      input[input_state]);
     STransition i_s = lexicon->take_non_epsilons(next,
 						 input[input_state]);
 
     while (i_s.symbol != NO_SYMBOL_NUMBER) {
-	    queue.push_back(front.update(
-				i_s.symbol,
-				input_state + 1,
-				front.mutator_state,
-				i_s.index,
-				i_s.weight));
-		
+	queue.push_back(front.update(
+			    i_s.symbol,
+			    input_state + 1,
+			    front.mutator_state,
+			    i_s.index,
+			    i_s.weight));
+	
 	++next;
 	i_s = lexicon->take_non_epsilons(
 	    next,
@@ -220,7 +220,7 @@ void Speller::mutator_epsilons(void)
     if (!mutator->has_transitions(front.mutator_state + 1, 0)) {
 	    return;
 	}
-    TransitionTableIndex next_m = mutator->next(front.mutator_state + 1, 0);
+    TransitionTableIndex next_m = mutator->next(front.mutator_state, 0);
     STransition mutator_i_s = mutator->take_epsilons(next_m);
    
     while (mutator_i_s.symbol != NO_SYMBOL_NUMBER) {
@@ -235,7 +235,7 @@ void Speller::mutator_epsilons(void)
 		mutator_i_s = mutator->take_epsilons(next_m);
 		continue;
 	    }
-	    TransitionTableIndex next_l = lexicon->next(front.lexicon_state + 1,
+	    TransitionTableIndex next_l = lexicon->next(front.lexicon_state,
 						       alphabet_translator[mutator_i_s.symbol]);
 	    STransition lexicon_i_s = lexicon->take_non_epsilons(next_l,
 								alphabet_translator[mutator_i_s.symbol]);
@@ -267,7 +267,7 @@ void Speller::consume_input(void)
 				 input[input_state])) {
 	    return;
 	}
-    TransitionTableIndex next_m = mutator->next(front.mutator_state + 1,
+    TransitionTableIndex next_m = mutator->next(front.mutator_state,
 					       input[input_state]);
     STransition mutator_i_s = mutator->take_non_epsilons(next_m,
 							    input[input_state]);
@@ -292,7 +292,7 @@ void Speller::consume_input(void)
 		    input[input_state]);
 		continue;
 		}
-	    TransitionTableIndex next_l = lexicon->next(front.lexicon_state + 1,
+	    TransitionTableIndex next_l = lexicon->next(front.lexicon_state,
 						       alphabet_translator[mutator_i_s.symbol]);
 	    STransition lexicon_i_s = lexicon->take_non_epsilons(next_l,
 								    alphabet_translator[mutator_i_s.symbol]);
@@ -316,12 +316,12 @@ void Speller::consume_input(void)
 }
 
 TransitionTableIndex Transducer::next(TransitionTableIndex i,
-				 SymbolNumber symbol)
+				      SymbolNumber symbol)
 {
     if (i >= TRANSITION_TARGET_TABLE_START) {
-	return i - TRANSITION_TARGET_TABLE_START;
+	return i - TRANSITION_TARGET_TABLE_START + 1;
     } else {
-	return indices[i+symbol]->target() - TRANSITION_TARGET_TABLE_START;
+	return indices[i+1+symbol]->target() - TRANSITION_TARGET_TABLE_START;
     }
 }
 
@@ -329,17 +329,17 @@ bool Transducer::has_transitions(TransitionTableIndex i,
 				 SymbolNumber symbol)
 {
     if (i >= TRANSITION_TARGET_TABLE_START) {
-	return (transitions[i]->get_input() == symbol);
+	return (transitions[i - TRANSITION_TARGET_TABLE_START]->get_input() == symbol);
     } else {
 	return (indices[i+symbol]->get_input() == symbol);
-    }
+	}*/
 }
 
 bool Transducer::has_epsilons_or_flags(TransitionTableIndex i)
 {
     if (i >= TRANSITION_TARGET_TABLE_START) {
-	return (transitions[i]->get_input() == 0 or
-		is_flag(transitions[i]->get_input()));
+	return (transitions[i - TRANSITION_TARGET_TABLE_START]->get_input() == 0 or
+		is_flag(transitions[i - TRANSITION_TARGET_TABLE_START]->get_input()));
     } else {
 	return (indices[i]->get_input() == 0);
     }
