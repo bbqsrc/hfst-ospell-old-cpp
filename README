@@ -20,8 +20,7 @@ pointers to the Speller constructor, eg.:
 	try {
 		error = new hfst_ol::Transducer(error_source);
 		lexicon = new hfst_ol::Transducer(lexicon_file);
-	} catch (hfst_ol::TransducerParsingException& e)
-		{
+	} catch (hfst_ol::TransducerParsingException& e) {
 			/* problem with transducer file, usually completely
 			different type of file - there's no magic number
 			in the header to check for this */
