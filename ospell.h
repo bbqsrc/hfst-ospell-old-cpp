@@ -37,12 +37,12 @@ typedef std::pair<std::string, Weight> StringWeightPair;
 
 class StringWeightComparison
 /* results are reversed by default because greater weights represent
-   worse results */
+   worse results - to reverse the reversal, give a true argument*/
 
 {
     bool reverse;
 public:
-    StringWeightComparison(bool reverse_result=true):
+    StringWeightComparison(bool reverse_result=false):
 	reverse(reverse_result)
 	{}
     
