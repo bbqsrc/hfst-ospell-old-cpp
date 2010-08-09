@@ -6,7 +6,6 @@
 #include <string>
 #include <deque>
 #include <queue>
-#include <cassert>
 #include "hfst-ol.h"
 
 namespace hfst_ol {
