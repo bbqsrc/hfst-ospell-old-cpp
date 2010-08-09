@@ -4,22 +4,22 @@ Preliminary hfst-ospell library and toy commandline tester
 
 Usage:
 
-	#include ospell.h
+	#include <ospell.h>
 
 and compile your project with
 
-	ospell.cc hfst-ol.cc
+	ospell.cc hfst-ol.cc (-lhfst-ospell?)
 
 The library lives in a namespace called hfst_ol. Pass (weighted!) Transducer
 pointers to the Speller constructor, eg.:
 
 	FILE * error_source = fopen(error_filename, "r");
-	FILE * lexicon = fopen(lexicon_filename, "r");
+	FILE * lexicon_file = fopen(lexicon_filename, "r");
 	hfst_ol::Transducer * error;
 	hfst_ol::Transducer * lexicon;
 	try {
 		error = new hfst_ol::Transducer(error_source);
-		lexicon = new hfst_ol::Transducer(lexicon);
+		lexicon = new hfst_ol::Transducer(lexicon_file);
 	} catch (hfst_ol::TransducerParsingException& e)
 		{
 			/* problem with transducer file, usually completely
@@ -28,7 +28,7 @@ pointers to the Speller constructor, eg.:
 		}
 	hfst_ol::Speller * speller;
 	try {
-	speller = hfst_ol::Speller(&error, &lexicon);
+	speller = hfst_ol::Speller(error, lexicon);
 	} catch (hfst_ol::AlphabetTranslationException& e) {
 	/* problem with translating between the two alphabets */
 	}
