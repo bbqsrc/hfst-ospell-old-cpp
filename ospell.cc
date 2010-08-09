@@ -26,7 +26,7 @@ bool InputString::initialize(Encoder * encoder,
     // Initialize the symbol vector to the tokenization given by encoder.
     // In the case of tokenization failure, valid utf-8 characters
     // are tokenized as "other" and tokenization is reattempted from
-    // such a character onwards. The empty string is tokenized as
+    // such a character onwards. The empty string is tokenized as an
     // empty vector; there is no end marker.
     
     s.clear();
