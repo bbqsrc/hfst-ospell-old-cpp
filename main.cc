@@ -147,16 +147,26 @@ int main(int argc, char **argv)
 	    std::cerr << "Lexicon was unweighted, exiting\n\n";
 	    return EXIT_FAILURE;
 	}
-	hfst_ol::Speller speller(mutator, lexicon);
+	
+	hfst_ol::Speller * speller;
+
+	try {
+	    speller = new hfst_ol::Speller(mutator, lexicon);
+	} catch (hfst_ol::AlphabetTranslationException& e) {
+	    std::cerr <<
+		"Unable to build speller - some symbols in the error source\n"
+		"aren't present in the alphabet\n";
+	    return EXIT_FAILURE;
+	}
 	
 	char * str = (char*) malloc(2000);
 	
 	while (!std::cin.eof()) {
 	    std::cin.getline(str, 2000);
-	    if (speller.check(str)) {
+	    if (speller->check(str)) {
 		std::cout << "\"" << str << "\" is in the lexicon\n\n";
 	    } else {
-		hfst_ol::CorrectionQueue corrections = speller.correct(str);
+		hfst_ol::CorrectionQueue corrections = speller->correct(str);
 		if (corrections.size() > 0) {
 		    std::cout << "Corrections for \"" << str << "\":\n";
 		    while (corrections.size() > 0)

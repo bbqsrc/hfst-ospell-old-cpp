@@ -28,9 +28,9 @@ pointers to the Speller constructor, eg.:
 		}
 	hfst_ol::Speller * speller;
 	try {
-	speller = hfst_ol::Speller(error, lexicon);
+		speller = new hfst_ol::Speller(error, lexicon);
 	} catch (hfst_ol::AlphabetTranslationException& e) {
-	/* problem with translating between the two alphabets */
+		/* problem with translating between the two alphabets */
 	}
 
 
