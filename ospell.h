@@ -287,7 +287,7 @@ public:
 	    build_alphabet_translator();
 /*	    mutator->free_temporary();
 	    lexicon->free_temporary();*/
-	    // not ok if they need to be reused
+	    // not ok if they need to be reused, FIXME to minimize memory use
 	}
     
     bool init_input(char * str, Encoder * encoder, SymbolNumber other);
