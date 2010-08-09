@@ -253,6 +253,15 @@ public:
 
 };
 
+class AlphabetTranslationException: public std::exception
+{
+public:
+    virtual const char* what() const throw()
+	{
+	    return("Not all symbols in mutator's alphabet appear in lexicon's alphabet");
+	}
+};
+
 class Speller
 {
 public:

@@ -500,7 +500,9 @@ void Speller::build_alphabet_translator(void)
 	    alphabet_translator.push_back(NO_SYMBOL_NUMBER);
 	    continue; // no translation
 	}
-	assert(to_symbols->count(from_keys->operator[](i)) == 1);
+	if (to_symbols->count(from_keys->operator[](i)) != 1) {
+	    throw AlphabetTranslationException();
+	}
 	// translator at i points to lexicon's symbol for mutator's string for
 	// mutator's symbol number i
 	alphabet_translator.push_back(

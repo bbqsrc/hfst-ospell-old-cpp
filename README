@@ -15,18 +15,24 @@ pointers to the Speller constructor, eg.:
 
 	FILE * error_source = fopen(error_filename, "r");
 	FILE * lexicon = fopen(lexicon_filename, "r");
-	try
-	{
-		hfst_ol::Transducer error(error_source);
-		hfst_ol::Transducer lexicon(lexicon);
-	}
-	catch (hfst_ol::TransducerParsingException& e)
+	hfst_ol::Transducer * error;
+	hfst_ol::Transducer * lexicon;
+	try {
+		error = new hfst_ol::Transducer(error_source);
+		lexicon = new hfst_ol::Transducer(lexicon);
+	} catch (hfst_ol::TransducerParsingException& e)
 		{
 			/* problem with transducer file, usually completely
 			different type of file - there's no magic number
 			in the header to check for this */
 		}
-	hfst_ol::Speller speller(&error, &lexicon);
+	hfst_ol::Speller * speller;
+	try {
+	speller = hfst_ol::Speller(&error, &lexicon);
+	} catch (hfst_ol::AlphabetTranslationException& e) {
+	/* problem with translating between the two alphabets */
+	}
+
 
 And use the functions
 
@@ -36,4 +42,20 @@ And use the functions
 	// CorrectionQueue is a priority queue, sorted by weight
 	hfst_ol::CorrectionQueue hfst_ol::Speller::correct(char * line);
 
-to communicate with it. See main.cc for a concrete usage example.
+to communicate with it. See main.cc for a concrete usage example. It provides a
+demo utility with the following help message:
+
+--------------------------------------------------------------------------------
+
+Usage: hfst-ospell [OPTIONS] ERRORSOURCE LEXICON
+Run a composition of ERRORSOURCE and LEXICON on standard input and
+print corrected output
+
+  -h, --help                  Print this help message
+  -V, --version               Print version information
+  -v, --verbose               Be verbose
+  -q, --quiet                 Don't be verbose (default)
+  -s, --silent                Same as quiet
+
+
+Report bugs to hfst-bugs@ling.helsinki.fi

@@ -31,7 +31,7 @@ bool print_usage(void)
     std::cerr <<
 	"\n" <<
 	"Usage: " << PACKAGE_NAME << " [OPTIONS] ERRORSOURCE LEXICON\n" <<
-	"Run a composition of ERRORSOURCE and LEXICON on standard input and" <<
+	"Run a composition of ERRORSOURCE and LEXICON on standard input and\n" <<
 	"print corrected output\n" <<
 	"\n" <<
 	"  -h, --help                  Print this help message\n" <<
