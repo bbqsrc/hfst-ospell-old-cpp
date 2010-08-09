@@ -4,7 +4,6 @@
 #define HFST_OSPELL_OSPELL_H_
 
 #include <string>
-#include <getopt.h>
 #include <deque>
 #include <queue>
 #include <cassert>

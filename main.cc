@@ -21,6 +21,7 @@
  */
 
 #include "ospell.h"
+#include <getopt.h>
 
 #define PACKAGE_NAME "hfst-ospell"
 #define PACKAGE_STRING "hfst-ospell 0.1"
