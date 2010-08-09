@@ -283,7 +283,7 @@ public:
 
     unsigned int get_state_size(void)
 	{
-	    return mutator->get_state_size();
+	    return lexicon->get_state_size();
 	}
 
     void build_alphabet_translator(void);

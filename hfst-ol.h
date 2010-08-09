@@ -238,8 +238,6 @@ public:
 	    feat_num = 0;
 	    val_num = 1;
 	    value_bucket[std::string()] = 0; // empty value = neutral
-	    // assume the first symbol is epsilon which we don't want to print
-	    kt->push_back(std::string(""));
 	    for (SymbolNumber k = 0; k < number_of_symbols; ++k)
 	    {
 		get_next_symbol(f,k);
@@ -350,7 +348,11 @@ class TransitionIndex
   
   bool final(void)
   {
-    return first_transition_index == 1;
+      if (input_symbol != NO_SYMBOL_NUMBER)
+      {
+	  return false;
+      }
+      return first_transition_index != NO_TABLE_INDEX;
   }
 
     Weight final_weight(void)

@@ -16,6 +16,7 @@ void TransducerAlphabet::get_next_symbol(FILE * f, SymbolNumber k)
 	++sym;
     }
   if (k == 0) {
+      kt->push_back(std::string(""));
       return; // ignore epsilon
   }
   *sym = 0;
