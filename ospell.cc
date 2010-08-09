@@ -246,10 +246,11 @@ void Speller::mutator_epsilons(void)
 		alphabet_translator[mutator_i_s.symbol]);
 	    
 	    while (lexicon_i_s.symbol != NO_SYMBOL) {
-		queue.push_back(front.update(lexicon_i_s.symbol,
-					     mutator_i_s.index,
-					     lexicon_i_s.index,
-					     lexicon_i_s.weight + mutator_i_s.weight));
+		queue.push_back(front.update(
+				    lexicon_i_s.symbol,
+				    mutator_i_s.index,
+				    lexicon_i_s.index,
+				    lexicon_i_s.weight + mutator_i_s.weight));
 		++next_l;
 		lexicon_i_s = lexicon->take_non_epsilons(
 		    next_l,
