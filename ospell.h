@@ -19,7 +19,7 @@ public:
     Weight weight;
 
     STransition(TransitionTableIndex i,
-		    SymbolNumber s):
+		SymbolNumber s):
 	index(i),
 	symbol(s),
 	weight(0.0)
@@ -258,7 +258,8 @@ class AlphabetTranslationException: public std::exception
 public:
     virtual const char* what() const throw()
 	{
-	    return("Not all symbols in mutator's alphabet appear in lexicon's alphabet");
+	    return("Not all symbols in mutator's alphabet appear "
+		   "in lexicon's alphabet");
 	}
 };
 
