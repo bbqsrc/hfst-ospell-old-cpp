@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 		    std::cout << "Corrections for \"" << str << "\":\n";
 		    while (corrections.size() > 0)
 		    {
-			std::cout << corrections.top().first << "\t" << corrections.top().second << std::endl;
+			std::cout << corrections.top().first << "    " << corrections.top().second << std::endl;
 			corrections.pop();
 		    }
 		    std::cout << std::endl;

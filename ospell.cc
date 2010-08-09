@@ -408,10 +408,10 @@ void Transducer::set_symbol_table(void)
 
 CorrectionQueue Speller::correct(char * line)
 {
-    CorrectionQueue corrections;
     if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
-	return corrections;
+	return CorrectionQueue();
     }
+    std::map<std::string, Weight> corrections;
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     queue.assign(1, start_node);
 
@@ -420,20 +420,33 @@ CorrectionQueue Speller::correct(char * line)
 	mutator_epsilons();
 	if (queue.front().input_state == input.len()) {
 	    TreeNode front = queue.front();
+	    std::string string = stringify(front.string);
+	    Weight weight = front.weight +
+		lexicon->final_weight(front.lexicon_state) +
+		mutator->final_weight(front.mutator_state);
+
+	    /*
+	     * The following condition means: if all our transducers are in
+	     * final states AND the correction is either new or has a lower
+	     * weight than before, we make it a correction
+	     */
 	    if (mutator->is_final(front.mutator_state) and
-		lexicon->is_final(front.lexicon_state)) {
-		corrections.push(StringWeightPair(
-				     stringify(front.string),
-				     front.weight +
-				     lexicon->final_weight(front.lexicon_state) +
-				     mutator->final_weight(front.mutator_state)));
+		lexicon->is_final(front.lexicon_state) and
+		((corrections.count(string)) == 0 or
+		 corrections[string] > weight)) {
+		corrections[string] = weight;
 	    }
 	} else {
 	    consume_input();
 	}
 	queue.pop_front();
     }
-    return corrections;
+    CorrectionQueue correction_queue;
+    std::map<std::string, Weight>::iterator it;
+    for (it = corrections.begin(); it != corrections.end(); ++it) {
+	correction_queue.push(StringWeightPair(it->first, it->second));
+    }
+    return correction_queue;
 }
 
 bool Speller::check(char * line)
