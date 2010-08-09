@@ -3,7 +3,7 @@
 /*
  * This file contains some classes, typedefs and constant common to all
  * hfst-optimized-lookup stuff. This is just to get them out of the way
- * in the actual ospell code.
+ * of the actual ospell code.
  */
 
 #ifndef HFST_OSPELL_HFST_OL_H_
@@ -141,7 +141,7 @@ public:
 	    read_property(has_input_epsilon_cycles,f);
 	    read_property(has_unweighted_input_epsilon_cycles,f);
 
-	    // For ospell: demand weightedness
+	    // For ospell: demand weightedness FIXME: do this somewhere else
 	    if (!weighted) {
 		throw UnweightedSpellerException();
 	    }
