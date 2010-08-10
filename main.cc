@@ -154,8 +154,8 @@ int main(int argc, char **argv)
 	    speller = new hfst_ol::Speller(mutator, lexicon);
 	} catch (hfst_ol::AlphabetTranslationException& e) {
 	    std::cerr <<
-		"Unable to build speller - some symbols in the error source\n"
-		"aren't present in the alphabet\n";
+		"Unable to build speller - symbol " << e.what() << " not "
+		"present in lexicon's alphabet\n";
 	    return EXIT_FAILURE;
 	}
 	

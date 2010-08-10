@@ -511,7 +511,8 @@ void Speller::build_alphabet_translator(void)
 	    continue; // no translation
 	}
 	if (to_symbols->count(from_keys->operator[](i)) != 1) {
-	    throw AlphabetTranslationException();
+	    throw AlphabetTranslationException(
+		std::string(from_keys->operator[](i)));
 	}
 	// translator at i points to lexicon's symbol for mutator's string for
 	// mutator's symbol number i

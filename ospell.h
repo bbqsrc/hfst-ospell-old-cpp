@@ -6,6 +6,7 @@
 #include <string>
 #include <deque>
 #include <queue>
+#include <stdexcept>
 #include "hfst-ol.h"
 
 namespace hfst_ol {
@@ -254,14 +255,15 @@ public:
 
 };
 
-class AlphabetTranslationException: public std::exception
-{
+    class AlphabetTranslationException: public std::runtime_error
+{ // "what" should hold the first untranslatable symbol
 public:
-    virtual const char* what() const throw()
-	{
-	    return("Not all symbols in mutator's alphabet appear "
-		   "in lexicon's alphabet");
-	}
+/*    virtual const char* what() const throw()
+      { return("Error while reading index table"); }*/
+
+    AlphabetTranslationException(const std::string what):
+	std::runtime_error(what)
+	{ }
 };
 
 class Speller
