@@ -10,7 +10,7 @@ void TransducerAlphabet::get_next_symbol(FILE * f, SymbolNumber k)
     {
 	if (byte == EOF)
 	{
-	    throw TransducerParsingException();
+	    throw AlphabetParsingException();
 	}
 	*sym = byte;
 	++sym;
