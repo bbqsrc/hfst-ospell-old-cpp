@@ -468,6 +468,7 @@ public:
                 throw IndexTableReadingException();
             }
             get_index_vector();
+	    free(TableIndices);
 	}
     
 	TransitionIndexVector &operator() (void)
@@ -495,6 +496,7 @@ public:
                 throw TransitionTableReadingException();
             }
             get_transition_vector();
+	    free(TableTransitions);
 	    }
   
 	TransitionVector &operator() (void)
