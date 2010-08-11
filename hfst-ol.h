@@ -208,23 +208,23 @@ public:
 class FlagDiacriticOperation
 {
 private:
-	FlagDiacriticOperator operation;
-	SymbolNumber feature;
-	ValueNumber value;
+	const FlagDiacriticOperator operation;
+	const SymbolNumber feature;
+	const ValueNumber value;
 public:
-	FlagDiacriticOperation(FlagDiacriticOperator op,
-                           SymbolNumber feat,
-                           ValueNumber val):
+	FlagDiacriticOperation(const FlagDiacriticOperator op,
+			       const SymbolNumber feat,
+			       const ValueNumber val):
 	    operation(op), feature(feat), value(val) {}
 
 	// dummy constructor
 	FlagDiacriticOperation():
 	    operation(P), feature(NO_SYMBOL), value(0) {}
   
-	bool isFlag(void) { return feature != NO_SYMBOL; }
-	FlagDiacriticOperator Operation(void) { return operation; }
-	SymbolNumber Feature(void) { return feature; }
-	ValueNumber Value(void) { return value; }
+	bool isFlag(void) const { return feature != NO_SYMBOL; }
+	FlagDiacriticOperator Operation(void) const { return operation; }
+	SymbolNumber Feature(void) const { return feature; }
+	ValueNumber Value(void) const { return value; }
 
 };
 
@@ -353,20 +353,18 @@ public:
 	static const size_t SIZE = 
 	    sizeof(SymbolNumber) + sizeof(TransitionTableIndex);
 
-	TransitionIndex(SymbolNumber input,
-                    TransitionTableIndex first_transition):
+	TransitionIndex(const SymbolNumber input,
+			const TransitionTableIndex first_transition):
 	    input_symbol(input),
 	    first_transition_index(first_transition)
 	    {}
 
-	bool matches(SymbolNumber s);
-  
-	TransitionTableIndex target(void)
+	TransitionTableIndex target(void) const
 	    {
             return first_transition_index;
 	    }
   
-	bool final(void)
+	bool final(void) const
 	    {
             if (input_symbol != NO_SYMBOL)
             {
@@ -375,12 +373,12 @@ public:
             return first_transition_index != NO_TABLE_INDEX;
 	    }
 
-	Weight final_weight(void)
+	Weight final_weight(void) const
 	    {
             return static_cast<Weight>(first_transition_index);
 	    }
   
-	SymbolNumber get_input(void)
+	SymbolNumber get_input(void) const
 	    {
             return input_symbol;
 	    }
@@ -401,10 +399,10 @@ public:
 	static const size_t SIZE = 
 	    2 * sizeof(SymbolNumber) + sizeof(TransitionTableIndex) + sizeof(Weight);
 
-	Transition(SymbolNumber input,
-               SymbolNumber output,
-               TransitionTableIndex target,
-               Weight w):
+	Transition(const SymbolNumber input,
+		   const SymbolNumber output,
+		   const TransitionTableIndex target,
+		   const Weight w):
 	    input_symbol(input),
 	    output_symbol(output),
 	    target_index(target),
@@ -418,29 +416,27 @@ public:
 	    transition_weight(INFINITE_WEIGHT)
 	    {}
 
-	bool matches(SymbolNumber s);
-
-	TransitionTableIndex target(void)
+	TransitionTableIndex target(void) const
 	    {
             return target_index;
 	    }
 
-	SymbolNumber get_output(void)
+	SymbolNumber get_output(void) const
 	    {
             return output_symbol;
 	    }
 
-	SymbolNumber get_input(void)
+	SymbolNumber get_input(void) const
 	    {
             return input_symbol;
 	    }
 
-	Weight get_weight(void)
+	Weight get_weight(void) const
 	    {
             return transition_weight;
 	    }
 
-	bool final(void)
+	bool final(void) const
 	    {
             if (input_symbol != NO_SYMBOL)
                 return false;
@@ -460,30 +456,20 @@ private:
   
 	void get_index_vector(void);
 public:
-	IndexTableReader(FILE * f,
-                     TransitionTableIndex index_count): 
-	    number_of_table_entries(index_count)
-	    {
+    IndexTableReader(FILE * f,
+		     TransitionTableIndex index_count): 
+	number_of_table_entries(index_count)
+	{
             table_size = number_of_table_entries*TransitionIndex::SIZE;
             TableIndices = (char*)(malloc(table_size));
-
-
+	    
+	    
             if (fread(TableIndices,table_size,1,f) != 1) {
                 throw IndexTableReadingException();
             }
             get_index_vector();
-	    }
-  
-	bool get_finality(TransitionTableIndex i)
-	    {
-            return indices[i]->final();
-	    }
-  
-	TransitionIndex * at(TransitionTableIndex i)
-	    {
-            return indices[i];
-	    }
-  
+	}
+    
 	TransitionIndexVector &operator() (void)
 	    { return indices; }
 };
@@ -497,14 +483,11 @@ protected:
 	size_t table_size;
 	size_t transition_size;
   
-	TransitionTableIndex position;
-  
 	void get_transition_vector(void);
 public:
 	TransitionTableReader(FILE * f,
                           TransitionTableIndex transition_count):
-	    number_of_table_entries(transition_count),
-	    position(0)
+	    number_of_table_entries(transition_count)
 	    {
             table_size = number_of_table_entries*Transition::SIZE;
             TableTransitions = (char*)(malloc(table_size));
@@ -514,37 +497,6 @@ public:
             get_transition_vector();
 	    }
   
-	void Set(TransitionTableIndex pos);
-
-	Transition * at(TransitionTableIndex i)
-	    {
-            return transitions[i - TARGET_TABLE];
-	    }
-
-	void Next(void)
-	    {
-            ++position;
-	    }
-  
-	bool Matches(SymbolNumber s);
-
-	TransitionTableIndex get_target(void)
-	    {
-            return transitions[position]->target();
-	    }
-
-	SymbolNumber get_output(void)
-	    {
-            return transitions[position]->get_output();
-	    }
-
-	SymbolNumber get_input(void)
-	    {
-            return transitions[position]->get_input();
-	    }
-
-	bool get_finality(TransitionTableIndex i);
-
 	TransitionVector &operator() (void)
 	    { 
             return transitions; 

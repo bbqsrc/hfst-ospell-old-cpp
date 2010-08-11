@@ -258,9 +258,7 @@ public:
     class AlphabetTranslationException: public std::runtime_error
 { // "what" should hold the first untranslatable symbol
 public:
-/*    virtual const char* what() const throw()
-      { return("Error while reading index table"); }*/
-
+    
     AlphabetTranslationException(const std::string what):
 	std::runtime_error(what)
 	{ }

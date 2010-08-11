@@ -125,12 +125,14 @@ int main(int argc, char **argv)
     } else {
 	mutator_file = fopen(argv[(optind)], "r");
 	if (mutator_file == NULL) {
-	    std::cerr << "Could not open file " << argv[(optind)] << std::endl;
+	    std::cerr << "Could not open file " << argv[(optind)]
+		      << std::endl;
 	    return 1;
 	}
 	lexicon_file = fopen(argv[(optind + 1)], "r");
 	if (lexicon_file == NULL) {
-	    std::cerr << "Could not open file " << argv[(optind)] << std::endl;
+	    std::cerr << "Could not open file " << argv[(optind + 1)]
+		      << std::endl;
 	    return 1;
 	}
 	hfst_ol::Transducer * mutator;
