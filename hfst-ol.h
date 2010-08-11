@@ -443,25 +443,15 @@ public:
 class TransitionTableReader
 {
 protected:
-    TransitionTableIndex number_of_table_entries;
-    char * TableTransitions;
     TransitionVector transitions;
-    size_t table_size;
-    size_t transition_size;
   
-    void get_transition_vector(void);
+    void read(FILE * f,
+	      TransitionTableIndex number_of_table_entries);
 public:
     TransitionTableReader(FILE * f,
-                          TransitionTableIndex transition_count):
-	number_of_table_entries(transition_count)
+                          TransitionTableIndex transition_count)
 	{
-            table_size = number_of_table_entries*Transition::SIZE;
-            TableTransitions = (char*)(malloc(table_size));
-            if (fread(TableTransitions,table_size,1,f) != 1) {
-                throw TransitionTableReadingException();
-            }
-            get_transition_vector();
-	    free(TableTransitions);
+	    read(f, transition_count);
 	}
   
     TransitionVector &operator() (void)

@@ -109,18 +109,25 @@ void IndexTableReader::read(FILE * f,
     free(index_area);
 }
 
-void TransitionTableReader::get_transition_vector(void)
+void TransitionTableReader::read(FILE * f,
+				 TransitionTableIndex number_of_table_entries)
 {
+    size_t table_size = number_of_table_entries*Transition::SIZE;
+    char * transition_area = (char*)(malloc(table_size));
+    if (fread(transition_area, table_size, 1, f) != 1) {
+	throw TransitionTableReadingException();
+    }
+
     for (size_t i = 0; i < number_of_table_entries; ++i)
     {
 	size_t j = i * Transition::SIZE;
-	SymbolNumber * input = (SymbolNumber*)(TableTransitions + j);
+	SymbolNumber * input = (SymbolNumber*)(transition_area + j);
 	SymbolNumber * output = 
-	    (SymbolNumber*)(TableTransitions + j + sizeof(SymbolNumber));
+	    (SymbolNumber*)(transition_area + j + sizeof(SymbolNumber));
 	TransitionTableIndex * target = 
-	    (TransitionTableIndex*)(TableTransitions + j + 2 * sizeof(SymbolNumber));
+	    (TransitionTableIndex*)(transition_area + j + 2 * sizeof(SymbolNumber));
 	Weight * weight =
-	    (Weight*)(TableTransitions + j + 2 * sizeof(SymbolNumber) +
+	    (Weight*)(transition_area + j + 2 * sizeof(SymbolNumber) +
 		      sizeof(TransitionTableIndex));
       
 	transitions.push_back(new Transition(*input,
@@ -129,6 +136,7 @@ void TransitionTableReader::get_transition_vector(void)
 					     *weight));
       
     }
+    free(transition_area);
 }
 
 void LetterTrie::add_string(const char * p, SymbolNumber symbol_key)
