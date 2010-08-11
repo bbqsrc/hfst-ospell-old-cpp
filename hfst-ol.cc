@@ -84,7 +84,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
 	string_to_symbol->operator[](std::string(line)) = k;
     }
     free(line);
-    state_size = feature_bucket.size();
+    flag_state_size = feature_bucket.size();
 }
 
 void IndexTableReader::read(FILE * f,

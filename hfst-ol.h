@@ -235,7 +235,7 @@ private:
     KeyTable * kt;
     OperationMap * operations;
     SymbolNumber other_symbol;
-    SymbolNumber state_size;
+    SymbolNumber flag_state_size;
     StringSymbolMap * string_to_symbol;
     
     void read(FILE * f, SymbolNumber number_of_symbols);
@@ -257,7 +257,7 @@ public:
 	{ return operations; }
     
     SymbolNumber get_state_size(void)
-	{ return state_size; }
+	{ return flag_state_size; }
     
     SymbolNumber get_other(void)
 	{
