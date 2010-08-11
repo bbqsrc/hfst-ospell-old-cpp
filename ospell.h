@@ -146,11 +146,6 @@ public:
 	    return alphabet.get_operation_map();
 	}
 
-    void free_temporary(void)
-	{
-	    alphabet.free_temporary();
-	}
-
     STransition take_epsilons(const TransitionTableIndex i) const;
     STransition take_epsilons_and_flags(const TransitionTableIndex i);
     STransition take_non_epsilons(const TransitionTableIndex i,
