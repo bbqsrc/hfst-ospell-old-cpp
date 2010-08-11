@@ -280,14 +280,11 @@ public:
 	symbol_table(lexicon->get_symbol_table())
 	{
 	    build_alphabet_translator();
-/*	    mutator->free_temporary();
-	    lexicon->free_temporary();*/
-	    // not ok if they need to be reused, FIXME to minimize memory use
 	}
     
     bool init_input(char * str, Encoder * encoder, SymbolNumber other);
 
-    unsigned int get_state_size(void)
+    SymbolNumber get_state_size(void)
 	{
 	    return lexicon->get_state_size();
 	}
