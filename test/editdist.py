@@ -8,10 +8,8 @@ epsilon = u'<>'
 
 if len(sys.argv) < 2:
     sys.exit()
-if len(sys.argv) == 2:
-    distance = 1
-else:
-    distance = int(sys.argv[2])
+if len(sys.argv) > 2:
+    epsilon = unicode(sys.argv[2], 'utf-8')
 alphabet = unicode(sys.argv[1], 'utf-8')
 
 for char in alphabet:
