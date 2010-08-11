@@ -326,8 +326,8 @@ void Speller::consume_input(void)
     }
 }
 
-TransitionTableIndex Transducer::next(TransitionTableIndex i,
-				      SymbolNumber symbol)
+TransitionTableIndex Transducer::next(const TransitionTableIndex i,
+				      const SymbolNumber symbol) const
 {
     if (i >= TARGET_TABLE) {
 	return i - TARGET_TABLE + 1;
@@ -336,8 +336,8 @@ TransitionTableIndex Transducer::next(TransitionTableIndex i,
     }
 }
 
-bool Transducer::has_transitions(TransitionTableIndex i,
-				 SymbolNumber symbol)
+bool Transducer::has_transitions(const TransitionTableIndex i,
+				 const SymbolNumber symbol) const
 {
     if (i >= TARGET_TABLE) {
 	return (transitions[i - TARGET_TABLE]->get_input() == symbol);
@@ -346,7 +346,7 @@ bool Transducer::has_transitions(TransitionTableIndex i,
     }
 }
 
-bool Transducer::has_epsilons_or_flags(TransitionTableIndex i)
+bool Transducer::has_epsilons_or_flags(const TransitionTableIndex i)
 {
     if (i >= TARGET_TABLE) {
 	return(transitions[i - TARGET_TABLE]->get_input() == 0 or
@@ -356,7 +356,7 @@ bool Transducer::has_epsilons_or_flags(TransitionTableIndex i)
     }
 }
 
-STransition Transducer::take_epsilons(TransitionTableIndex i)
+STransition Transducer::take_epsilons(const TransitionTableIndex i) const
 {
     if (transitions[i]->get_input() != 0) {
 	return STransition(0, NO_SYMBOL);
@@ -366,7 +366,7 @@ STransition Transducer::take_epsilons(TransitionTableIndex i)
 		       transitions[i]->get_weight());
 }
 
-STransition Transducer::take_epsilons_and_flags(TransitionTableIndex i)
+STransition Transducer::take_epsilons_and_flags(const TransitionTableIndex i)
 {
     if (transitions[i]->get_input() != 0 and
 	!is_flag(transitions[i]->get_input())) {
@@ -377,8 +377,8 @@ STransition Transducer::take_epsilons_and_flags(TransitionTableIndex i)
 		       transitions[i]->get_weight());
 }
 
-STransition Transducer::take_non_epsilons(TransitionTableIndex i,
-					  SymbolNumber symbol)
+STransition Transducer::take_non_epsilons(const TransitionTableIndex i,
+					  const SymbolNumber symbol) const
 {
     if (transitions[i]->get_input() != symbol) {
 	return STransition(0, NO_SYMBOL);
@@ -388,7 +388,7 @@ STransition Transducer::take_non_epsilons(TransitionTableIndex i,
 		       transitions[i]->get_weight());
 }
 
-bool Transducer::is_final(TransitionTableIndex i)
+bool Transducer::is_final(const TransitionTableIndex i)
 {
     if (i >= TARGET_TABLE) {
 	return final_transition(i - TARGET_TABLE);
@@ -397,7 +397,7 @@ bool Transducer::is_final(TransitionTableIndex i)
     }
 }
 
-Weight Transducer::final_weight(TransitionTableIndex i)
+Weight Transducer::final_weight(const TransitionTableIndex i) const
 {
     if (i >= TARGET_TABLE) {
 	return transitions[i - TARGET_TABLE]->get_weight();

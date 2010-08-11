@@ -151,18 +151,18 @@ public:
 	    alphabet.free_temporary();
 	}
 
-    STransition take_epsilons(TransitionTableIndex i);
-    STransition take_epsilons_and_flags(TransitionTableIndex i);
-    STransition take_non_epsilons(TransitionTableIndex i,
-				  SymbolNumber symbol);
-    TransitionTableIndex next(TransitionTableIndex i,
-			      SymbolNumber symbol);
-    bool has_transitions(TransitionTableIndex i,
-			 SymbolNumber symbol);
-    bool has_epsilons_or_flags(TransitionTableIndex i);
-    bool is_final(TransitionTableIndex i);
-    Weight final_weight(TransitionTableIndex i);
-    bool is_flag(SymbolNumber symbol)
+    STransition take_epsilons(const TransitionTableIndex i) const;
+    STransition take_epsilons_and_flags(const TransitionTableIndex i);
+    STransition take_non_epsilons(const TransitionTableIndex i,
+				  const SymbolNumber symbol) const;
+    TransitionTableIndex next(const TransitionTableIndex i,
+			      const SymbolNumber symbol) const;
+    bool has_transitions(const TransitionTableIndex i,
+			 const SymbolNumber symbol) const;
+    bool has_epsilons_or_flags(const TransitionTableIndex i);
+    bool is_final(const TransitionTableIndex i);
+    Weight final_weight(const TransitionTableIndex i) const;
+    bool is_flag(const SymbolNumber symbol)
 	{ return alphabet.is_flag(symbol); }
 
 };
