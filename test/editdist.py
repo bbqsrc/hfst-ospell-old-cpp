@@ -30,18 +30,21 @@ epsilon = unicode(options.epsilon, 'utf-8')
 distance = options.distance
 swapstate = distance + 1 # used for swap states
 
+def p(string): # stupid python, or possibly stupid me
+    return string.encode('utf-8')
+
 for state in range(distance):
     for char in alphabet:
 
         # first the nonmodifying transitions
-        print str(state) + "\t" + str(state) + "\t" + char + "\t" + char + "\t0.0"
+        print str(state) + "\t" + str(state) + "\t" + p(char) + "\t" + p(char) + "\t0.0"
 
         # then swaps of two characters - we make a separate state counter for this
         if options.swap:
             others = [c for c in alphabet if c != char]
             for other in others:
-                print str(state) + "\t" + str(swapstate) + "\t" + char + "\t" + other + "\t1.0"
-                print str(swapstate) + "\t" + str(state + 1) + "\t" + other + "\t" + char + "\t0.0"
+                print str(state) + "\t" + str(swapstate) + "\t" + p(char) + "\t" + p(other) + "\t1.0"
+                print str(swapstate) + "\t" + str(state + 1) + "\t" + p(other) + "\t" + p(char) + "\t0.0"
                 swapstate += 1 # make a new state
 
     # all states except swap states and the initial state are final
@@ -53,4 +56,4 @@ for char in alphabet: # generate all insertions and deletions
     others = [c for c in alphabet if c != char]
     for other in others:
         for state in range(distance):
-            print str(state) + "\t" + str(state + 1) + "\t" + char + "\t" + other + "\t1.0"
+            print str(state) + "\t" + str(state + 1) + "\t" + p(char) + "\t" + p(other) + "\t1.0"
