@@ -165,6 +165,9 @@ int main(int argc, char **argv)
 	
 	while (!std::cin.eof()) {
 	    std::cin.getline(str, 2000);
+	    if (str[0] == '\0') {
+		break;
+	    }
 	    if (speller->check(str)) {
 		std::cout << "\"" << str << "\" is in the lexicon\n\n";
 	    } else {
