@@ -8,9 +8,11 @@ from optparse import OptionParser
 usage_string = "usage: %prog [options] alphabet"
 parser = OptionParser(usage=usage_string)
 parser.add_option("-e", "--epsilon", dest = "epsilon",
-                  help = "specify symbol to use as epsilon", metavar = "EPS")
+                  help = "specify symbol to use as epsilon, default is @0@",
+                  metavar = "EPS")
 parser.add_option("-d", "--distance", type = "int", dest = "distance",
-                  help = "specify edit depth", metavar = "DIST")
+                  help = "specify edit depth, default is 1",
+                  metavar = "DIST")
 parser.add_option("-s", "--swap", action = "store_true", dest="swap",
                   help = "generate swaps (as well as insertions and deletions)")
 parser.set_defaults(epsilon = '@0@')
