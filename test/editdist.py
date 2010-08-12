@@ -29,6 +29,7 @@ alphabet = unicode(args[0], 'utf-8')
 epsilon = unicode(options.epsilon, 'utf-8')
 distance = options.distance
 swapstate = distance + 1 # used for swap states
+OTHER = u'@?@'
 
 def p(string): # stupid python, or possibly stupid me
     return string.encode('utf-8')
@@ -50,10 +51,17 @@ for state in range(distance):
     # all states except swap states and the initial state are final
     print str(state + 1) + "\t0.0"
 
-alphabet = [a for a in alphabet] + [epsilon] # now add epsilon to the alphabet for insertions and deletions
+# now add epsilon to the alphabet for insertions and deletions
+alphabet = [a for a in alphabet] + [epsilon]
 
-for char in alphabet: # generate all insertions and deletions
+for char in alphabet: # generate all insertions, deletions and substitutions
     others = [c for c in alphabet if c != char]
-    for other in others:
-        for state in range(distance):
+    for state in range(distance):
+        for other in others:
             print str(state) + "\t" + str(state + 1) + "\t" + p(char) + "\t" + p(other) + "\t1.0"
+
+# finally deletions and substitutions of OTHER
+
+for state in range(distance):
+    for char in alphabet:
+        print str(state) + "\t" + str(state + 1) + "\t" + p(OTHER) + "\t" + p(char) + "\t1.0"
