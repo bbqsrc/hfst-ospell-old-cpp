@@ -67,7 +67,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
 			k,
 			FlagDiacriticOperation(
 			    op, feature_bucket[feat], value_bucket[val])));
-	  
+
 		kt->push_back(std::string(""));
 		continue;
 	  

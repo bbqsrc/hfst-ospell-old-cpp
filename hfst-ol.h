@@ -460,6 +460,14 @@ public:
 	}
 };
 
+template <class printable>
+void debug_print(printable p)
+{
+    if (1) {
+	std::cerr << p;
+    }
+}
+
 } // namespace hfst_ol
     
 #endif // HFST_OSPELL_HFST_OL_H_

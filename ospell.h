@@ -152,6 +152,7 @@ public:
 				  const SymbolNumber symbol) const;
     TransitionTableIndex next(const TransitionTableIndex i,
 			      const SymbolNumber symbol) const;
+    TransitionTableIndex next_e(const TransitionTableIndex i) const;
     bool has_transitions(const TransitionTableIndex i,
 			 const SymbolNumber symbol) const;
     bool has_epsilons_or_flags(const TransitionTableIndex i);

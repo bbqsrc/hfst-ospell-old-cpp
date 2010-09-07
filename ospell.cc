@@ -170,10 +170,10 @@ void Speller::lexicon_epsilons(void)
 	return;
     }
     TransitionTableIndex next = lexicon->next(front.lexicon_state, 0);
-    // FIXME: if the epsilon transition area begins with a flag, this breaks
     STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL) {
+	front = queue.front();
 	if ((lexicon->transitions[next]->get_input() == 0) or
 	    front.try_compatible_with( // this is terrible
 		operations->operator[](
@@ -191,12 +191,12 @@ void Speller::lexicon_consume(void)
 {
     TreeNode front = queue.front();
     unsigned int input_state = front.input_state;
-    if (input_state + 1 > input.len() or
+    if (input_state >= input.len() or
 	!lexicon->has_transitions(
 	    front.lexicon_state + 1, input[input_state])) {
 	return;
     }
-    
+
     TransitionTableIndex next = lexicon->next(front.lexicon_state,
 					      input[input_state]);
     STransition i_s = lexicon->take_non_epsilons(next,
@@ -265,7 +265,7 @@ void Speller::mutator_epsilons(void)
 void Speller::consume_input(void)
 {
     unsigned int input_state = queue.front().input_state;
-    if (input_state + 1 > input.len()) {
+    if (input_state >= input.len()) {
 	return; // not enough input to consume
     }
     
@@ -370,7 +370,7 @@ STransition Transducer::take_epsilons_and_flags(const TransitionTableIndex i)
 {
     if (transitions[i]->get_input() != 0 and
 	!is_flag(transitions[i]->get_input())) {
-	return STransition(0,NO_SYMBOL);
+	return STransition(0, NO_SYMBOL);
     }
     return STransition(transitions[i]->target(),
 		       transitions[i]->get_output(),
@@ -419,6 +419,7 @@ void Transducer::set_symbol_table(void)
 
 CorrectionQueue Speller::correct(char * line)
 {
+    debug_print("Correcting...\n");
     if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
 	return CorrectionQueue();
     }
@@ -462,6 +463,7 @@ CorrectionQueue Speller::correct(char * line)
 
 bool Speller::check(char * line)
 {
+    debug_print("Checking...\n");
     if (!init_input(line, lexicon->get_encoder(), NO_SYMBOL)) {
 	return false;
     }
