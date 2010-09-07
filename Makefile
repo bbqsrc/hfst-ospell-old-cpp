@@ -14,4 +14,4 @@ debug: hfst-ol.cc main.cc ospell.cc ospell.h hfst-ol.h Makefile
 	g++ -g -Wall -Wextra -o hfst-ospell hfst-ol.cc ospell.cc main.cc
 
 profile: hfst-ol.cc main.cc ospell.cc ospell.h hfst-ol.h Makefile
-	g++ -Wall -Wextra -O2 -o hfst-ospell hfst-ol.cc ospell.cc main.cc -pg
+	g++ -Wall -Wextra -O3 -o hfst-ospell hfst-ol.cc ospell.cc main.cc -pg

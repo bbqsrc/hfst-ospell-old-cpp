@@ -172,14 +172,19 @@ void Speller::lexicon_epsilons(void)
     STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL) {
-	TreeNode front = queue.front();
-	if ((lexicon->transitions[next]->get_input() == 0) or
-	    front.try_compatible_with( // this is terrible
-		operations->operator[](
-		    lexicon->transitions[next]->get_input()))) {
-	    queue.push_back(front.update_lexicon(i_s.symbol,
+	if (lexicon->transitions[next]->get_input() == 0) {
+	    queue.push_back(queue.front().update_lexicon(i_s.symbol,
 						 i_s.index,
 						 i_s.weight));
+	} else {
+	    TreeNode front = queue.front();
+	    if (front.try_compatible_with( // this is terrible
+		    operations->operator[](
+			lexicon->transitions[next]->get_input()))) {
+		queue.push_back(front.update_lexicon(i_s.symbol,
+						     i_s.index,
+						     i_s.weight));
+	    }
 	}
 	++next;
 	i_s = lexicon->take_epsilons_and_flags(next);
@@ -195,18 +200,16 @@ void Speller::lexicon_consume(void)
 	return;
     }
 
-    TreeNode front = queue.front();
-
-    TransitionTableIndex next = lexicon->next(front.lexicon_state,
+    TransitionTableIndex next = lexicon->next(queue.front().lexicon_state,
 					      input[input_state]);
     STransition i_s = lexicon->take_non_epsilons(next,
 						 input[input_state]);
 
     while (i_s.symbol != NO_SYMBOL) {
-	queue.push_back(front.update(
+	queue.push_back(queue.front().update(
 			    i_s.symbol,
 			    input_state + 1,
-			    front.mutator_state,
+			    queue.front().mutator_state,
 			    i_s.index,
 			    i_s.weight));
 	
@@ -221,32 +224,31 @@ void Speller::mutator_epsilons(void)
     if (!mutator->has_transitions(queue.front().mutator_state + 1, 0)) {
 	return;
     }
-    TreeNode front = queue.front();
-    TransitionTableIndex next_m = mutator->next(front.mutator_state, 0);
+    TransitionTableIndex next_m = mutator->next(queue.front().mutator_state, 0);
     STransition mutator_i_s = mutator->take_epsilons(next_m);
    
     while (mutator_i_s.symbol != NO_SYMBOL) {
 	if (mutator_i_s.symbol == 0) {
-	    queue.push_back(front.update_mutator(mutator_i_s.symbol,
-						 mutator_i_s.index,
-						 mutator_i_s.weight));
+	    queue.push_back(queue.front().update_mutator(mutator_i_s.symbol,
+							 mutator_i_s.index,
+							 mutator_i_s.weight));
 	} else {
 	    if (!lexicon->has_transitions(
-		    front.lexicon_state + 1,
+		    queue.front().lexicon_state + 1,
 		    alphabet_translator[mutator_i_s.symbol])) {
 		++next_m;
 		mutator_i_s = mutator->take_epsilons(next_m);
 		continue;
 	    }
 	    TransitionTableIndex next_l = lexicon->next(
-		front.lexicon_state,
+		queue.front().lexicon_state,
 		alphabet_translator[mutator_i_s.symbol]);
 	    STransition lexicon_i_s = lexicon->take_non_epsilons(
 		next_l,
 		alphabet_translator[mutator_i_s.symbol]);
 	    
 	    while (lexicon_i_s.symbol != NO_SYMBOL) {
-		queue.push_back(front.update(
+		queue.push_back(queue.front().update(
 				    lexicon_i_s.symbol,
 				    mutator_i_s.index,
 				    lexicon_i_s.index,
@@ -271,9 +273,7 @@ void Speller::consume_input(void)
 	return; // not enough input to consume of no suitable transitions
     }
     
-    TreeNode front = queue.front();
-    
-    TransitionTableIndex next_m = mutator->next(front.mutator_state,
+    TransitionTableIndex next_m = mutator->next(queue.front().mutator_state,
 						input[input_state]);
     
     STransition mutator_i_s = mutator->take_non_epsilons(next_m,
@@ -283,14 +283,14 @@ void Speller::consume_input(void)
 
 	if (mutator_i_s.symbol == 0) {
 	    
-	    queue.push_back(front.update(0,
-					 input_state + 1,
-					 mutator_i_s.index,
-					 front.lexicon_state,
-					 mutator_i_s.weight));
+	    queue.push_back(queue.front().update(0,
+						 input_state + 1,
+						 mutator_i_s.index,
+						 queue.front().lexicon_state,
+						 mutator_i_s.weight));
 	} else {
 	    if (!lexicon->has_transitions(
-		    front.lexicon_state + 1,
+		    queue.front().lexicon_state + 1,
 		    alphabet_translator[mutator_i_s.symbol])) {
 		++next_m;
 		mutator_i_s = mutator->take_non_epsilons(next_m,
@@ -298,7 +298,7 @@ void Speller::consume_input(void)
 		continue;
 	    }
 	    TransitionTableIndex next_l = lexicon->next(
-		front.lexicon_state,
+		queue.front().lexicon_state,
 		alphabet_translator[mutator_i_s.symbol]);
 	    
 	    STransition lexicon_i_s = lexicon->take_non_epsilons(
@@ -307,11 +307,11 @@ void Speller::consume_input(void)
 	    
 	    while (lexicon_i_s.symbol != NO_SYMBOL) {
 		queue.push_back(
-		    front.update(lexicon_i_s.symbol,
-				 input_state + 1,
-				 mutator_i_s.index,
-				 lexicon_i_s.index,
-				 lexicon_i_s.weight + mutator_i_s.weight));
+		    queue.front().update(lexicon_i_s.symbol,
+					 input_state + 1,
+					 mutator_i_s.index,
+					 lexicon_i_s.index,
+					 lexicon_i_s.weight + mutator_i_s.weight));
 		++next_l;
 		lexicon_i_s = lexicon->take_non_epsilons(
 		    next_l,
@@ -417,6 +417,7 @@ void Transducer::set_symbol_table(void)
 
 CorrectionQueue Speller::correct(char * line)
 {
+    // if input initialization fails, return empty correction queue
     if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
 	return CorrectionQueue();
     }
@@ -428,17 +429,15 @@ CorrectionQueue Speller::correct(char * line)
 	lexicon_epsilons();
 	mutator_epsilons();
 	if (queue.front().input_state == input.len()) {
-	    TreeNode front = queue.front();
-
 	    /* if our transducers are in final states
 	     * we generate the correction
 	     */
-	    if (mutator->is_final(front.mutator_state) and
-		lexicon->is_final(front.lexicon_state)) {
-		std::string string = stringify(front.string);
-		Weight weight = front.weight +
-		    lexicon->final_weight(front.lexicon_state) +
-		    mutator->final_weight(front.mutator_state);
+	    if (mutator->is_final(queue.front().mutator_state) and
+		lexicon->is_final(queue.front().lexicon_state)) {
+		std::string string = stringify(queue.front().string);
+		Weight weight = queue.front().weight +
+		    lexicon->final_weight(queue.front().lexicon_state) +
+		    mutator->final_weight(queue.front().mutator_state);
 		/* if the correction is novel or better than before, insert it
 		 */
 		if (corrections.count(string) == 0 or

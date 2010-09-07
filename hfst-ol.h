@@ -463,7 +463,7 @@ public:
 template <class printable>
 void debug_print(printable p)
 {
-    if (1) {
+    if (0) {
 	std::cerr << p;
     }
 }
