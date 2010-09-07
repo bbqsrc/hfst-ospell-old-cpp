@@ -165,15 +165,14 @@ bool TreeNode::try_compatible_with(FlagDiacriticOperation op)
 
 void Speller::lexicon_epsilons(void)
 {
-    TreeNode front = queue.front();
-    if (!lexicon->has_epsilons_or_flags(front.lexicon_state + 1)) {
+    if (!lexicon->has_epsilons_or_flags(queue.front().lexicon_state + 1)) {
 	return;
     }
-    TransitionTableIndex next = lexicon->next(front.lexicon_state, 0);
+    TransitionTableIndex next = lexicon->next(queue.front().lexicon_state, 0);
     STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL) {
-	front = queue.front();
+	TreeNode front = queue.front();
 	if ((lexicon->transitions[next]->get_input() == 0) or
 	    front.try_compatible_with( // this is terrible
 		operations->operator[](
@@ -189,13 +188,14 @@ void Speller::lexicon_epsilons(void)
 
 void Speller::lexicon_consume(void)
 {
-    TreeNode front = queue.front();
-    unsigned int input_state = front.input_state;
+    unsigned int input_state = queue.front().input_state;
     if (input_state >= input.len() or
 	!lexicon->has_transitions(
-	    front.lexicon_state + 1, input[input_state])) {
+	    queue.front().lexicon_state + 1, input[input_state])) {
 	return;
     }
+
+    TreeNode front = queue.front();
 
     TransitionTableIndex next = lexicon->next(front.lexicon_state,
 					      input[input_state]);
@@ -218,10 +218,10 @@ void Speller::lexicon_consume(void)
 
 void Speller::mutator_epsilons(void)
 {
-    TreeNode front = queue.front();
-    if (!mutator->has_transitions(front.mutator_state + 1, 0)) {
+    if (!mutator->has_transitions(queue.front().mutator_state + 1, 0)) {
 	return;
     }
+    TreeNode front = queue.front();
     TransitionTableIndex next_m = mutator->next(front.mutator_state, 0);
     STransition mutator_i_s = mutator->take_epsilons(next_m);
    
@@ -265,15 +265,13 @@ void Speller::mutator_epsilons(void)
 void Speller::consume_input(void)
 {
     unsigned int input_state = queue.front().input_state;
-    if (input_state >= input.len()) {
-	return; // not enough input to consume
+    if (input_state >= input.len() or
+	!mutator->has_transitions(queue.front().mutator_state + 1,
+				  input[input_state])) {
+	return; // not enough input to consume of no suitable transitions
     }
     
     TreeNode front = queue.front();
-    if (!mutator->has_transitions(front.mutator_state + 1,
-				  input[input_state])) {
-	return;
-    }
     
     TransitionTableIndex next_m = mutator->next(front.mutator_state,
 						input[input_state]);
@@ -419,7 +417,6 @@ void Transducer::set_symbol_table(void)
 
 CorrectionQueue Speller::correct(char * line)
 {
-    debug_print("Correcting...\n");
     if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
 	return CorrectionQueue();
     }
@@ -432,21 +429,22 @@ CorrectionQueue Speller::correct(char * line)
 	mutator_epsilons();
 	if (queue.front().input_state == input.len()) {
 	    TreeNode front = queue.front();
-	    std::string string = stringify(front.string);
-	    Weight weight = front.weight +
-		lexicon->final_weight(front.lexicon_state) +
-		mutator->final_weight(front.mutator_state);
 
-	    /*
-	     * The following condition means: if all our transducers are in
-	     * final states AND the correction is either new or has a lower
-	     * weight than before, we make it a correction
+	    /* if our transducers are in final states
+	     * we generate the correction
 	     */
 	    if (mutator->is_final(front.mutator_state) and
-		lexicon->is_final(front.lexicon_state) and
-		((corrections.count(string)) == 0 or
-		 corrections[string] > weight)) {
-		corrections[string] = weight;
+		lexicon->is_final(front.lexicon_state)) {
+		std::string string = stringify(front.string);
+		Weight weight = front.weight +
+		    lexicon->final_weight(front.lexicon_state) +
+		    mutator->final_weight(front.mutator_state);
+		/* if the correction is novel or better than before, insert it
+		 */
+		if (corrections.count(string) == 0 or
+		    corrections[string] > weight) {
+		    corrections[string] = weight;
+		}
 	    }
 	} else {
 	    consume_input();
@@ -463,7 +461,6 @@ CorrectionQueue Speller::correct(char * line)
 
 bool Speller::check(char * line)
 {
-    debug_print("Checking...\n");
     if (!init_input(line, lexicon->get_encoder(), NO_SYMBOL)) {
 	return false;
     }
