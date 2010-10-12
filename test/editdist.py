@@ -72,6 +72,8 @@ if len(args) > 1:
 
 if len(args) == 1:
     alphabet = [c for c in unicode(args[0], 'utf-8')]
+else:
+    alphabet = []
 
 if options.inputfile != None:
     try:
@@ -84,7 +86,7 @@ if options.inputfile != None:
         if line in ["@@\n", ""]:
             break
         if line.strip() != "":
-            alphabet.append(unicode(line, 'utf-8'))
+            alphabet.append(unicode(line.strip("\n"), 'utf-8'))
 
 epsilon = unicode(options.epsilon, 'utf-8')
 OTHER = u'@?@'
@@ -120,8 +122,8 @@ class Transducer:
             if (frompair, topair) not in swaps:
                 swaps[(frompair, topair)] = weight
         else:
-            if not (parts[0], parts[1]) in substitutions:
-                substitutions[(parts[0], parts[1])] = weight
+            if not (parts[0], parts[1]) in self.substitutions:
+                self.substitutions[(parts[0], parts[1])] = weight
 
     def generate(self):
         if (self.other, self.epsilon) not in self.substitutions:
