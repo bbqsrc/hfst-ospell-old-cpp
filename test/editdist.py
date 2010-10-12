@@ -36,11 +36,11 @@ The specification file should be in the following format:
 with d for distance and S for size of alphabet plus one
 (for epsilon), expected output is a transducer in ATT format with
 * Swapless:
-** n + 1 states
-** n(S^2 + S - 1) transitions
+** d + 1 states
+** d*(S^2 + S - 1) transitions
 * Swapful:
-** n(S^2 - 3S + 3) + 1 states
-** n(3S^2 - 5S + 3) transitions
+** d*(S^2 - 3S + 3) + 1 states
+** d*(3S^2 - 5S + 3) transitions
 """
 
 parser = OptionParser(usage=usage_string, epilog=info_string)
@@ -116,11 +116,11 @@ class Transducer:
         if ',' in parts[0]:
             frompair = tuple(parts[0].split(','))
             topair = tuple(parts[1].split(','))
-            if not (len(frompair) == len(topair) == 1):
+            if not (len(frompair) == len(topair) == 2):
                 raise ValueError("Got swap-specification with incorrect number "
                                  "of comma separators:\n" + specification)
-            if (frompair, topair) not in swaps:
-                swaps[(frompair, topair)] = weight
+            if (frompair, topair) not in self.swaps:
+                self.swaps[(frompair, topair)] = weight
         else:
             if not (parts[0], parts[1]) in self.substitutions:
                 self.substitutions[(parts[0], parts[1])] = weight
@@ -140,9 +140,15 @@ class Transducer:
             for symbol2 in self.alphabet:
                 if symbol == symbol2: continue
                 if ((symbol, symbol2), (symbol2, symbol)) not in self.swaps:
-                    self.swaps[((symbol, symbol2), (symbol2, symbol))] = 1.0
+                    if ((symbol2, symbol), (symbol, symbol2)) in self.swaps:
+                        self.swaps[((symbol, symbol2), (symbol2, symbol))] = self.swaps[((symbol2, symbol), (symbol, symbol2))]
+                    else:
+                        self.swaps[((symbol, symbol2), (symbol2, symbol))] = 1.0
                 if (symbol, symbol2) not in self.substitutions:
-                    self.substitutions[(symbol, symbol2)] = 1.0
+                    if (symbol2, symbol) in self.substitutions:
+                        self.substitutions[(symbol, symbol2)] = self.substitutions[(symbol2, symbol)]
+                    else:
+                        self.substitutions[(symbol, symbol2)] = 1.0
 
     def make_transitions(self):
         for state in range(options.distance):
@@ -151,8 +157,8 @@ class Transducer:
                 self.transitions.append(maketrans(state, state + 1, sub[0], sub[1], self.substitutions[sub]))
             if options.swap:
                 for swap in self.swaps:
-                    self.transitions.append(maketrans(state, swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
-                    self.transitions.append(maketrans(swapstate, state + 1, swap[1][0], swap[1][1], 0.0))
+                    self.transitions.append(maketrans(state, self.swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
+                    self.transitions.append(maketrans(self.swapstate, state + 1, swap[1][0], swap[1][1], 0.0))
                     self.swapstate += 1
 
 transducer = Transducer(alphabet)
