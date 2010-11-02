@@ -1,6 +1,6 @@
 ifeq ($(shell uname), Darwin)
 	SHAREDLIB=libhfst-ospell.0.0.0.dylib
-	LINKFLAGS=-dynamiclib -Wl,dylib_install_name,libhfst-ospell.dylib
+	LINKFLAGS=-dynamiclib -Wl,-dylib_install_name,libhfst-ospell.dylib
 else
 	SHAREDLIB=libhfst-ospell.so.0.0.0
 	LINKFLAGS=-shared -Wl,-soname,libhfst-ospell.so -Wl,-no-undefined
