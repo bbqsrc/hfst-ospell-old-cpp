@@ -509,6 +509,8 @@ void Speller::build_alphabet_translator(void)
 	    continue; // no translation
 	}
 	if (to_symbols->count(from_keys->operator[](i)) != 1) {
+        std::string name(from_keys->operator[](i));
+        if (name != "")
 	    throw AlphabetTranslationException(
 		std::string(from_keys->operator[](i)));
 	}
