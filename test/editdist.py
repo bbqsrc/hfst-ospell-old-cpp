@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# see edisdist.py --help for usage
+# see editdist.py --help for usage
 
 
 import sys
