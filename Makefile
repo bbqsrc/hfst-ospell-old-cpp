@@ -16,8 +16,17 @@ CXXFLAGS=-fPIC -Wall -Wextra -Werror -O3
 all: hfst-ospell libhfst-ospell.a $(SHAREDLIB)
 
 install: hfst-ospell libhfst-ospell.a hfst-ol.h ospell.h $(SHAREDLIB)
+	if [ ! -d $(DESTDIR)$(libdir) ] ; then \
+		mkdir -p $(DESTDIR)$(libdir) ;\
+	fi
 	install -m 644 libhfst-ospell.a $(DESTDIR)$(libdir)
+	if [ ! -d $(DESTDIR)$(includedir) ] ; then \
+		mkdir -p $(DESTDIR)$(includedir) ; \
+	fi
 	install -m 644 hfst-ol.h ospell.h $(DESTDIR)$(includedir)
+	if [ ! -d $(DESTDIR)$(bindir) ] ; then \
+		mkdir -p $(DESTDIR)$(bindir) ; \
+	fi
 	install $(STRIPFLAG) hfst-ospell $(DESTDIR)$(bindir)
 	install $(STRIPFLAG) $(SHAREDLIB) $(DESTDIR)$(libdir)
 	(ldconfig || true)
