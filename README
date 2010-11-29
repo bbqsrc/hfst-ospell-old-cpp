@@ -1,14 +1,17 @@
-Preliminary hfst-ospell library and toy commandline tester
+hfst-ospell library and toy commandline tester
 
-(for static compilation at this time)
+This is a minimal hfst optimized lookup format based spell checker library and
+a demonstrational implementation of command line based spell checker. The
+library is licenced under Apache licence version 2, other licences can be
+obtained from University of Helsinki.
 
-Usage:
+Usage in external programs:
 
 	#include <ospell.h>
 
 and compile your project with
 
-	ospell.cc hfst-ol.cc (-lhfst-ospell?)
+	-lhfst-ospell
 
 The library lives in a namespace called hfst_ol. Pass (weighted!) Transducer
 pointers to the Speller constructor, eg.:
@@ -45,6 +48,8 @@ to communicate with it. See main.cc for a concrete usage example. It provides a
 demo utility with the following help message:
 
 --------------------------------------------------------------------------------
+
+The command line program:
 
 Usage: hfst-ospell [OPTIONS] ERRORSOURCE LEXICON
 Run a composition of ERRORSOURCE and LEXICON on standard input and
