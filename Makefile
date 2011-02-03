@@ -32,6 +32,7 @@
 
 
 
+
 pkgdatadir = $(datadir)/hfst-ospell
 pkgincludedir = $(includedir)/hfst-ospell
 pkglibdir = $(libdir)/hfst-ospell
@@ -52,12 +53,12 @@ build_triplet = i386-apple-darwin9.8.0
 host_triplet = i386-apple-darwin9.8.0
 bin_PROGRAMS = hfst-ospell$(EXEEXT)
 subdir = .
-DIST_COMMON = README $(am__configure_deps) $(hfstinclude_HEADERS) \
+DIST_COMMON = README $(am__configure_deps) $(include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/config.h.in $(top_srcdir)/configure AUTHORS COPYING \
-	ChangeLog INSTALL NEWS build-aux/config.guess \
-	build-aux/config.sub build-aux/depcomp build-aux/install-sh \
-	build-aux/ltmain.sh build-aux/missing
+	$(srcdir)/config.h.in $(srcdir)/hfstospell.pc.in \
+	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
+	build-aux/config.guess build-aux/config.sub build-aux/depcomp \
+	build-aux/install-sh build-aux/ltmain.sh build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -66,7 +67,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = hfstospell.pc
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -90,7 +91,7 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
-	"$(DESTDIR)$(hfstincludedir)"
+	"$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libhfstospell_la_LIBADD =
 am_libhfstospell_la_OBJECTS = hfst-ol.lo ospell.lo
@@ -134,7 +135,8 @@ am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libhfstospell_la_SOURCES) $(hfst_ospell_SOURCES)
 DIST_SOURCES = $(libhfstospell_la_SOURCES) $(hfst_ospell_SOURCES)
-HEADERS = $(hfstinclude_HEADERS)
+DATA = $(pkgconfig_DATA)
+HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -279,8 +281,11 @@ hfst_ospell_SOURCES = main.cc
 hfst_ospell_LDADD = libhfstospell.la
 
 # install headers for library in hfst's includedir
-hfstincludedir = $(includedir)/hfst/
-hfstinclude_HEADERS = hfst-ol.h ospell.h
+include_HEADERS = hfst-ol.h ospell.h
+
+# pkgconfig
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = hfstospell.pc
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -337,6 +342,8 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
+hfstospell.pc: $(top_builddir)/config.status $(srcdir)/hfstospell.pc.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
@@ -459,26 +466,46 @@ clean-libtool:
 
 distclean-libtool:
 	-rm -f libtool config.lt
-install-hfstincludeHEADERS: $(hfstinclude_HEADERS)
+install-pkgconfigDATA: $(pkgconfig_DATA)
 	@$(NORMAL_INSTALL)
-	test -z "$(hfstincludedir)" || $(MKDIR_P) "$(DESTDIR)$(hfstincludedir)"
-	@list='$(hfstinclude_HEADERS)'; test -n "$(hfstincludedir)" || list=; \
+	test -z "$(pkgconfigdir)" || $(MKDIR_P) "$(DESTDIR)$(pkgconfigdir)"
+	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(hfstincludedir)'"; \
-	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(hfstincludedir)" || exit $$?; \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgconfigdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgconfigdir)" || exit $$?; \
 	done
 
-uninstall-hfstincludeHEADERS:
+uninstall-pkgconfigDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(hfstinclude_HEADERS)'; test -n "$(hfstincludedir)" || list=; \
+	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(hfstincludedir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(hfstincludedir)" && rm -f $$files
+	echo " ( cd '$(DESTDIR)$(pkgconfigdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(pkgconfigdir)" && rm -f $$files
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
+	@list='$(include_HEADERS)'; test -n "$(includedir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(includedir)'"; \
+	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(includedir)" || exit $$?; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(include_HEADERS)'; test -n "$(includedir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(includedir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(includedir)" && rm -f $$files
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -686,11 +713,12 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-am
-all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(HEADERS) config.h
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(DATA) $(HEADERS) \
+		config.h
 install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(hfstincludedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -742,7 +770,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-hfstincludeHEADERS
+install-data-am: install-includeHEADERS install-pkgconfigDATA
 
 install-dvi: install-dvi-am
 
@@ -790,8 +818,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-hfstincludeHEADERS \
-	uninstall-libLTLIBRARIES
+uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
+	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA
 
 .MAKE: all install-am install-strip
 
@@ -804,15 +832,16 @@ uninstall-am: uninstall-binPROGRAMS uninstall-hfstincludeHEADERS \
 	distuninstallcheck dvi dvi-am html html-am info info-am \
 	install install-am install-binPROGRAMS install-data \
 	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-hfstincludeHEADERS install-html \
-	install-html-am install-info install-info-am \
+	install-exec-am install-html install-html-am \
+	install-includeHEADERS install-info install-info-am \
 	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	install-pkgconfigDATA install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-hfstincludeHEADERS uninstall-libLTLIBRARIES
+	uninstall-includeHEADERS uninstall-libLTLIBRARIES \
+	uninstall-pkgconfigDATA
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -27,5 +27,8 @@ hfst_ospell_SOURCES=main.cc
 hfst_ospell_LDADD=libhfstospell.la
 
 # install headers for library in hfst's includedir
-hfstincludedir=$(includedir)/hfst/
-hfstinclude_HEADERS=hfst-ol.h ospell.h
+include_HEADERS=hfst-ol.h ospell.h
+
+# pkgconfig
+pkgconfigdir=$(libdir)/pkgconfig
+pkgconfig_DATA=hfstospell.pc

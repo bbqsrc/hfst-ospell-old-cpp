@@ -65,7 +65,7 @@ AC_FUNC_MALLOC
 # Checks for system services
 
 # config files
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile hfstospell.pc])
 
 # output
 AC_OUTPUT
