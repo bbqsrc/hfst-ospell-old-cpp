@@ -1,0 +1,16 @@
+======================
+ NEWS for hfst-ospell
+======================
+
+This file contains all noteworthy changes in HFST-ospell development between
+releases.  For full listing of changes see ChangeLog.
+
+Noteworthy changes in 0.1.1
+---------------------------
+
+* Added autoconfiscation to avoid bugs like missing Makefile in tarball
+
+Noteworthy changes in 0.1
+-------------------------
+
+* First release
