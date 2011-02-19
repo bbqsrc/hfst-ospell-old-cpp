@@ -207,7 +207,7 @@ void Speller::lexicon_epsilons(void)
 void Speller::lexicon_consume(void)
 {
     unsigned int input_state = queue.front().input_state;
-    if (input_state >= input.len() or
+    if (input_state >= input.len()||
 	!lexicon->has_transitions(
 	    queue.front().lexicon_state + 1, input[input_state])) {
 	return;
@@ -280,7 +280,7 @@ void Speller::mutator_epsilons(void)
 void Speller::consume_input(void)
 {
     unsigned int input_state = queue.front().input_state;
-    if (input_state >= input.len() or
+    if (input_state >= input.len()||
 	!mutator->has_transitions(queue.front().mutator_state + 1,
 				  input[input_state])) {
 	return; // not enough input to consume of no suitable transitions
@@ -360,7 +360,7 @@ bool Transducer::has_transitions(const TransitionTableIndex i,
 bool Transducer::has_epsilons_or_flags(const TransitionTableIndex i)
 {
     if (i >= TARGET_TABLE) {
-	return(transitions[i - TARGET_TABLE]->get_input() == 0 or
+	return(transitions[i - TARGET_TABLE]->get_input() == 0||
 	       is_flag(transitions[i - TARGET_TABLE]->get_input()));
     } else {
 	return (indices[i]->get_input() == 0);
@@ -379,7 +379,7 @@ STransition Transducer::take_epsilons(const TransitionTableIndex i) const
 
 STransition Transducer::take_epsilons_and_flags(const TransitionTableIndex i)
 {
-    if (transitions[i]->get_input() != 0 and
+    if (transitions[i]->get_input() != 0&&
 	!is_flag(transitions[i]->get_input())) {
 	return STransition(0, NO_SYMBOL);
     }
@@ -445,7 +445,7 @@ CorrectionQueue Speller::correct(char * line)
 	    /* if our transducers are in final states
 	     * we generate the correction
 	     */
-	    if (mutator->is_final(queue.front().mutator_state) and
+	    if (mutator->is_final(queue.front().mutator_state)&&
 		lexicon->is_final(queue.front().lexicon_state)) {
 		std::string string = stringify(queue.front().string);
 		Weight weight = queue.front().weight +
@@ -453,7 +453,7 @@ CorrectionQueue Speller::correct(char * line)
 		    mutator->final_weight(queue.front().mutator_state);
 		/* if the correction is novel or better than before, insert it
 		 */
-		if (corrections.count(string) == 0 or
+		if (corrections.count(string) == 0||
 		    corrections[string] > weight) {
 		    corrections[string] = weight;
 		}
@@ -480,7 +480,7 @@ bool Speller::check(char * line)
     queue.assign(1, start_node);
 
     while (queue.size() > 0) {
-	if (queue.front().input_state == input.len() and
+	if (queue.front().input_state == input.len()&&
 	    lexicon->is_final(queue.front().lexicon_state)) {
 	    return true;
 	}

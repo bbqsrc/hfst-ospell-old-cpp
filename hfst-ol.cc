@@ -13,6 +13,7 @@
 //  limitations under the License.
 
 #include "hfst-ol.h"
+#include <string>
 
 namespace hfst_ol {
     
@@ -85,7 +86,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
 		kt->push_back(std::string(""));
 		continue;
 	  
-	    } else if (strlen(line) == 3 and line[1] == '?') { // other symbol
+	    } else if (strlen(line) == 3&& line[1] == '?') { // other symbol
 		other_symbol = k;
 		kt->push_back(std::string(""));
 		continue;

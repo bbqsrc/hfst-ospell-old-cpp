@@ -150,15 +150,15 @@ public:
             /* The following conditional clause does all the numerical reads
                and throws an exception if any fails to return 1 */
             if (fread(&number_of_input_symbols,
-                      sizeof(SymbolNumber),1,f) != 1 or
+                      sizeof(SymbolNumber),1,f) != 1||
                 fread(&number_of_symbols,
-                      sizeof(SymbolNumber),1,f) != 1 or
+                      sizeof(SymbolNumber),1,f) != 1||
                 fread(&size_of_transition_index_table,
-                      sizeof(TransitionTableIndex),1,f) != 1 or
+                      sizeof(TransitionTableIndex),1,f) != 1||
                 fread(&size_of_transition_target_table,
-                      sizeof(TransitionTableIndex),1,f) != 1 or
+                      sizeof(TransitionTableIndex),1,f) != 1||
                 fread(&number_of_states,
-                      sizeof(TransitionTableIndex),1,f) != 1 or
+                      sizeof(TransitionTableIndex),1,f) != 1||
                 fread(&number_of_transitions,
                       sizeof(TransitionTableIndex),1,f) != 1) {
                 throw HeaderParsingException();
