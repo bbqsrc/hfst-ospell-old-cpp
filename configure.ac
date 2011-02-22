@@ -19,7 +19,7 @@
 AC_PREREQ([2.62])
 
 # init
-AC_INIT([hfst-ospell], [0.1.1], [hfst-bugs@helsinki.fi], [hfst-ospell], [http://hfst.sf.net])
+AC_INIT([hfstospell], [0.1.1], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign check-news color-tests silent-rules 1.11])
 AM_SILENT_RULES([yes])
@@ -29,7 +29,7 @@ AC_CONFIG_SRCDIR([ospell.cc])
 AC_CONFIG_HEADERS([config.h])
 
 # Information on package
-HFSTOSPELL_NAME=hfst-ospell
+HFSTOSPELL_NAME=hfstospell
 HFSTOSPELL_MAJOR=0
 HFSTOSPELL_MINOR=1
 HFSTOSPELL_EXTENSION=.1_beta
