@@ -137,15 +137,13 @@ int main(int argc, char **argv)
 	}
 	hfst_ol::Transducer * mutator;
 	hfst_ol::Transducer * lexicon;
-	try {
-	    mutator = new hfst_ol::Transducer(mutator_file);
-	} catch (hfst_ol::UnweightedSpellerException e) {
+	mutator = new hfst_ol::Transducer(mutator_file);
+	if (!mutator->is_weighted()) {
 	    std::cerr << "Error source was unweighted, exiting\n\n";
 	    return EXIT_FAILURE;
 	}
-	try {
-	    lexicon = new hfst_ol::Transducer(lexicon_file);
-	} catch (hfst_ol::UnweightedSpellerException e) {
+	lexicon = new hfst_ol::Transducer(lexicon_file);
+	if (!lexicon->is_weighted()) {
 	    std::cerr << "Lexicon was unweighted, exiting\n\n";
 	    return EXIT_FAILURE;
 	}

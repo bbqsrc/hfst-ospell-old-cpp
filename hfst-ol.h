@@ -144,9 +144,12 @@ private:
             }
 	}
 
+    void skip_hfst3_header(FILE * f);
+
 public:
     TransducerHeader(FILE * f)
 	{
+	    skip_hfst3_header(f); // skip header iff it is present
             /* The following conditional clause does all the numerical reads
                and throws an exception if any fails to return 1 */
             if (fread(&number_of_input_symbols,
@@ -175,10 +178,6 @@ public:
             read_property(has_input_epsilon_cycles,f);
             read_property(has_unweighted_input_epsilon_cycles,f);
 
-            // For ospell: demand weightedness FIXME: do this somewhere else
-            if (!weighted) {
-                throw UnweightedSpellerException();
-            }
 	}
 
     SymbolNumber symbol_count(void)

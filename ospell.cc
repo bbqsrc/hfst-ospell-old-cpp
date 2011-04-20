@@ -512,6 +512,11 @@ void Speller::build_alphabet_translator(void)
 {
     TransducerAlphabet * from = mutator->get_alphabet();
     TransducerAlphabet * to = lexicon->get_alphabet();
+    if (!mutator->is_weighted() or
+	!lexicon->is_weighted()) {
+	throw UnweightedSpellerException();
+    }
+    
     KeyTable * from_keys = from->get_key_table();
     StringSymbolMap * to_symbols = to->get_string_to_symbol();
     alphabet_translator.push_back(0); // zeroth element is always epsilon

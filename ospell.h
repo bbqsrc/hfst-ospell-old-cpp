@@ -173,6 +173,8 @@ public:
     Weight final_weight(const TransitionTableIndex i) const;
     bool is_flag(const SymbolNumber symbol)
 	{ return alphabet.is_flag(symbol); }
+    bool is_weighted(void)
+	{ return header.probe_flag(Weighted);}
 
 };
 
