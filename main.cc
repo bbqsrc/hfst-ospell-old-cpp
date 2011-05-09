@@ -28,9 +28,6 @@
 #  include <getopt.h>
 #endif
 
-#define PACKAGE_NAME "hfst-ospell"
-#define PACKAGE_STRING "hfst-ospell 0.1"
-#define PACKAGE_BUGREPORT "hfst-bugs@ling.helsinki.fi"
 
 bool print_usage(void)
 {

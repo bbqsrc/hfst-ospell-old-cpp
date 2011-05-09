@@ -52,6 +52,7 @@ AC_PROG_MAKE_SET
 
 # Checks for header files
 AC_HEADER_STDBOOL
+AC_CHECK_HEADER([getopt.h])
 
 # Checks for types
 AC_TYPE_SIZE_T
