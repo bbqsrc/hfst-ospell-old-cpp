@@ -21,7 +21,12 @@
  */
 
 #include "ospell.h"
-#include <getopt.h>
+#if HAVE_CONFIG_H
+#  include <config.h>
+#endif
+#if HAVE_GETOPT_H
+#  include <getopt.h>
+#endif
 
 #define PACKAGE_NAME "hfst-ospell"
 #define PACKAGE_STRING "hfst-ospell 0.1"
@@ -71,7 +76,8 @@ int main(int argc, char **argv)
     
     int c;
   
-    while (true) {
+#if HAVE_GETOPT
+	while (true) {
 	static struct option long_options[] =
 	    {
 		// first the hfst-mandated options
@@ -114,7 +120,10 @@ int main(int argc, char **argv)
 	    break;
 	}
     }
-    // no more options, we should now be at the input filenames
+#else
+	int optind = 1;
+#endif
+	// no more options, we should now be at the input filenames
     if ( (optind + 2) < argc) {
 	std::cerr << "More than two input files given\n";
 	return EXIT_FAILURE;

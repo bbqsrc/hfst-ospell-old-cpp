@@ -20,7 +20,7 @@ namespace hfst_ol {
 void TransducerHeader::skip_hfst3_header(FILE * f)
 {
     const char* header1 = "HFST";
-    int header_loc = 0; // how much of the header has been found
+    unsigned int header_loc = 0; // how much of the header has been found
     int c;
     for(header_loc = 0; header_loc < strlen(header1) + 1; header_loc++)
     {
@@ -32,7 +32,7 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
     {
 	unsigned short remaining_header_len;
 	if (fread(&remaining_header_len,
-		  sizeof(remaining_header_len), 1, f) != 1 or
+		  sizeof(remaining_header_len), 1, f) != 1 ||
 	    getc(f) != '\0') {
 	    throw HeaderParsingException();
 	}
@@ -45,9 +45,9 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
 	    throw HeaderParsingException();
 	}
 	std::string header_tail(headervalue, remaining_header_len);
-	int type_field = header_tail.find("type");
+	size_t type_field = header_tail.find("type");
 	if (type_field != std::string::npos) {
-	    if (header_tail.find("HFST_OL") != type_field + 5 and
+	    if (header_tail.find("HFST_OL") != type_field + 5 &&
 		header_tail.find("HFST_OLW") != type_field + 5) {
 		delete headervalue;
 		throw HeaderParsingException();
