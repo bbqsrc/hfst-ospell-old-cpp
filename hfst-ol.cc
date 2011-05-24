@@ -37,10 +37,10 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
 	    throw HeaderParsingException();
 	}
 	char * headervalue = new char[remaining_header_len];
-	if (fread(headervalue, remaining_header_len, 1, f) < remaining_header_len)
-      {
-        throw HeaderParsingException();
-      }
+	if (fread(headervalue, remaining_header_len, 1, f) != 1)
+	{
+	    throw HeaderParsingException();
+	}
 	if (headervalue[remaining_header_len - 1] != '\0') {
 	    throw HeaderParsingException();
 	}
