@@ -354,11 +354,8 @@ public:
   
     bool final(void) const
 	{
-            if (input_symbol != NO_SYMBOL)
-            {
-                return false;
-            }
-            return first_transition_index != NO_TABLE_INDEX;
+	    return input_symbol == NO_SYMBOL &&
+		first_transition_index != NO_TABLE_INDEX;
 	}
 
     Weight final_weight(void) const
@@ -432,11 +429,9 @@ public:
 
     bool final(void) const
 	{
-            if (input_symbol != NO_SYMBOL)
-                return false;
-            if (output_symbol != NO_SYMBOL)
-                return false;
-            return transition_weight != INFINITE_WEIGHT;
+	    return input_symbol == NO_SYMBOL &&
+		output_symbol == NO_SYMBOL &&
+		target_index == 1;
 	}
 };
 
