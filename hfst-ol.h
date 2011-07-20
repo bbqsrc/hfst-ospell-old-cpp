@@ -363,7 +363,13 @@ public:
 
     Weight final_weight(void) const
 	{
-            return static_cast<Weight>(first_transition_index);
+	    union to_weight
+	    {
+		TransitionTableIndex i;
+		Weight w;
+	    } weight;
+	    weight.i = first_transition_index;
+	    return weight.w;
 	}
   
     SymbolNumber get_input(void) const
