@@ -17,11 +17,12 @@
 
 # autoconf requirements
 AC_PREREQ([2.62])
+LT_PREREQ([2.2.6])
 
 # init
-AC_INIT([hfstospell], [0.1.1], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
+AC_INIT([hfstospell], [0.2.0], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign check-news color-tests silent-rules 1.11])
+AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules])
 AM_SILENT_RULES([yes])
 AC_REVISION([$Revision: 1.9 $])
 AC_CONFIG_MACRO_DIR([m4])
@@ -31,8 +32,8 @@ AC_CONFIG_HEADERS([config.h])
 # Information on package
 HFSTOSPELL_NAME=hfstospell
 HFSTOSPELL_MAJOR=0
-HFSTOSPELL_MINOR=1
-HFSTOSPELL_EXTENSION=.1_beta
+HFSTOSPELL_MINOR=2
+HFSTOSPELL_EXTENSION=.0_beta
 HFSTOSPELL_VERSION=$HFSTOSPELL_MAJOR.$HFSTOSPELL_MINOR$HFSTOSPELL_EXTENSION
 AC_SUBST(HFSTOSPELL_MAJOR)
 AC_SUBST(HFSTOSPELL_MINOR)
@@ -43,7 +44,7 @@ AC_SUBST(HFSTOSPELL_NAME)
 AC_PROG_CC
 AC_PROG_CXX
 AC_LIBTOOL_WIN32_DLL
-m4_ifdef([LT_INIT], [LT_INIT], [AC_PROG_LIBTOOL])
+LT_INIT
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -52,7 +53,7 @@ AC_PROG_MAKE_SET
 
 # Checks for header files
 AC_HEADER_STDBOOL
-AC_CHECK_HEADER([getopt.h])
+AC_CHECK_HEADERS([getopt.h])
 
 # Checks for types
 AC_TYPE_SIZE_T
@@ -63,6 +64,9 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions
 AC_FUNC_MALLOC
+AC_CHECK_LIB([archive], [main])
+AM_CONDITIONAL([CAN_ZIP], [test "x$ac_cv_lib_archive_main" != xno])
+PKG_CHECK_MODULES([LIBXML], [libxml-2.0 >= 2.6.19])
 
 # Checks for system services
 
@@ -75,5 +79,10 @@ AC_OUTPUT
 ## keep the list alphabetically sorted (vim; !sort)
 cat <<EOF
 -- Building $PACKAGE_STRING
+ * zhfst support: $ac_cv_lib_archive_main
 EOF
+
+AS_IF([test "x$ac_cv_lib_archive_main" == xno], 
+      [AC_MSG_WARN([libarchive missing, support for zhfst files disabled])])
+
 
