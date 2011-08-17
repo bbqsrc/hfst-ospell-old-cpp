@@ -50,10 +50,14 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
 # Checks for libraries
+AC_CHECK_LIB([archive], [main])
+PKG_CHECK_MODULES([LIBXML], [libxml-2.0 >= 2.6.19])
 
 # Checks for header files
 AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([getopt.h])
+AC_CHECK_HEADERS([archive.h archive_entry.h])
+AM_CONDITIONAL([CAN_ZIP], [test "x$ac_cv_lib_archive_main" != xno -a "x$ac_cv_header_archive_h" != xno])
 
 # Checks for types
 AC_TYPE_SIZE_T
@@ -64,10 +68,7 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions
 AC_FUNC_MALLOC
-AC_CHECK_LIB([archive], [main])
-AM_CONDITIONAL([CAN_ZIP], [test "x$ac_cv_lib_archive_main" != xno])
-PKG_CHECK_MODULES([LIBXML], [libxml-2.0 >= 2.6.19])
-
+AC_CHECK_FUNCS([strndup])
 # Checks for system services
 
 # config files
@@ -82,7 +83,7 @@ cat <<EOF
  * zhfst support: $ac_cv_lib_archive_main
 EOF
 
-AS_IF([test "x$ac_cv_lib_archive_main" == xno], 
+AS_IF([test "x$ac_cv_lib_archive_main" == xno -o "x$ac_cv_header_archive_h" == xno], 
       [AC_MSG_WARN([libarchive missing, support for zhfst files disabled])])
 
 

@@ -16,6 +16,14 @@
 #ifndef HFST_OSPELL_ZHFSTOSPELLER_H_
 #define HFST_OSPELL_ZHFSTOSPELLER_H_
 
+#if HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
+#ifndef HAVE_STRNDUP
+char* strndup(const char* s, size_t n);
+#endif
+
 #include <map>
 
 using std::map;

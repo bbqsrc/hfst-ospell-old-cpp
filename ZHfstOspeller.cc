@@ -13,6 +13,10 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+#if HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 // C
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -30,6 +34,25 @@ using std::map;
 #include "ospell.h"
 #include "hfst-ol.h"
 #include "ZHfstOspeller.h"
+
+#ifndef HAVE_STRNDUP
+char*
+strndup(const char* s, size_t n)
+  {
+    char* rv = static_cast<char*>(malloc(sizeof(char)*n+1));
+    if (rv == NULL)
+      {
+        return rv;
+      }
+    rv = static_cast<char*>(memcpy(rv, s, n));
+    if (rv == NULL)
+      {
+        return rv;
+      }
+    rv[n] = '\0';
+    return rv;
+  }
+#endif
 
 namespace hfst_ol 
   {
