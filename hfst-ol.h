@@ -31,6 +31,7 @@
 #include <cstring>
 #include <set>
 #include <utility>
+#include "ol-exceptions.h"
 
 namespace hfst_ol {
 
@@ -68,42 +69,6 @@ enum HeaderFlag {Weighted, Deterministic, Input_deterministic, Minimized,
                  Cyclic, Has_epsilon_epsilon_transitions,
                  Has_input_epsilon_transitions, Has_input_epsilon_cycles,
                  Has_unweighted_input_epsilon_cycles};
-    
-class HeaderParsingException: public std::exception
-{
-public:
-    virtual const char* what() const throw()
-	{ return("Parsing error while reading header"); }
-};
-    
-    
-class AlphabetParsingException: public std::exception
-{
-public:
-    virtual const char* what() const throw()
-	{ return("Parsing error while reading alphabet"); }
-};
-
-class IndexTableReadingException: public std::exception
-{
-public:
-    virtual const char* what() const throw()
-	{ return("Error while reading index table"); }
-};
-
-class TransitionTableReadingException: public std::exception
-{
-public:
-    virtual const char* what() const throw()
-	{ return("Error while reading transition table"); }
-};
-
-class UnweightedSpellerException: public std::exception
-{
-public:
-    virtual const char* what() const throw()
-	{ return("Transducers for use in spellers must be weighted"); }
-};
 
 class TransducerHeader
 {
@@ -130,7 +95,8 @@ private:
 	{
             unsigned int prop;
             if (fread(&prop,sizeof(unsigned int),1,f) != 1) {
-                throw HeaderParsingException();
+                HFST_THROW_MESSAGE(HeaderParsingException,
+				   "Header ended unexpectedly\n");
             }
             if (prop == 0)
             {
@@ -164,7 +130,8 @@ public:
                       sizeof(TransitionTableIndex),1,f) != 1||
                 fread(&number_of_transitions,
                       sizeof(TransitionTableIndex),1,f) != 1) {
-                throw HeaderParsingException();
+                HFST_THROW_MESSAGE(HeaderParsingException,
+				   "Header ended unexpectedly\n");
             }
 
             read_property(weighted,f);

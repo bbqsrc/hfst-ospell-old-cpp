@@ -27,6 +27,7 @@
 #if HAVE_GETOPT_H
 #  include <getopt.h>
 #endif
+#include "ol-exceptions.h"
 #include "ospell.h"
 #include "ZHfstOspeller.h"
 

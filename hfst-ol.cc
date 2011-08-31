@@ -34,15 +34,18 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
 	if (fread(&remaining_header_len,
 		  sizeof(remaining_header_len), 1, f) != 1 ||
 	    getc(f) != '\0') {
-	    throw HeaderParsingException();
+	    HFST_THROW_MESSAGE(HeaderParsingException,
+			       "Found broken HFST3 header\n");
 	}
 	char * headervalue = new char[remaining_header_len];
 	if (fread(headervalue, remaining_header_len, 1, f) != 1)
 	{
-	    throw HeaderParsingException();
+	    HFST_THROW_MESSAGE(HeaderParsingException,
+			       "HFST3 header ended unexpectedly\n");
 	}
 	if (headervalue[remaining_header_len - 1] != '\0') {
-	    throw HeaderParsingException();
+	    HFST_THROW_MESSAGE(HeaderParsingException,
+			       "Found broken HFST3 header\n");
 	}
 	std::string header_tail(headervalue, remaining_header_len);
 	size_t type_field = header_tail.find("type");
@@ -50,7 +53,10 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
 	    if (header_tail.find("HFST_OL") != type_field + 5 &&
 		header_tail.find("HFST_OLW") != type_field + 5) {
 		delete headervalue;
-		throw HeaderParsingException();
+		HFST_THROW_MESSAGE(
+		    TransducerTypeException,
+		    "Transducer has incorrect type, should be "
+		    "hfst-optimized-lookup\n");
 	    }
 	}
     } else // nope. put back what we've taken
@@ -77,7 +83,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
     while ( (byte = fgetc(f)) != 0 ) {
 	/* pass over epsilon */
 	if (byte == EOF) {
-	    throw AlphabetParsingException();
+	    HFST_THROW(AlphabetParsingException);
 	}
     }
 
@@ -85,7 +91,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
 	char * sym = line;
 	while ( (byte = fgetc(f)) != 0 ) {
 	    if (byte == EOF) {
-		throw AlphabetParsingException();
+		HFST_THROW(AlphabetParsingException);
 	    }
 	    *sym = byte;
 	    ++sym;
@@ -154,7 +160,7 @@ void IndexTableReader::read(FILE * f,
     size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
     char * index_area = (char*)(malloc(table_size));
     if (fread(index_area,table_size, 1, f) != 1) {
-	throw IndexTableReadingException();
+	HFST_THROW(IndexTableReadingException);
     }
 
     for (size_t i = 0;
@@ -176,7 +182,7 @@ void TransitionTableReader::read(FILE * f,
     size_t table_size = number_of_table_entries*Transition::SIZE;
     char * transition_area = (char*)(malloc(table_size));
     if (fread(transition_area, table_size, 1, f) != 1) {
-	throw TransitionTableReadingException();
+	HFST_THROW(TransitionTableReadingException);
     }
 
     for (size_t i = 0; i < number_of_table_entries; ++i)

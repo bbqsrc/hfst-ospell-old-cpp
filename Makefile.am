@@ -34,7 +34,7 @@ hfst_ospell_norvig_SOURCES=main-norvig.cc
 hfst_ospell_norvig_LDADD=libhfstospell.la
 
 # install headers for library in hfst's includedir
-include_HEADERS=hfst-ol.h ospell.h ZHfstOspeller.h
+include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h ZHfstOspeller.h
 
 # pkgconfig
 pkgconfigdir=$(libdir)/pkgconfig
