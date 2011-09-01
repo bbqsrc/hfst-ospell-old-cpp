@@ -34,53 +34,143 @@ using std::map;
 
 namespace hfst_ol 
   {
-    //! @brief HfstOspellerInfo represents one info block of an zhfst file.
+    //! @brief data type for associating set of translations to languages.
+    typedef std::map<std::string,std::string> LanguageVersions;
+
+
+    //! @brief ZHfstOspellerInfo represents one info block of an zhfst file.
     //! @seealso https://victorio.uit.no/langtech/trunk/plan/proof/doc/lexfile-spec.xml
-    class ZHfstOspellerInfo
+    struct ZHfstOspellerInfoMetadata
+      {
+        //! @brief active locale of speller in BCP format
+        std::string locale_;
+        //! @brief transalation of titles to all languages
+        LanguageVersions title_;
+        //! @brief translation of descriptions to all languages
+        LanguageVersions description_;
+        //! @brief version defintition as free form string
+        std::string version_;
+        //! @brief vcs revision as string
+        std::string vcsrev_;
+        //! @brief date for age of speller as string
+        std::string date_;
+        //! @brief producer of the speller
+        std::string producer_;
+        //! @brief email address of the speller
+        std::string email_;
+        //! @brief web address of the speller
+        std::string website_;
+      };
+    //! @brief Represents one acceptor block in XML metadata
+    struct ZHfstOspellerAcceptorMetadata
+      {
+        //! @brief unique id of acceptor
+        std::string id_;
+        //! @brief descr part of acceptor
+        std::string descr_;
+        //! @brief type of dictionary
+        std::string type_;
+        //! @brief type of transducer
+        std::string transtype_;
+        //! @brief titles of dictionary in languages
+        LanguageVersions title_;
+        //! @brief descriptions of dictionary in languages
+        LanguageVersions description_;
+      };
+    //! @brief Represents one errmodel block in XML metadata
+    struct ZHfstOspellerErrModelMetadata
+      {
+        //! @brief id of each error model in set
+        std::string id_;
+        //! @brief descr part of each id
+        std::string descr_;
+        //! @brief title of error models in languages
+        LanguageVersions title_;
+        //! @brief description of error models in languages
+        LanguageVersions description_;
+        std::vector<std::string> type_;
+        std::vector<std::string> model_;
+      };
+    //! @brief holds one index.xml metadata for whole ospeller
+    class ZHfstOspellerXmlMetadata
       {
         public:
-            //! @brief construct empty speller info for undefined language and
-            //! no other metadata.
-            ZHfstOspellerInfo();
-            //! @brief read metadate from XML file laid out like the spec.
-            void read_xml(const std::string& filename);
-            std::string debug_dump() const;
-        private:
-            std::string locale_;
-            std::map<std::string,std::string> title_;
-            std::map<std::string,std::string> description_;
-            std::string version_;
-            std::string vcsrev_;
-            std::string date_;
-            std::string producer_;
-            std::string email_;
-            std::string website_;
-            friend class ZHfstOspeller;
-      };
+        //! @brief construct metadata for undefined language and other default
+        //!        values
+        ZHfstOspellerXmlMetadata();
+        void read_xml(const std::string& filename);
+        std::string debug_dump() const;
 
+        public:
+        ZHfstOspellerInfoMetadata info_;
+        std::map<std::string,ZHfstOspellerAcceptorMetadata> acceptor_;
+        std::vector<ZHfstOspellerErrModelMetadata> errmodel_;
+      };
+    //! @brief ZHfstOspeller class holds one speller contained in one
+    //!        zhfst file.
+    //!        Ospeller can perform all basic writer tool functionality that
+    //!        is supporte by the automata in the zhfst archive.
     class ZHfstOspeller
       {
         public:
+            //! @brief create speller with default values for undefined 
+            //!        language.
             ZHfstOspeller();
+            //! @brief destroy all automata used by the speller.
             ~ZHfstOspeller();
             
+            //! @brief construct speller from named file containing valid
+            //!        zhfst archive.
             void read_zhfst(const std::string& filename);
+            //! @breif construct speller from quad of old speller files in a
+            //!        directory.
+            //! @deprecated just to support old installations
             void read_legacy(const std::string& path);
 
+            //! @brief  check if the given word is spelled correctly
             bool spell(const std::string& wordform);
+            //! @brief construct an ordered set of corrections for misspelled
+            //!        word form.
             CorrectionQueue suggest(const std::string& wordform);
-            
+            //! @brief analyse word form morphologically
+            AnalysisQueue analyse(const std::string& wordform);
+            //! @brief hyphenate word form
+            HyphenationQueue hyphenate(const std::string& wordform);
+
+            //! @brief create string representation of the speller for
+            //!        programmer to debug
             std::string metadata_dump() const;
         private:
+            //! @brief file or path where the speller came from
             std::string filename_;
-            unsigned long suggestions_;
+            //! @brief upper bound for suggestions generated and given
+            unsigned long suggestions_maximum_;
+            //! @brief whether automatons loaded yet can be used to check
+            //!        spelling
             bool can_spell_;
+            //! @brief whether automatons loaded yet can be used to correct
+            //!        word forms
             bool can_correct_;
+            //! @brief whether automatons loaded yet can be used to analyse
+            //!        word forms
+            bool can_analyse_;
+            //! @brief whether automatons loaded yet can be used to hyphenate
+            //!        word forms
+            bool can_hyphenate_;
+            //! @brief dictionaries loaded
             std::map<std::string, Transducer*> acceptors_;
+            //! @brief error models loaded
             std::map<std::string, Transducer*> errmodels_;
+            //! @brief pointer to current speller
             Speller* current_speller_;
+            //! @brief pointer to current correction model
             Speller* current_sugger_;
-            ZHfstOspellerInfo metadata_;
+            //! @brief pointer to current morphological analyser
+            Speller* current_analyser_;
+            //! @brief pointer to current hyphenator
+            Transducer* current_hyphenator_;
+            //! @brief the metadata of loeaded speller
+            ZHfstOspellerXmlMetadata metadata_;
       };
 
     class ZHfstException

@@ -73,6 +73,12 @@ public:
 typedef std::priority_queue<StringWeightPair,
 			    std::vector<StringWeightPair>,
 			    StringWeightComparison> CorrectionQueue;
+typedef std::priority_queue<StringWeightPair,
+			    std::vector<StringWeightPair>,
+			    StringWeightComparison> AnalysisQueue;
+typedef std::priority_queue<StringWeightPair,
+			    std::vector<StringWeightPair>,
+			    StringWeightComparison> HyphenationQueue;
 
 class Transducer
 {
