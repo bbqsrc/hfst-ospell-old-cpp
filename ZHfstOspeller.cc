@@ -225,18 +225,6 @@ ZHfstOspeller::~ZHfstOspeller()
         current_sugger_ = 0;
         current_speller_ = 0;
       }
-    for (map<string, Transducer*>::iterator t = acceptors_.begin();
-         t != acceptors_.end();
-         ++t)
-      {
-        delete t->second;
-      }
-    for (map<string, Transducer*>::iterator t = errmodels_.begin();
-         t != errmodels_.end();
-         ++t)
-      {
-        delete t->second;
-      }
   }
 
 bool
@@ -279,10 +267,15 @@ ZHfstOspeller::read_zhfst(const string& filename)
           {
             throw ZHfstZipReadingError("Archive not OK");
           }
-        const char* filename = archive_entry_pathname(entry);
+        char* filename = strdup(archive_entry_pathname(entry));
         if ((strncmp(filename, "acceptor.", strlen("acceptor.")) == 0) ||
             (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0))
           {
+            char* temporary = strdup("/tmp/zhfstaeXXXXXX");
+            int temp_fd = mkstemp(temporary);
+            archive_entry_set_pathname(entry, temporary);
+            close(temp_fd);
+            // FIXME: potential race condition
             archive_write_header(aw, entry);
             const void* buf;
             size_t size = 0;
@@ -307,7 +300,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
               }
 
             archive_write_finish_entry(aw);
-            const char* p = filename;
+            char* p = filename;
             if (strncmp(filename, "acceptor.", strlen("acceptor.")) == 0)
                 {
                   p += strlen("acceptor.");
@@ -324,7 +317,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
                         }
                     }
                   char* descr = strndup(p, descr_len);
-                  FILE* f = fopen(filename, "r");
+                  FILE* f = fopen(temporary, "r");
                   if (f == NULL)
                     {
                       throw ZHfstTemporaryWritingError("reading acceptor back "
@@ -333,7 +326,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
                   Transducer* trans = new Transducer(f);
                   acceptors_[descr] = trans;
                 }
-            if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
+            else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
                 {
                   p += strlen("errmodel.");
                   size_t descr_len = 0;
@@ -349,7 +342,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
                         }
                     }
                   char* descr = strndup(p, descr_len);
-                  FILE* f = fopen(filename, "r");
+                  FILE* f = fopen(temporary, "r");
                   if (NULL == f)
                     {
                       throw ZHfstTemporaryWritingError("reading errmodel back "
@@ -358,9 +351,19 @@ ZHfstOspeller::read_zhfst(const string& filename)
                   Transducer* trans = new Transducer(f);
                   errmodels_[descr] = trans;
                 }
+            else
+              {
+                throw std::logic_error("acceptor || errmodel && "
+                                       "!acceptor && !errmodel in substring");
+              }
           } // if acceptor or errmodel
         else if (strcmp(filename, "index.xml") == 0)
           {
+            char* temporary = strdup("/tmp/zhfstidxXXXXXX");
+            int temp_fd = mkstemp(temporary);
+            archive_entry_set_pathname(entry, temporary);
+            close(temp_fd);
+            // FIXME: potential race condition
             archive_write_header(aw, entry);
             const void* buf;
             size_t size = 0;
@@ -384,13 +387,14 @@ ZHfstOspeller::read_zhfst(const string& filename)
                 throw ZHfstZipReadingError("Archive not EOF'd");
               }
             archive_write_finish_entry(aw);
-            metadata_.read_xml(filename);
+            metadata_.read_xml(temporary);
 
           }
         else
           {
-            fprintf(stderr, "Unknown file in arcgive %s\n", filename);
+            fprintf(stderr, "Unknown file in archive %s\n", filename);
           }
+        free(filename);
       } // while r != ARCHIVE_EOF
     archive_read_close(ar);
     archive_write_close(aw);
