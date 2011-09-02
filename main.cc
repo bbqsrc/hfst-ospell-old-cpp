@@ -34,6 +34,9 @@
 using hfst_ol::ZHfstOspeller;
 using hfst_ol::Transducer;
 
+static bool quiet = false;
+static bool verbose = false;
+
 bool print_usage(void)
 {
     std::cerr <<
@@ -164,9 +167,11 @@ zhfst_spell(char* zhfst_filename)
       return EXIT_FAILURE;
     }
 
-  std::cout << "Following metadata was read from ZHFST archive:" << std::endl
-      << speller.metadata_dump() << std::endl;
-    
+  if (verbose)
+    {
+      std::cout << "Following metadata was read from ZHFST archive:" << std::endl
+                << speller.metadata_dump() << std::endl;
+    }
   char * str = (char*) malloc(2000);
     
     while (!std::cin.eof()) {
@@ -231,10 +236,14 @@ int main(int argc, char **argv)
             break;
           
         case 'v':
+            verbose = true;
+            quiet = false;
             break;
           
         case 'q': // fallthrough
         case 's':
+            quiet = true;
+            verbose = false;
             break;
           
         default:
