@@ -4,6 +4,9 @@
 #include <string>
 #include <sstream>
 
+namespace hfst_ol
+{
+
 // This structure is inherited from for each exception. Taken from HFST library
 // code.
 struct OspellException
@@ -27,6 +30,12 @@ OspellException(const std::string &name,const std::string &file,size_t line):
 	      << file << " on line: " << line;
 	    return o.str();
 	}
+    const char* what()
+      {
+        std::ostringstream o;
+        o << file << ":" << line << ":" << name;
+        return o.str().c_str();
+      }
 };
 
 // These macros are used instead of the normal exception facilities.
@@ -61,5 +70,5 @@ HFST_EXCEPTION_CHILD_DECLARATION(TransitionTableReadingException);
 HFST_EXCEPTION_CHILD_DECLARATION(UnweightedSpellerException);
 
 HFST_EXCEPTION_CHILD_DECLARATION(TransducerTypeException);
-
+} // namespace
 #endif // _OL_EXCEPTIONS_H
