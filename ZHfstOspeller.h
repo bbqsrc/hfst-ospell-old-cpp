@@ -20,10 +20,6 @@
 #  include <config.h>
 #endif
 
-#ifndef HAVE_STRNDUP
-char* strndup(const char* s, size_t n);
-#endif
-
 #include <map>
 
 using std::map;
