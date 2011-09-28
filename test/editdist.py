@@ -48,6 +48,7 @@ The specification file should be in the following format:
   weights with
   FROM,TO <TAB> TO,FROM <TAB> WEIGHT
   Again, unspecified swaps will be generated automatically with weight 1.0.
+* Lines starting with ## are comments.
 
 with d for distance and S for size of alphabet plus one
 (for epsilon), expected output is a transducer in ATT format with
@@ -162,6 +163,8 @@ if options.inputfile != None:
         if line in ("@@\n", ""):
             break
         if line.strip() != "":
+            if line.startswith(u'##'):
+                continue
             if len(line) > 1 and line.startswith(u'~'):
                 exclusions.add(line[1:])
                 continue
@@ -270,6 +273,8 @@ transducer = Transducer(alphabet)
 if options.inputfile != None:
     while True:
         line = inputfile.readline()
+        if line.startswith('##'):
+            continue
         if line == "\n":
             continue
         if line == "":
