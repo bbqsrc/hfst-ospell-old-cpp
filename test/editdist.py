@@ -128,6 +128,8 @@ parser.set_defaults(swap = False)
 parser.set_defaults(verbose = False)
 (options, args) = parser.parse_args()
 
+alphabet = {}
+
 if options.inputfile == None and options.alphabetfile == None \
         and len(args) == 0:
     print "Specify at least one of INPUT, ALPHABET or alphabet string"
@@ -136,16 +138,6 @@ if len(args) > 1:
     print "Too many options!"
     sys.exit()
 
-if len(args) == 1:
-    alphabet = [c for c in unicode(args[0], 'utf-8')]
-elif options.alphabetfile != None:
-    afile = open(options.alphabetfile, "rb")
-    ol_header = Header(afile)
-    ol_alphabet = Alphabet(afile, ol_header.number_of_symbols)
-    alphabet = filter(lambda x: x.strip() != '', ol_alphabet.keyTable[:])
-else:
-    alphabet = []
-
 if options.inputfile != None:
     try:
         inputfile = open(options.inputfile)
@@ -153,11 +145,29 @@ if options.inputfile != None:
         print "Couldn't open " + options.inputfile
         sys.exit()
     while True:
-        line = inputfile.readline()
-        if line in ["@@\n", ""]:
+        line = unicode(inputfile.readline(), 'utf-8')
+        if line in ("@@\n", ""):
             break
         if line.strip() != "":
-            alphabet.append(unicode(line.strip("\n"), 'utf-8'))
+            if '\t' in line:
+                weight = float(line.split('\t')[1])
+                symbol = linesplit('\t')[0]
+            else:
+                weight = 0.0
+                symbol = line.strip("\n")
+            alphabet[symbol] = weight
+
+if len(args) == 1:
+    for c in unicode(args[0], 'utf-8'):
+        if c not in alphabet.keys():
+            alphabet[c] = 0.0
+if options.alphabetfile != None:
+    afile = open(options.alphabetfile, "rb")
+    ol_header = Header(afile)
+    ol_alphabet = Alphabet(afile, ol_header.number_of_symbols)
+    for c in filter(lambda x: x.strip() != '', ol_alphabet.keyTable[:]):
+        if c not in alphabet.keys():
+            alphabet[c] = 0.0
 
 epsilon = unicode(options.epsilon, 'utf-8')
 OTHER = u'@?@'
@@ -201,30 +211,30 @@ class Transducer:
         # generate standard subs and swaps
         if (self.other, self.epsilon) not in self.substitutions:
             self.substitutions[(self.other, self.epsilon)] = 1.0
-        for symbol in self.alphabet:
+        for symbol in self.alphabet.keys():
             if (self.other, symbol) not in self.substitutions:
-                self.substitutions[(self.other, symbol)] = 1.0
+                self.substitutions[(self.other, symbol)] = 1.0 + alphabet[symbol]
             if (self.epsilon, symbol) not in self.substitutions:
-                self.substitutions[(self.epsilon, symbol)] = 1.0
+                self.substitutions[(self.epsilon, symbol)] = 1.0 + alphabet[symbol]
             if (symbol, self.epsilon) not in self.substitutions:
-                self.substitutions[(symbol, self.epsilon)] = 1.0
-            for symbol2 in self.alphabet:
+                self.substitutions[(symbol, self.epsilon)] = 1.0 + alphabet[symbol]
+            for symbol2 in self.alphabet.keys():
                 if symbol == symbol2: continue
                 if ((symbol, symbol2), (symbol2, symbol)) not in self.swaps:
                     if ((symbol2, symbol), (symbol, symbol2)) in self.swaps:
                         self.swaps[((symbol, symbol2), (symbol2, symbol))] = self.swaps[((symbol2, symbol), (symbol, symbol2))]
                     else:
-                        self.swaps[((symbol, symbol2), (symbol2, symbol))] = 1.0
+                        self.swaps[((symbol, symbol2), (symbol2, symbol))] = 1.0 + alphabet[symbol] + alphabet[symbol2]
                 if (symbol, symbol2) not in self.substitutions:
                     if (symbol2, symbol) in self.substitutions:
                         self.substitutions[(symbol, symbol2)] = self.substitutions[(symbol2, symbol)]
                     else:
-                        self.substitutions[(symbol, symbol2)] = 1.0
+                        self.substitutions[(symbol, symbol2)] = 1.0 + alphabet[symbol] + alphabet[symbol2]
 
     def make_transitions(self):
         for state in range(options.distance):
             self.transitions.append(str(state + 1) + "\t0.0") # final states
-            for symbol in self.alphabet: # identity transitions
+            for symbol in self.alphabet.keys(): # identity transitions
                 if symbol not in (self.epsilon, self.other):
                     self.transitions.append(maketrans(state, state, symbol, symbol, 0.0))
             for sub in self.substitutions:
