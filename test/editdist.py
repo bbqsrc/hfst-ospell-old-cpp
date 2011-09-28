@@ -11,9 +11,16 @@ from optparse import OptionParser
 usage_string = "usage: %prog [options] alphabet"
 
 info_string = """
-There are two ways to produce an edit distance transducer: a default one, by
-giving the alphabet as a command line argument, or in a file with specialized
-syntax.
+Produce an edit distance transducer in ATT format.
+
+There are three ways to produce an edit distance transducer:
+
+* giving the alphabet as a command line argument
+* giving a file with specialized configuration syntax
+* giving a transducer in optimized-lookup format to induce an alphabet
+    (in this case only symbols with length 1 are considered)
+
+These ways may be combined freely.
 
 For the default case, all the desired transitions are generated with weight 1.0.
 The alphabet is read from a string which contains all the (utf-8) characters
@@ -21,19 +28,23 @@ you want to use. Alternatively, an existing optimized-lookup transducer
 can be supplied for reading the alphabet.
 
 The specification file should be in the following format:
-* first, an (optional) list of tokens separated by newlines
-  all transitions involving these tokens that are otherwise unspecified
-  are generated with weight 1.0. Empty lines are ignored
-* if you want to specify transitions, insert a line with the content "@@"
+* First, an (optional) list of tokens separated by newlines
+  All transitions involving these tokens that are otherwise unspecified
+  are generated with weight 1.0. Symbol weights can be specified by appending
+  a tab and a weight to the symbol. Transitions involving such a symbol
+  will have the user-specified weight added to it.
+* If you want to exclude symbols that may be induced from a transducer,
+  add a leading ~ character to that line.
+* If you want to specify transitions, insert a line with the content "@@"
   (without the quotes)
-* on the following lines, specified transitions with the form
+* In the following lines, specified transitions with the form
   FROM <TAB> TO <TAB> WEIGHT
   where FROM is the source token, TO is the destination token and WEIGHT is
   a nonnegative floating point number specifying the weight. By default,
   if only one transition involving FROM and TO is specified, the same WEIGHT
   will be used to specify the transition TO -> FROM (assuming that both are
   listed in the list of tokens).
-* if the command line option to generate swaps is set, you can also specify swap
+* If the command line option to generate swaps is set, you can also specify swap
   weights with
   FROM,TO <TAB> TO,FROM <TAB> WEIGHT
   Again, unspecified swaps will be generated automatically with weight 1.0.
@@ -130,6 +141,7 @@ parser.set_defaults(verbose = False)
 (options, args) = parser.parse_args()
 
 alphabet = {}
+exclusions = set()
 
 if options.inputfile == None and options.alphabetfile == None \
         and len(args) == 0:
@@ -150,6 +162,9 @@ if options.inputfile != None:
         if line in ("@@\n", ""):
             break
         if line.strip() != "":
+            if len(line) > 1 and line.startswith(u'~'):
+                exclusions.add(line[1:])
+                continue
             if '\t' in line:
                 weight = float(line.split('\t')[1])
                 symbol = linesplit('\t')[0]
@@ -169,6 +184,10 @@ if options.alphabetfile != None:
     for c in filter(lambda x: x.strip() != '', ol_alphabet.keyTable[:]):
         if c not in alphabet.keys():
             alphabet[c] = 0.0
+
+for symbol in exclusions:
+    if symbol in alphabet:
+        del alphabet[symbol]
 
 epsilon = unicode(options.epsilon, 'utf-8')
 OTHER = u'@?@'
