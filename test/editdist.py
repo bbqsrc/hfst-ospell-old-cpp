@@ -202,8 +202,6 @@ class Transducer:
         for symbol in self.alphabet:
             if (self.other, symbol) not in self.substitutions:
                 self.substitutions[(self.other, symbol)] = 1.0
-            if (symbol, symbol) not in self.substitutions:
-                self.substitutions[(symbol, symbol)] = 1.0
             if (self.epsilon, symbol) not in self.substitutions:
                 self.substitutions[(self.epsilon, symbol)] = 1.0
             if (symbol, self.epsilon) not in self.substitutions:
@@ -224,6 +222,9 @@ class Transducer:
     def make_transitions(self):
         for state in range(options.distance):
             self.transitions.append(str(state + 1) + "\t0.0")
+            for symbol in self.alphabet:
+                if symbol not in (self.epsilon, self.other):
+                    self.transitions.append(maketrans(state, state, symbol, symbol, 0.0))
             for sub in self.substitutions:
                 self.transitions.append(maketrans(state, state + 1, sub[0], sub[1], self.substitutions[sub]))
             if options.swap:
