@@ -4,6 +4,7 @@
 
 
 import sys
+import struct
 from optparse import OptionParser
 
 usage_string = "usage: %prog [options] alphabet"
@@ -14,6 +15,9 @@ giving the alphabet as a command line argument, or in a file with specialized
 syntax.
 
 For the default case, all the desired transitions are generated with weight 1.0.
+The alphabet is read from a string which contains all the (utf-8) characters
+you want to use. Alternatively, an existing optimized-lookup transducer
+can be supplied for reading the alphabet.
 
 The specification file should be in the following format:
 * first, an (optional) list of tokens separated by newlines
@@ -43,7 +47,65 @@ with d for distance and S for size of alphabet plus one
 ** d*(3S^2 - 5S + 3) transitions
 """
 
-parser = OptionParser(usage=usage_string, epilog=info_string)
+# Some utility classes
+
+class Header:
+    """Read and provide interface to header"""
+    
+    def __init__(self, file):
+        bytes = file.read(5) # "HFST\0"
+        if str(struct.unpack_from("<5s", bytes, 0)) == "('HFST\\x00',)":
+            # just ignore any hfst3 header
+            remaining = struct.unpack_from("<H", file.read(3), 0)[0]
+            self.handle_hfst3_header(file, remaining)
+            bytes = file.read(56) # 2 unsigned shorts, 4 unsigned ints and 9 uint-bools
+        else:
+            bytes = bytes + file.read(56 - 5)
+        self.number_of_input_symbols             = struct.unpack_from("<H", bytes, 0)[0]
+        self.number_of_symbols                   = struct.unpack_from("<H", bytes, 2)[0]
+        self.size_of_transition_index_table      = struct.unpack_from("<I", bytes, 4)[0]
+        self.size_of_transition_target_table     = struct.unpack_from("<I", bytes, 8)[0]
+        self.number_of_states                    = struct.unpack_from("<I", bytes, 12)[0]
+        self.number_of_transitions               = struct.unpack_from("<I", bytes, 16)[0]
+        self.weighted                            = struct.unpack_from("<I", bytes, 20)[0] != 0
+        self.deterministic                       = struct.unpack_from("<I", bytes, 24)[0] != 0
+        self.input_deterministic                 = struct.unpack_from("<I", bytes, 28)[0] != 0
+        self.minimized                           = struct.unpack_from("<I", bytes, 32)[0] != 0
+        self.cyclic                              = struct.unpack_from("<I", bytes, 36)[0] != 0
+        self.has_epsilon_epsilon_transitions     = struct.unpack_from("<I", bytes, 40)[0] != 0
+        self.has_input_epsilon_transitions       = struct.unpack_from("<I", bytes, 44)[0] != 0
+        self.has_input_epsilon_cycles            = struct.unpack_from("<I", bytes, 48)[0] != 0
+        self.has_unweighted_input_epsilon_cycles = struct.unpack_from("<I", bytes, 52)[0] != 0
+
+    def handle_hfst3_header(self, file, remaining):
+        chars = struct.unpack_from("<" + str(remaining) + "c",
+                                   file.read(remaining), 0)
+        # assume the h3-header doesn't say anything surprising for now
+
+class Alphabet:
+    """Read and provide interface to alphabet"""
+
+    def __init__(self, file, number_of_symbols):
+        self.keyTable = [] # list of unicode objects, use foo.encode("utf-8") to print
+        for x in range(number_of_symbols):
+            symbol = ""
+            while True:
+                byte = file.read(1)
+                if byte == '\0': # a symbol has ended
+                    symbol = unicode(symbol, "utf-8")
+                    if len(symbol) != 1:
+                        sys.stderr.write("Ignored symbol " + symbol + "\n")
+                    else:
+                        self.keyTable.append(symbol)
+                    break
+                symbol += byte
+
+class MyOptionParser(OptionParser):
+    # This is needed to override the formatting of the help string
+    def format_epilog(self, formatter):
+        return self.epilog
+
+parser = MyOptionParser(usage=usage_string, epilog=info_string)
 parser.add_option("-e", "--epsilon", dest = "epsilon",
                   help = "specify symbol to use as epsilon, default is @0@",
                   metavar = "EPS")
@@ -55,6 +117,9 @@ parser.add_option("-s", "--swap", action = "store_true", dest="swap",
 parser.add_option("-i", "--input", dest = "inputfile",
                   help = "optional file with special edit-distance syntax",
                   metavar = "INPUT")
+parser.add_option("-a", "--alphabet", dest = "alphabetfile",
+                  help = "read the alphabet from an existing optimized-lookup format transducer",
+                  metavar = "ALPHABET")
 parser.add_option("-v", "--verbose", action = "store_true", dest="verbose",
                   help = "print some diagnostics to standard error")
 parser.set_defaults(epsilon = '@0@')
@@ -63,8 +128,9 @@ parser.set_defaults(swap = False)
 parser.set_defaults(verbose = False)
 (options, args) = parser.parse_args()
 
-if options.inputfile == None and len(args) == 0:
-    print "No alphabet or input file specified!"
+if options.inputfile == None and options.alphabetfile == None \
+        and len(args) == 0:
+    print "Specify at least one of INPUT, ALPHABET or alphabet string"
     sys.exit()
 if len(args) > 1:
     print "Too many options!"
@@ -72,6 +138,11 @@ if len(args) > 1:
 
 if len(args) == 1:
     alphabet = [c for c in unicode(args[0], 'utf-8')]
+elif options.alphabetfile != None:
+    afile = open(options.alphabetfile, "rb")
+    ol_header = Header(afile)
+    ol_alphabet = Alphabet(afile, ol_header.number_of_symbols)
+    alphabet = filter(lambda x: x.strip() != '', ol_alphabet.keyTable[:])
 else:
     alphabet = []
 
@@ -170,7 +241,7 @@ if options.inputfile != None:
             continue
         if line == "":
             break
-        transducer.process(line)
+        transducer.process(unicode(line, "utf-8"))
 
 transducer.generate()
 transducer.make_transitions()
