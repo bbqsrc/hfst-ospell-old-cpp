@@ -5,6 +5,7 @@
 
 import sys
 import struct
+import codecs
 from optparse import OptionParser
 
 usage_string = "usage: %prog [options] alphabet"
@@ -261,9 +262,11 @@ transducer.make_transitions()
 for transition in transducer.transitions:
     print transition
 
+stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
+
 if options.verbose:
-    sys.stderr.write("\n" + str(transducer.swapstate) + " states and " + str(len(transducer.transitions)) + " transitions written for\n"+
+    stderr_u8.write("\n" + str(transducer.swapstate) + " states and " + str(len(transducer.transitions)) + " transitions written for\n"+
                      "distance " + str(options.distance) + " and base alphabet size " + str(len(transducer.alphabet)) +"\n\n")
-    sys.stderr.write("The alphabet was:\n")
+    stderr_u8.write("The alphabet was:\n")
     for symbol, weight in alphabet.iteritems():
-        sys.stderr.write(symbol + "\t" + str(weight) + "\n")
+        stderr_u8.write(symbol + "\t" + str(weight) + "\n")
