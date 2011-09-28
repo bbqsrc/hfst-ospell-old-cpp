@@ -197,6 +197,8 @@ class Transducer:
                 self.substitutions[(parts[0], parts[1])] = weight
 
     def generate(self):
+        # for substitutions and swaps that weren't defined by the user,
+        # generate standard subs and swaps
         if (self.other, self.epsilon) not in self.substitutions:
             self.substitutions[(self.other, self.epsilon)] = 1.0
         for symbol in self.alphabet:
@@ -221,8 +223,8 @@ class Transducer:
 
     def make_transitions(self):
         for state in range(options.distance):
-            self.transitions.append(str(state + 1) + "\t0.0")
-            for symbol in self.alphabet:
+            self.transitions.append(str(state + 1) + "\t0.0") # final states
+            for symbol in self.alphabet: # identity transitions
                 if symbol not in (self.epsilon, self.other):
                     self.transitions.append(maketrans(state, state, symbol, symbol, 0.0))
             for sub in self.substitutions:
