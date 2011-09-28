@@ -263,4 +263,7 @@ for transition in transducer.transitions:
 
 if options.verbose:
     sys.stderr.write("\n" + str(transducer.swapstate) + " states and " + str(len(transducer.transitions)) + " transitions written for\n"+
-                     "distance " + str(options.distance) + " and base alphabet size " + str(len(transducer.alphabet) + 1) +"\n")
+                     "distance " + str(options.distance) + " and base alphabet size " + str(len(transducer.alphabet)) +"\n\n")
+    sys.stderr.write("The alphabet was:\n")
+    for symbol, weight in alphabet.iteritems():
+        sys.stderr.write(symbol + "\t" + str(weight) + "\n")
