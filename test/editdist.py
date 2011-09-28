@@ -166,7 +166,7 @@ if options.inputfile != None:
             if line.startswith(u'##'):
                 continue
             if len(line) > 1 and line.startswith(u'~'):
-                exclusions.add(line[1:])
+                exclusions.add(line[1:].strip())
                 continue
             if '\t' in line:
                 weight = float(line.split('\t')[1])
@@ -178,20 +178,15 @@ if options.inputfile != None:
 
 if len(args) == 1:
     for c in unicode(args[0], 'utf-8'):
-        if c not in alphabet.keys():
+        if c not in alphabet.keys() and c not in exclusions:
             alphabet[c] = 0.0
 if options.alphabetfile != None:
     afile = open(options.alphabetfile, "rb")
     ol_header = Header(afile)
     ol_alphabet = Alphabet(afile, ol_header.number_of_symbols)
     for c in filter(lambda x: x.strip() != '', ol_alphabet.keyTable[:]):
-        if c not in alphabet.keys():
+        if c not in alphabet.keys() and c not in exclusions:
             alphabet[c] = 0.0
-
-for symbol in exclusions:
-    if symbol in alphabet:
-        del alphabet[symbol]
-
 epsilon = unicode(options.epsilon, 'utf-8')
 OTHER = u'@?@'
 
@@ -294,3 +289,7 @@ if options.verbose:
     stderr_u8.write("The alphabet was:\n")
     for symbol, weight in alphabet.iteritems():
         stderr_u8.write(symbol + "\t" + str(weight) + "\n")
+    if len(exclusions) != 0:
+        stderr_u8.write("The exclusions were:\n")
+        for symbol in exclusions:
+            stderr_u8.write(symbol + "\n")
