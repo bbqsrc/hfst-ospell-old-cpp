@@ -99,6 +99,7 @@ class Alphabet:
     """Read and provide interface to alphabet"""
 
     def __init__(self, file, number_of_symbols):
+        stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
         self.keyTable = [] # list of unicode objects, use foo.encode("utf-8") to print
         for x in range(number_of_symbols):
             symbol = ""
@@ -107,7 +108,7 @@ class Alphabet:
                 if byte == '\0': # a symbol has ended
                     symbol = unicode(symbol, "utf-8")
                     if len(symbol) != 1:
-                        sys.stderr.write("Ignored symbol " + symbol + "\n")
+                        stderr_u8.write("Ignored symbol " + symbol + "\n")
                     else:
                         self.keyTable.append(symbol)
                     break
