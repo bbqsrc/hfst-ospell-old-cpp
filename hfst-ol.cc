@@ -25,8 +25,9 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
     for(header_loc = 0; header_loc < strlen(header1) + 1; header_loc++)
     {
 	c = getc(f);
-	if(c != header1[header_loc])
+	if(c != header1[header_loc]) {
 	    break;
+	}
     }
     if(header_loc == strlen(header1) + 1) // we found it
     {
@@ -138,7 +139,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
 		kt->push_back(std::string(""));
 		continue;
 	  
-	    } else if (strlen(line) == 3&& line[1] == '?') { // other symbol
+	    } else if (strcmp(line, "@_UNKNOWN_SYMBOL_@") == 0) { // other symbol
 		other_symbol = k;
 		kt->push_back(std::string(""));
 		continue;

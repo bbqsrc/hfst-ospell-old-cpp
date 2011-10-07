@@ -189,7 +189,7 @@ if options.alphabetfile != None:
         if c not in alphabet.keys() and c not in exclusions:
             alphabet[c] = 0.0
 epsilon = unicode(options.epsilon, 'utf-8')
-OTHER = u'@?@'
+OTHER = u'@_UNKNOWN_SYMBOL_@'
 
 def p(string): # stupid python, or possibly stupid me
     return string.encode('utf-8')
