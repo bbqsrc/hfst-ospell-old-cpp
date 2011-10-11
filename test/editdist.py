@@ -263,6 +263,9 @@ class Transducer:
                     self.transitions.append(maketrans(state, self.swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
                     self.transitions.append(maketrans(self.swapstate, state + 1, swap[1][0], swap[1][1], 0.0))
                     self.swapstate += 1
+        for symbol in self.alphabet.keys():
+            if symbol not in (self.epsilon, self.other):
+                self.transitions.append(maketrans(options.distance, options.distance, symbol, symbol, 0.0))
 
 transducer = Transducer(alphabet)
 
