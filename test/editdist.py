@@ -204,7 +204,8 @@ class Transducer:
         self.swaps = {}
         self.other = _other
         self.epsilon = _epsilon
-        self.swapstate = options.distance + 1 # used for swap states
+        self.swapstate = options.distance + 1
+        self.skipstate = self.swapstate + 1
         self.transitions = []
 
     def process(self, specification):
@@ -250,22 +251,76 @@ class Transducer:
                     else:
                         self.substitutions[(symbol, symbol2)] = 1.0 + alphabet[symbol] + alphabet[symbol2]
 
+    def next_special(self, state):
+        if state == "swap":
+            self.swapstate += 1
+            while self.swapstate == self.skipstate:
+                self.swapstate += 1
+        elif state == "skip":
+            self.skipstate += 1
+            while self.skipstate == self.swapstate:
+                self.skipstate += 1
+        else:
+            raise Exception
+
+    def make_identities(self, state, nextstate = None):
+        if nextstate is None:
+            nextstate = state
+        ret = []
+        for symbol in self.alphabet.keys():
+            if symbol not in (self.epsilon, self.other):
+                ret.append(maketrans(state, nextstate, symbol, symbol, 0.0))
+        return ret
+
+    def make_swaps(self, state, nextstate = None):
+        if nextstate is None:
+            nextstate = state + 1
+        ret = []
+        if options.swap:
+            for swap in self.swaps:
+                ret.append(maketrans(state, self.swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
+                ret.append(maketrans(self.swapstate, nextstate, swap[1][0], swap[1][1], 0.0))
+                self.next_special("swap")
+        return ret
+
+    # for substitutions, we try to eliminate redundancies by refusing to do
+    # deletion right after insertion and insertion right after deletion
+    def make_substitutions(self, state, nextstate = None):
+        if nextstate is None:
+            nextstate = state + 1
+        ret = []
+        for sub in self.substitutions:
+            if nextstate + 1 >= options.distance:
+                ret.append(maketrans(state, nextstate, sub[0], sub[1], self.substitutions[sub]))
+            elif sub[1] is self.epsilon: # deletion
+                ret.append(maketrans(state, self.skipstate, sub[0], sub[1], self.substitutions[sub]))
+                ret += self.make_identities(self.skipstate, nextstate)
+                ret += self.make_swaps(self.skipstate, nextstate + 1)
+                for sub2 in self.substitutions:
+                    # after deletion, refuse to do insertion
+                    if sub2[0] != self.epsilon:
+                        ret.append(maketrans(self.skipstate, nextstate + 1, sub2[0], sub2[1], self.substitutions[sub2]))
+                self.next_special("skip")
+            elif sub[0] is self.epsilon: # insertion
+                ret.append(maketrans(state, self.skipstate, sub[0], sub[1], self.substitutions[sub]))
+                ret += self.make_identities(self.skipstate, nextstate)
+                ret += self.make_swaps(self.skipstate, nextstate + 1)
+                for sub2 in self.substitutions:
+                    # after insertion, refuse to do deletion
+                    if sub2[1] != self.epsilon:
+                        ret.append(maketrans(self.skipstate, nextstate + 1, sub2[0], sub2[1], self.substitutions[sub2]))
+                self.next_special("skip")
+            else:
+                ret.append(maketrans(state, nextstate, sub[0], sub[1], self.substitutions[sub]))
+        return ret
+
     def make_transitions(self):
         for state in range(options.distance):
             self.transitions.append(str(state + 1) + "\t0.0") # final states
-            for symbol in self.alphabet.keys(): # identity transitions
-                if symbol not in (self.epsilon, self.other):
-                    self.transitions.append(maketrans(state, state, symbol, symbol, 0.0))
-            for sub in self.substitutions:
-                self.transitions.append(maketrans(state, state + 1, sub[0], sub[1], self.substitutions[sub]))
-            if options.swap:
-                for swap in self.swaps:
-                    self.transitions.append(maketrans(state, self.swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
-                    self.transitions.append(maketrans(self.swapstate, state + 1, swap[1][0], swap[1][1], 0.0))
-                    self.swapstate += 1
-        for symbol in self.alphabet.keys():
-            if symbol not in (self.epsilon, self.other):
-                self.transitions.append(maketrans(options.distance, options.distance, symbol, symbol, 0.0))
+            self.transitions += self.make_identities(state)
+            self.transitions += self.make_substitutions(state)
+            self.transitions += self.make_swaps(state)
+        self.transitions += self.make_identities(options.distance)
 
 transducer = Transducer(alphabet)
 
@@ -288,7 +343,7 @@ for transition in transducer.transitions:
 stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
 
 if options.verbose:
-    stderr_u8.write("\n" + str(transducer.swapstate) + " states and " + str(len(transducer.transitions)) + " transitions written for\n"+
+    stderr_u8.write("\n" + str(max(transducer.skipstate, transducer.swapstate)) + " states and " + str(len(transducer.transitions)) + " transitions written for\n"+
                      "distance " + str(options.distance) + " and base alphabet size " + str(len(transducer.alphabet)) +"\n\n")
     stderr_u8.write("The alphabet was:\n")
     for symbol, weight in alphabet.iteritems():
