@@ -128,6 +128,8 @@ parser.add_option("-d", "--distance", type = "int", dest = "distance",
                   metavar = "DIST")
 parser.add_option("-s", "--swap", action = "store_true", dest="swap",
                   help = "generate swaps (as well as insertions and deletions)")
+parser.add_option("", "--no-elim", action = "store_true", dest="no_elim",
+                  help = "don't do redundancy elimination")
 parser.add_option("-i", "--input", dest = "inputfile",
                   help = "optional file with special edit-distance syntax",
                   metavar = "INPUT")
@@ -139,6 +141,7 @@ parser.add_option("-v", "--verbose", action = "store_true", dest="verbose",
 parser.set_defaults(epsilon = '@0@')
 parser.set_defaults(distance = 1)
 parser.set_defaults(swap = False)
+parser.set_defaults(no_elim = False)
 parser.set_defaults(verbose = False)
 (options, args) = parser.parse_args()
 
@@ -290,7 +293,7 @@ class Transducer:
             nextstate = state + 1
         ret = []
         for sub in self.substitutions:
-            if nextstate + 1 >= options.distance:
+            if (nextstate + 1 >= options.distance) or options.no_elim:
                 ret.append(maketrans(state, nextstate, sub[0], sub[1], self.substitutions[sub]))
             elif sub[1] is self.epsilon: # deletion
                 ret.append(maketrans(state, self.skipstate, sub[0], sub[1], self.substitutions[sub]))
