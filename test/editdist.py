@@ -293,7 +293,7 @@ class Transducer:
             nextstate = state + 1
         ret = []
         for sub in self.substitutions:
-            if (nextstate + 1 >= options.distance) or options.no_elim:
+            if (nextstate >= options.distance) or options.no_elim:
                 ret.append(maketrans(state, nextstate, sub[0], sub[1], self.substitutions[sub]))
             elif sub[1] is self.epsilon: # deletion
                 ret.append(maketrans(state, self.skipstate, sub[0], sub[1], self.substitutions[sub]))
