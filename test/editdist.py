@@ -210,11 +210,12 @@ class Transducer:
         self.other = _other
         self.epsilon = _epsilon
         self.distance = _distance
-        self.swapstates = [n for n in range(_distance + 1, _distance + 1 + swaps)]
-        self.skipstates = [n for n in range(_distance + 1 + swaps, _distance + 1 + swaps + skips)]
-        print "distance " + str(self.distance)
-        print "swaps " + str(self.swapstates)
-        print "skips " + str(self.skipstates)
+        self.swapstates = []
+        self.swapstates = []
+        if options.swap:
+            self.swapstates = [n for n in range(_distance + 1, _distance + 1 + swaps)]
+        if not options.no_elim:
+            self.skipstates = [n for n in range(_distance + 1 + swaps, _distance + 1 + swaps + skips)]
         self.transitions = []
 
     def process(self, specification):
