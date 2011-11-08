@@ -201,14 +201,20 @@ def maketrans(from_st, to_st, from_sy, to_sy, weight):
     return str(from_st) + "\t" + str(to_st) + "\t" + p(from_sy) + "\t" + p(to_sy) + "\t" + str(weight)
 
 class Transducer:
-    def __init__(self, alphabet, _other = OTHER, _epsilon = epsilon):
+    def __init__(self, alphabet, _other = OTHER, _epsilon = epsilon, _distance = options.distance):
+        skips = (_distance - 1) * 2
+        swaps = (len(alphabet)**2)*(3*_distance - 2) + len(alphabet)*(2-3*_distance)
         self.alphabet = alphabet
         self.substitutions = {}
         self.swaps = {}
         self.other = _other
         self.epsilon = _epsilon
-        self.swapstate = options.distance + 1
-        self.skipstate = self.swapstate + 1
+        self.distance = _distance
+        self.swapstates = [n for n in range(_distance + 1, _distance + 1 + swaps)]
+        self.skipstates = [n for n in range(_distance + 1 + swaps, _distance + 1 + swaps + skips)]
+        print "distance " + str(self.distance)
+        print "swaps " + str(self.swapstates)
+        print "skips " + str(self.skipstates)
         self.transitions = []
 
     def process(self, specification):
@@ -254,18 +260,6 @@ class Transducer:
                     else:
                         self.substitutions[(symbol, symbol2)] = 1.0 + alphabet[symbol] + alphabet[symbol2]
 
-    def next_special(self, state):
-        if state == "swap":
-            self.swapstate += 1
-            while self.swapstate == self.skipstate:
-                self.swapstate += 1
-        elif state == "skip":
-            self.skipstate += 1
-            while self.skipstate == self.swapstate:
-                self.skipstate += 1
-        else:
-            raise Exception
-
     def make_identities(self, state, nextstate = None):
         if nextstate is None:
             nextstate = state
@@ -281,9 +275,9 @@ class Transducer:
         ret = []
         if options.swap:
             for swap in self.swaps:
-                ret.append(maketrans(state, self.swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
-                ret.append(maketrans(self.swapstate, nextstate, swap[1][0], swap[1][1], 0.0))
-                self.next_special("swap")
+                swapstate = self.swapstates.pop(0)
+                ret.append(maketrans(state, swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
+                ret.append(maketrans(swapstate, nextstate, swap[1][0], swap[1][1], 0.0))
         return ret
 
     # for substitutions, we try to eliminate redundancies by refusing to do
@@ -292,27 +286,29 @@ class Transducer:
         if nextstate is None:
             nextstate = state + 1
         ret = []
+        if (nextstate < options.distance) and not options.no_elim:
+            delete_skip = self.skipstates.pop(0)
+            insert_skip = self.skipstates.pop(0)
+            ret += self.make_identities(delete_skip, nextstate)
+            ret += self.make_swaps(delete_skip, nextstate + 1)
+            ret += self.make_identities(insert_skip, nextstate)
+            ret += self.make_swaps(insert_skip, nextstate + 1)
+            
         for sub in self.substitutions:
             if (nextstate >= options.distance) or options.no_elim:
                 ret.append(maketrans(state, nextstate, sub[0], sub[1], self.substitutions[sub]))
             elif sub[1] is self.epsilon: # deletion
-                ret.append(maketrans(state, self.skipstate, sub[0], sub[1], self.substitutions[sub]))
-                ret += self.make_identities(self.skipstate, nextstate)
-                ret += self.make_swaps(self.skipstate, nextstate + 1)
+                ret.append(maketrans(state, delete_skip, sub[0], sub[1], self.substitutions[sub]))
                 for sub2 in self.substitutions:
                     # after deletion, refuse to do insertion
                     if sub2[0] != self.epsilon:
-                        ret.append(maketrans(self.skipstate, nextstate + 1, sub2[0], sub2[1], self.substitutions[sub2]))
-                self.next_special("skip")
+                        ret.append(maketrans(delete_skip, nextstate + 1, sub2[0], sub2[1], self.substitutions[sub2]))
             elif sub[0] is self.epsilon: # insertion
-                ret.append(maketrans(state, self.skipstate, sub[0], sub[1], self.substitutions[sub]))
-                ret += self.make_identities(self.skipstate, nextstate)
-                ret += self.make_swaps(self.skipstate, nextstate + 1)
+                ret.append(maketrans(state, insert_skip, sub[0], sub[1], self.substitutions[sub]))
                 for sub2 in self.substitutions:
                     # after insertion, refuse to do deletion
                     if sub2[1] != self.epsilon:
-                        ret.append(maketrans(self.skipstate, nextstate + 1, sub2[0], sub2[1], self.substitutions[sub2]))
-                self.next_special("skip")
+                        ret.append(maketrans(insert_skip, nextstate + 1, sub2[0], sub2[1], self.substitutions[sub2]))
             else:
                 ret.append(maketrans(state, nextstate, sub[0], sub[1], self.substitutions[sub]))
         return ret
@@ -324,6 +320,8 @@ class Transducer:
             self.transitions += self.make_substitutions(state)
             self.transitions += self.make_swaps(state)
         self.transitions += self.make_identities(options.distance)
+        assert len(self.skipstates) == 0
+        assert len(self.swapstates) == 0
 
 transducer = Transducer(alphabet)
 
