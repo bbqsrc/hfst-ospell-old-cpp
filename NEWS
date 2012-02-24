@@ -5,6 +5,15 @@
 This file contains all noteworthy changes in HFST-ospell development between
 releases.  For full listing of changes see ChangeLog.
 
+Noteworthy changes in 0.2.0
+---------------------------
+
+* Added support for zipped XML based transducer collection format.
+
+* Few new frontends for various experiments
+
+* Lots of metadata everywhere
+
 Noteworthy changes in 0.1.1
 ---------------------------
 
