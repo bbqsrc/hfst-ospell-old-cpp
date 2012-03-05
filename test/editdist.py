@@ -130,6 +130,8 @@ parser.add_option("-s", "--swap", action = "store_true", dest="swap",
                   help = "generate swaps (as well as insertions and deletions)")
 parser.add_option("", "--no-elim", action = "store_true", dest="no_elim",
                   help = "don't do redundancy elimination")
+parser.add_option("-m", "--minimum-edit", type = "int", dest = "minimum_edit",
+                  help = "minimum accepting edit (default is 1)")
 parser.add_option("-i", "--input", dest = "inputfile",
                   help = "optional file with special edit-distance syntax",
                   metavar = "INPUT")
@@ -142,6 +144,7 @@ parser.set_defaults(epsilon = '@0@')
 parser.set_defaults(distance = 1)
 parser.set_defaults(swap = False)
 parser.set_defaults(no_elim = False)
+parser.set_defaults(minimum_edit = 1)
 parser.set_defaults(verbose = False)
 (options, args) = parser.parse_args()
 
@@ -202,21 +205,16 @@ def maketrans(from_st, to_st, from_sy, to_sy, weight):
 
 class Transducer:
     def __init__(self, alphabet, _other = OTHER, _epsilon = epsilon, _distance = options.distance):
-        skips = (_distance - 1) * 2
-        swaps = (len(alphabet)**2)*(3*_distance - 2) + len(alphabet)*(2-3*_distance)
         self.alphabet = alphabet
         self.substitutions = {}
         self.swaps = {}
         self.other = _other
         self.epsilon = _epsilon
         self.distance = _distance
-        self.swapstates = []
-        self.swapstates = []
-        if options.swap:
-            self.swapstates = [n for n in range(_distance + 1, _distance + 1 + swaps)]
-        if not options.no_elim:
-            self.skipstates = [n for n in range(_distance + 1 + swaps, _distance + 1 + swaps + skips)]
         self.transitions = []
+        # the first self.distance states are always used, for others we
+        # grab state numbers from this counter
+        self.state_clock = self.distance + 1
 
     def process(self, specification):
         parts = specification.split('\t')
@@ -276,7 +274,8 @@ class Transducer:
         ret = []
         if options.swap:
             for swap in self.swaps:
-                swapstate = self.swapstates.pop(0)
+                swapstate = self.state_clock
+                self.state_clock += 1
                 ret.append(maketrans(state, swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
                 ret.append(maketrans(swapstate, nextstate, swap[1][0], swap[1][1], 0.0))
         return ret
@@ -287,24 +286,31 @@ class Transducer:
         if nextstate is None:
             nextstate = state + 1
         ret = []
+        eliminate = False
+        # unless we're about to hit the maximum edit or we're not eliminating
+        # redundancies, make skip states for delete and insert
         if (nextstate < options.distance) and not options.no_elim:
-            delete_skip = self.skipstates.pop(0)
-            insert_skip = self.skipstates.pop(0)
+            eliminate = True
+            delete_skip = self.state_clock
+            self.state_clock += 1
+            insert_skip = self.state_clock
+            self.state_clock += 1
             ret += self.make_identities(delete_skip, nextstate)
             ret += self.make_swaps(delete_skip, nextstate + 1)
             ret += self.make_identities(insert_skip, nextstate)
             ret += self.make_swaps(insert_skip, nextstate + 1)
+            # substitutions will be handled in the main loop
             
         for sub in self.substitutions:
-            if (nextstate >= options.distance) or options.no_elim:
+            if not eliminate:
                 ret.append(maketrans(state, nextstate, sub[0], sub[1], self.substitutions[sub]))
-            elif sub[1] is self.epsilon: # deletion
+            elif sub[1] is self.epsilon: # (eliminating) deletion
                 ret.append(maketrans(state, delete_skip, sub[0], sub[1], self.substitutions[sub]))
                 for sub2 in self.substitutions:
                     # after deletion, refuse to do insertion
                     if sub2[0] != self.epsilon:
                         ret.append(maketrans(delete_skip, nextstate + 1, sub2[0], sub2[1], self.substitutions[sub2]))
-            elif sub[0] is self.epsilon: # insertion
+            elif sub[0] is self.epsilon: # (eliminating) insertion
                 ret.append(maketrans(state, insert_skip, sub[0], sub[1], self.substitutions[sub]))
                 for sub2 in self.substitutions:
                     # after insertion, refuse to do deletion
@@ -316,13 +322,14 @@ class Transducer:
 
     def make_transitions(self):
         for state in range(options.distance):
-            self.transitions.append(str(state + 1) + "\t0.0") # final states
+            if options.minimum_edit != 0:
+                options.minimum_edit -= 1
+            else:
+                self.transitions.append(str(state + 1) + "\t0.0") # final states
             self.transitions += self.make_identities(state)
             self.transitions += self.make_substitutions(state)
             self.transitions += self.make_swaps(state)
         self.transitions += self.make_identities(options.distance)
-        assert len(self.skipstates) == 0
-        assert len(self.swapstates) == 0
 
 transducer = Transducer(alphabet)
 
@@ -345,7 +352,7 @@ for transition in transducer.transitions:
 stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
 
 if options.verbose:
-    stderr_u8.write("\n" + str(max(transducer.skipstate, transducer.swapstate)) + " states and " + str(len(transducer.transitions)) + " transitions written for\n"+
+    stderr_u8.write("\n" + str(transducer.state_clock) + " states and " + str(len(transducer.transitions)) + " transitions written for "+
                      "distance " + str(options.distance) + " and base alphabet size " + str(len(transducer.alphabet)) +"\n\n")
     stderr_u8.write("The alphabet was:\n")
     for symbol, weight in alphabet.iteritems():
