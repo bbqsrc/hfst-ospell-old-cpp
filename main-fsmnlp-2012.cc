@@ -153,6 +153,107 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
 }
 
 int
+fallback_spell(const char* errmodel_filename1, const char* errmodel_filename2,
+	     const char* acceptor_filename)
+{
+    FILE* mutator_file1 = fopen(errmodel_filename1, "r");
+    if (mutator_file1 == NULL) {
+        std::cerr << "Could not open file " << errmodel_filename1
+              << std::endl;
+        return EXIT_FAILURE;
+    }
+    FILE* mutator_file2 = fopen(errmodel_filename2, "r");
+    if (mutator_file2 == NULL) {
+        std::cerr << "Could not open file " << errmodel_filename2
+              << std::endl;
+        return EXIT_FAILURE;
+    }
+    FILE* lexicon_file = fopen(acceptor_filename, "r");
+    if (lexicon_file == NULL) {
+        std::cerr << "Could not open file " << acceptor_filename
+              << std::endl;
+        return EXIT_FAILURE;
+    }
+    hfst_ol::Transducer * mutator1;
+    hfst_ol::Transducer * mutator2;
+    hfst_ol::Transducer * lexicon;
+    mutator1= new hfst_ol::Transducer(mutator_file1);
+    if (!mutator1->is_weighted()) {
+        std::cerr << "Error source was unweighted, exiting\n\n";
+        return EXIT_FAILURE;
+    }
+    mutator2= new hfst_ol::Transducer(mutator_file2);
+    if (!mutator2->is_weighted()) {
+        std::cerr << "Error source was unweighted, exiting\n\n";
+        return EXIT_FAILURE;
+    }
+    lexicon = new hfst_ol::Transducer(lexicon_file);
+    if (!lexicon->is_weighted()) {
+        std::cerr << "Lexicon was unweighted, exiting\n\n";
+        return EXIT_FAILURE;
+    }
+    
+    hfst_ol::Speller * speller1;
+    hfst_ol::Speller * speller2;
+
+    try {
+        speller1 = new hfst_ol::Speller(mutator1, lexicon);
+    } catch (hfst_ol::AlphabetTranslationException& e) {
+        std::cerr <<
+        "Unable to build speller - symbol " << e.what() << " not "
+        "present in lexicon's alphabet\n";
+        return EXIT_FAILURE;
+    }
+    try {
+        speller2 = new hfst_ol::Speller(mutator2, lexicon);
+    } catch (hfst_ol::AlphabetTranslationException& e) {
+        std::cerr <<
+        "Unable to build speller - symbol " << e.what() << " not "
+        "present in lexicon's alphabet\n";
+        return EXIT_FAILURE;
+    }
+    std::cout << "This is basic HFST spellchecker read in legacy " 
+        "mode; use zhfst version to test new format" << std::endl;
+    char * str = (char*) malloc(2000);
+    
+    while (!std::cin.eof()) {
+        std::cin.getline(str, 2000);
+        if (str[0] == '\0') {
+        break;
+        }
+        if (speller1->check(str)) {
+        std::cout << "\"" << str << "\" is in the lexicon 1\n\n";
+        } else {
+        hfst_ol::CorrectionQueue corrections1 = speller1->correct(str);
+        if (corrections1.size() > 0) {
+            std::cout << "Corrections for \"" << str << "\" w/ source 1:\n";
+            while (corrections1.size() > 0)
+            {
+            std::cout << corrections1.top().first << "    " << corrections1.top().second << std::endl;
+            corrections1.pop();
+            }
+            std::cout << std::endl;
+        } else {
+	    hfst_ol::CorrectionQueue corrections2 = speller2->correct(str);
+	    if (corrections2.size() > 0) {
+		std::cout << "Corrections for \"" << str << "\" w/ source 2:\n";
+		while (corrections2.size() > 0)
+		{
+		    std::cout << corrections2.top().first << "    " << corrections2.top().second << std::endl;
+		    corrections2.pop();
+		}
+		std::cout << std::endl;
+	    } else {
+		std::cout << "Unable to correct \"" << str << "\"!\n\n";
+	    }
+        }
+	}
+    }
+    return EXIT_SUCCESS;
+
+}
+
+int
 zhfst_spell(char* zhfst_filename)
 {
   ZHfstOspeller speller;
@@ -319,6 +420,10 @@ int main(int argc, char **argv)
 #endif
     // no more options, we should now be at the input filenames
     int rv = EXIT_SUCCESS;
+    if (optind == (argc - 3))
+      {
+	  rv = fallback_spell(argv[optind], argv[optind+1], argv[optind+2]);
+      }
     if (optind == (argc - 2))
       {
         rv = legacy_spell(argv[optind], argv[optind+1]);
