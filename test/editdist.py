@@ -8,6 +8,8 @@ import struct
 import codecs
 from optparse import OptionParser
 
+debug = True
+
 usage_string = "usage: %prog [options] alphabet"
 
 info_string = """
@@ -132,6 +134,9 @@ parser.add_option("", "--no-elim", action = "store_true", dest="no_elim",
                   help = "don't do redundancy elimination")
 parser.add_option("-m", "--minimum-edit", type = "int", dest = "minimum_edit",
                   help = "minimum accepting edit (default is 1)")
+parser.add_option("", "--no-string-initial-correction", action = "store_true",
+                  dest = "no_initial",
+                  help = "don't make corrections at the beginning of the string")
 parser.add_option("-i", "--input", dest = "inputfile",
                   help = "optional file with special edit-distance syntax",
                   metavar = "INPUT")
@@ -144,6 +149,7 @@ parser.set_defaults(epsilon = '@0@')
 parser.set_defaults(distance = 1)
 parser.set_defaults(swap = False)
 parser.set_defaults(no_elim = False)
+parser.set_defaults(no_initial = False)
 parser.set_defaults(minimum_edit = 1)
 parser.set_defaults(verbose = False)
 (options, args) = parser.parse_args()
@@ -215,6 +221,7 @@ class Transducer:
         # the first self.distance states are always used, for others we
         # grab state numbers from this counter
         self.state_clock = self.distance + 1
+        self.debug_messages = []
 
     def process(self, specification):
         parts = specification.split('\t')
@@ -276,6 +283,7 @@ class Transducer:
             for swap in self.swaps:
                 swapstate = self.state_clock
                 self.state_clock += 1
+                self.debug_messages.append(str(swapstate) + " is a swap state for " + swap[0][0] + " and " + swap[0][1])
                 ret.append(maketrans(state, swapstate, swap[0][0], swap[0][1], self.swaps[swap]))
                 ret.append(maketrans(swapstate, nextstate, swap[1][0], swap[1][1], 0.0))
         return ret
@@ -299,7 +307,6 @@ class Transducer:
             ret += self.make_swaps(delete_skip, nextstate + 1)
             ret += self.make_identities(insert_skip, nextstate)
             ret += self.make_swaps(insert_skip, nextstate + 1)
-            # substitutions will be handled in the main loop
             
         for sub in self.substitutions:
             if not eliminate:
@@ -327,6 +334,8 @@ class Transducer:
             else:
                 self.transitions.append(str(state + 1) + "\t0.0") # final states
             self.transitions += self.make_identities(state)
+            if state == 0 and options.no_initial:
+                continue # Don't do initial corrections
             self.transitions += self.make_substitutions(state)
             self.transitions += self.make_swaps(state)
         self.transitions += self.make_identities(options.distance)
@@ -361,3 +370,7 @@ if options.verbose:
         stderr_u8.write("The exclusions were:\n")
         for symbol in exclusions:
             stderr_u8.write(symbol + "\n")
+    print
+    if debug:
+        for message in transducer.debug_messages:
+            print message
