@@ -8,7 +8,7 @@ import struct
 import codecs
 from optparse import OptionParser
 
-debug = True
+debug = False
 
 usage_string = "usage: %prog [options] alphabet"
 
@@ -150,7 +150,7 @@ parser.set_defaults(distance = 1)
 parser.set_defaults(swap = False)
 parser.set_defaults(no_elim = False)
 parser.set_defaults(no_initial = False)
-parser.set_defaults(minimum_edit = 1)
+parser.set_defaults(minimum_edit = 0)
 parser.set_defaults(verbose = False)
 (options, args) = parser.parse_args()
 
@@ -332,13 +332,14 @@ class Transducer:
             if options.minimum_edit != 0:
                 options.minimum_edit -= 1
             else:
-                self.transitions.append(str(state + 1) + "\t0.0") # final states
+                self.transitions.append(str(state) + "\t0.0") # final states
             self.transitions += self.make_identities(state)
             if state == 0 and options.no_initial:
                 continue # Don't do initial corrections
             self.transitions += self.make_substitutions(state)
             self.transitions += self.make_swaps(state)
         self.transitions += self.make_identities(options.distance)
+        self.transitions.append(str(options.distance) + "\t0.0")
 
 transducer = Transducer(alphabet)
 
