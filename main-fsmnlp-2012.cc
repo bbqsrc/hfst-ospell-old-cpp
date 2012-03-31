@@ -122,8 +122,6 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
         "present in lexicon's alphabet\n";
         return EXIT_FAILURE;
     }
-    std::cout << "This is basic HFST spellchecker read in legacy " 
-        "mode; use zhfst version to test new format" << std::endl;
     char * str = (char*) malloc(2000);
     
     while (!std::cin.eof()) {
@@ -212,8 +210,6 @@ fallback_spell(const char* errmodel_filename1, const char* errmodel_filename2,
         "present in lexicon's alphabet\n";
         return EXIT_FAILURE;
     }
-    std::cout << "This is basic HFST spellchecker read in legacy " 
-        "mode; use zhfst version to test new format" << std::endl;
     char * str = (char*) malloc(2000);
     
     while (!std::cin.eof()) {
