@@ -126,9 +126,6 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
     
     while (!std::cin.eof()) {
         std::cin.getline(str, 2000);
-        if (str[0] == '\0') {
-        break;
-        }
         if (speller->check(str)) {
         std::cout << "\"" << str << "\" is in the lexicon\n\n";
         } else {
@@ -214,9 +211,6 @@ fallback_spell(const char* errmodel_filename1, const char* errmodel_filename2,
     
     while (!std::cin.eof()) {
         std::cin.getline(str, 2000);
-        if (str[0] == '\0') {
-        break;
-        }
         if (speller1->check(str)) {
         std::cout << "\"" << str << "\" is in the lexicon 1\n\n";
         } else {
