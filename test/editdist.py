@@ -333,9 +333,11 @@ class Transducer:
                 options.minimum_edit -= 1
             else:
                 self.transitions.append(str(state) + "\t0.0") # final states
-            self.transitions += self.make_identities(state)
             if state == 0 and options.no_initial:
+                self.transitions += self.make_identities(state, state + 1)
                 continue # Don't do initial corrections
+            else:
+                self.transitions += self.make_identities(state)
             self.transitions += self.make_substitutions(state)
             self.transitions += self.make_swaps(state)
         self.transitions += self.make_identities(options.distance)
