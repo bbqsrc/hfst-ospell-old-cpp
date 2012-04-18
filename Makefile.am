@@ -19,7 +19,7 @@
 ACLOCAL_AMFLAGS=-I m4
 
 # targets
-bin_PROGRAMS=hfst-ospell hfst-ospell-norvig hfst-ospell-cicling hfst-ospell-fsmnlp-2012
+bin_PROGRAMS=hfst-ospell hfst-ospell-norvig hfst-ospell-fsmnlp-2012
 lib_LTLIBRARIES=libhfstospell.la
 
 # library parts
