@@ -414,7 +414,7 @@ int main(int argc, char **argv)
       {
 	  rv = fallback_spell(argv[optind], argv[optind+1], argv[optind+2]);
       }
-    if (optind == (argc - 2))
+    else if (optind == (argc - 2))
       {
         rv = legacy_spell(argv[optind], argv[optind+1]);
       }
