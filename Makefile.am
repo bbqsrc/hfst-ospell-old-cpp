@@ -32,8 +32,8 @@ hfst_ospell_SOURCES=main.cc
 hfst_ospell_LDADD=libhfstospell.la
 hfst_ospell_norvig_SOURCES=main-norvig.cc
 hfst_ospell_norvig_LDADD=libhfstospell.la
-hfst_ospell_cicling_SOURCES=main-cicling.cc
-hfst_ospell_cicling_LDADD=libhfstospell.la
+#hfst_ospell_cicling_SOURCES=main-cicling.cc
+#hfst_ospell_cicling_LDADD=libhfstospell.la
 hfst_ospell_fsmnlp_2012_SOURCES=main-fsmnlp-2012.cc
 hfst_ospell_fsmnlp_2012_LDADD=libhfstospell.la
 # install headers for library in hfst's includedir
