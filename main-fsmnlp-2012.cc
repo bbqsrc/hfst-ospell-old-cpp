@@ -422,9 +422,9 @@ int main(int argc, char **argv)
       {
         rv = zhfst_spell(argv[optind]);
       }
-    else if (optind < (argc - 2))
+    else if (optind < (argc - 3))
       {
-        std::cerr << "No more than two free parameters allowed" << std::endl;
+        std::cerr << "No more than three free parameters allowed" << std::endl;
         print_short_help();
         return EXIT_FAILURE;
       }
