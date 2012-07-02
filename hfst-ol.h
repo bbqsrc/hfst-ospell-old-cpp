@@ -110,7 +110,23 @@ private:
             }
 	}
 
+    void read_property(bool &property, char ** raw)
+	{
+            unsigned int prop = *((unsigned int *) *raw);
+            if (prop == 0)
+            {
+                property = false;
+                return;
+            }
+            else
+            {
+                property = true;
+                return;
+            }
+	}
+
     void skip_hfst3_header(FILE * f);
+    void skip_hfst3_header(char ** f);
 
 public:
     TransducerHeader(FILE * f)
@@ -144,6 +160,35 @@ public:
             read_property(has_input_epsilon_transitions,f);
             read_property(has_input_epsilon_cycles,f);
             read_property(has_unweighted_input_epsilon_cycles,f);
+
+	}
+
+    // read header from raw memory
+    TransducerHeader(char ** raw)
+	{
+	    skip_hfst3_header(raw); // skip header iff it is present
+	    number_of_input_symbols = *(SymbolNumber*) *raw;
+	    (*raw) += sizeof(SymbolNumber);
+	    number_of_symbols = *(SymbolNumber*) *raw;
+	    (*raw) += sizeof(SymbolNumber);
+	    size_of_transition_index_table = *(TransitionTableIndex*) *raw;
+	    (*raw) += sizeof(TransitionTableIndex);
+	    size_of_transition_target_table = *(TransitionTableIndex*) *raw;
+	    (*raw) += sizeof(TransitionTableIndex);
+	    number_of_states = *(TransitionTableIndex*) *raw;
+	    (*raw) += sizeof(TransitionTableIndex);
+	    number_of_transitions = *(TransitionTableIndex*) *raw;
+	    (*raw) += sizeof(TransitionTableIndex);
+
+            read_property(weighted,raw);
+            read_property(deterministic,raw);
+            read_property(input_deterministic,raw);
+            read_property(minimized,raw);
+            read_property(cyclic,raw);
+            read_property(has_epsilon_epsilon_transitions,raw);
+            read_property(has_input_epsilon_transitions,raw);
+            read_property(has_input_epsilon_cycles,raw);
+            read_property(has_unweighted_input_epsilon_cycles,raw);
 
 	}
 
@@ -216,8 +261,10 @@ private:
     SymbolNumber other_symbol;
     SymbolNumber flag_state_size;
     StringSymbolMap * string_to_symbol;
+    void process_symbol(char * line);
     
     void read(FILE * f, SymbolNumber number_of_symbols);
+    void read(char ** raw, SymbolNumber number_of_symbols);
     
 public:
     TransducerAlphabet(FILE * f, SymbolNumber number_of_symbols):
@@ -227,6 +274,15 @@ public:
 	string_to_symbol(new StringSymbolMap)
 	{
 	    read(f, number_of_symbols);
+	}
+
+    TransducerAlphabet(char ** raw, SymbolNumber number_of_symbols):
+	kt(new KeyTable),
+	operations(new OperationMap),
+	other_symbol(NO_SYMBOL),
+	string_to_symbol(new StringSymbolMap)
+	{
+	    read(raw, number_of_symbols);
 	}
 
     KeyTable * get_key_table(void)
@@ -409,11 +465,19 @@ private:
   
     void read(FILE * f,
 	      TransitionTableIndex number_of_table_entries);
+    void read(char ** raw,
+	      TransitionTableIndex number_of_table_entries);
 public:
     IndexTableReader(FILE * f,
 		     TransitionTableIndex number_of_table_entries)
 	{
 	    read(f, number_of_table_entries);
+	}
+    
+    IndexTableReader(char ** raw,
+		     TransitionTableIndex number_of_table_entries)
+	{
+	    read(raw, number_of_table_entries);
 	}
     
     TransitionIndexVector &operator() (void)
@@ -427,11 +491,19 @@ protected:
   
     void read(FILE * f,
 	      TransitionTableIndex number_of_table_entries);
+    void read(char ** raw,
+	      TransitionTableIndex number_of_table_entries);
 public:
     TransitionTableReader(FILE * f,
                           TransitionTableIndex transition_count)
 	{
 	    read(f, transition_count);
+	}
+  
+    TransitionTableReader(char ** raw,
+                          TransitionTableIndex transition_count)
+	{
+	    read(raw, transition_count);
 	}
   
     TransitionVector &operator() (void)

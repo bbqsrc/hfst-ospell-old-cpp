@@ -70,6 +70,32 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
     }
 }
     
+void TransducerHeader::skip_hfst3_header(char ** raw)
+{
+    const char* header1 = "HFST";
+    unsigned int header_loc = 0; // how much of the header has been found
+    int c;
+    for(header_loc = 0; header_loc < strlen(header1) + 1; header_loc++)
+    {
+	if(**raw != header1[header_loc]) {
+	    break;
+	}
+	++(*raw);
+    }
+    if(header_loc == strlen(header1) + 1) // we found it
+    {
+	unsigned short remaining_header_len = *((unsigned short *) *raw);
+	(*raw) += sizeof(unsigned short) + 1 + remaining_header_len;
+    } else // nope. put back what we've taken
+    {
+	--(*raw); // first the non-matching character
+	for(int i = header_loc - 1; i>=0; i--) {
+// then the characters that did match (if any)
+	    --(*raw);
+	    }
+    }
+}
+    
 void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
 {
     char * line = (char *) malloc(MAX_SYMBOL_BYTES);
@@ -98,8 +124,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
 	    ++sym;
 	}
 	*sym = 0;
-
-	// Now we detect and handle special symbols, which begin and end with @
+	// Detect and handle special symbols, which begin and end with @
 	if (line[0] == '@' && line[strlen(line) - 1] == '@') {
 	    if (strlen(line) >= 5 && line[2] == '.') { // flag diacritic
 		std::string feat;
@@ -155,6 +180,83 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
     flag_state_size = feature_bucket.size();
 }
 
+void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
+{
+    std::map<std::string, SymbolNumber> feature_bucket;
+    std::map<std::string, ValueNumber> value_bucket;
+    value_bucket[std::string()] = 0; // empty value = neutral
+    ValueNumber val_num = 1;
+    SymbolNumber feat_num = 0;
+
+    kt->push_back(std::string("")); // zeroth symbol is epsilon
+    while (**raw != 0) {
+	// pass over epsilon
+	++(*raw);
+    }
+    ++(*raw);
+    
+    for (SymbolNumber k = 1; k < number_of_symbols; ++k) {
+	
+	// Detect and handle special symbols, which begin and end with @
+	if ((*raw)[0] == '@' && *raw[strlen(*raw) - 1] == '@') {
+	    if (strlen(*raw) >= 5 && *raw[2] == '.') { // flag diacritic
+		std::string feat;
+		std::string val;
+		FlagDiacriticOperator op = P; // for the compiler
+		switch (*raw[1]) {
+		case 'P': op = P; break;
+		case 'N': op = N; break;
+		case 'R': op = R; break;
+		case 'D': op = D; break;
+		case 'C': op = C; break;
+		case 'U': op = U; break;
+		}
+		char * c = *raw;
+		for (c +=3; *c != '.' && *c != '@'; c++) { feat.append(c,1); }
+		if (*c == '.')
+		{
+		    for (++c; *c != '@'; c++) { val.append(c,1); }
+		}
+		if (feature_bucket.count(feat) == 0)
+		{
+		    feature_bucket[feat] = feat_num;
+		    ++feat_num;
+		}
+		if (value_bucket.count(val) == 0)
+		{
+		    value_bucket[val] = val_num;
+		    ++val_num;
+		}
+	  
+		operations->insert(
+		    std::pair<SymbolNumber, FlagDiacriticOperation>(
+			k,
+			FlagDiacriticOperation(
+			    op, feature_bucket[feat], value_bucket[val])));
+
+		kt->push_back(std::string(""));
+		continue;
+	  
+	    } else if (strcmp(*raw, "@_UNKNOWN_SYMBOL_@") == 0) { // other symbol
+		other_symbol = k;
+		kt->push_back(std::string(""));
+		continue;
+	    } else { // we don't know what this is, ignore and suppress
+		kt->push_back(std::string(""));
+		continue;
+	    }
+	}
+	kt->push_back(std::string(*raw));
+	string_to_symbol->operator[](std::string(*raw)) = k;
+	
+	while (**raw != 0) {
+	    ++(*raw);
+	}
+	++(*raw);
+    }
+    flag_state_size = feature_bucket.size();
+}
+
 void IndexTableReader::read(FILE * f,
 			    TransitionTableIndex number_of_table_entries)
 {
@@ -175,6 +277,24 @@ void IndexTableReader::read(FILE * f,
 	indices.push_back(new TransitionIndex(*input,*index));
     }
     free(index_area);
+}
+
+void IndexTableReader::read(char ** raw,
+			    TransitionTableIndex number_of_table_entries)
+{
+    size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
+
+    for (size_t i = 0;
+	 i < number_of_table_entries;
+	 ++i)
+    {
+	size_t j = i * TransitionIndex::SIZE;
+	SymbolNumber * input = (SymbolNumber*)((*raw) + j);
+	TransitionTableIndex * index = 
+	    (TransitionTableIndex*)((*raw) + j + sizeof(SymbolNumber));
+	indices.push_back(new TransitionIndex(*input,*index));
+    }
+    (*raw) += table_size;
 }
 
 void TransitionTableReader::read(FILE * f,
@@ -205,6 +325,31 @@ void TransitionTableReader::read(FILE * f,
       
     }
     free(transition_area);
+}
+
+void TransitionTableReader::read(char ** raw,
+				 TransitionTableIndex number_of_table_entries)
+{
+    size_t table_size = number_of_table_entries*Transition::SIZE;
+    for (size_t i = 0; i < number_of_table_entries; ++i)
+    {
+	size_t j = i * Transition::SIZE;
+	SymbolNumber * input = (SymbolNumber*)((*raw) + j);
+	SymbolNumber * output = 
+	    (SymbolNumber*)((*raw) + j + sizeof(SymbolNumber));
+	TransitionTableIndex * target = 
+	    (TransitionTableIndex*)((*raw) + j + 2 * sizeof(SymbolNumber));
+	Weight * weight =
+	    (Weight*)((*raw) + j + 2 * sizeof(SymbolNumber) +
+		      sizeof(TransitionTableIndex));
+      
+	transitions.push_back(new Transition(*input,
+					     *output,
+					     *target,
+					     *weight));
+      
+    }
+    (*raw) += table_size;
 }
 
 void LetterTrie::add_string(const char * p, SymbolNumber symbol_key)

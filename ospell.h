@@ -121,6 +121,19 @@ public:
 	    set_symbol_table();
 	}
 
+    Transducer(char * raw):
+	header(TransducerHeader(&raw)),
+	alphabet(TransducerAlphabet(&raw, header.symbol_count())),
+	keys(alphabet.get_key_table()),
+	index_reader(&raw,header.index_table_size()),
+	transition_reader(&raw,header.target_table_size()),
+	encoder(keys,header.input_symbol_count()),
+	indices(index_reader()),
+	transitions(transition_reader())
+	{
+	    set_symbol_table();
+	}
+
     TransitionIndexVector &indices;
   
     TransitionVector &transitions;
