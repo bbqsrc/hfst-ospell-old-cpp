@@ -41,15 +41,16 @@ AC_SUBST(HFSTOSPELL_VERSION)
 AC_SUBST(HFSTOSPELL_NAME)
 
 # Settings
-AC_ARG_WITH([extract_to],
-            [AS_HELP_STRING([--with-extract-to=TARGET],
-                           [extract zhfst archives to tmpdir or mem @<:@default=mem@:>@])]
-            [], [with_extract_to=mem])
-AS_IF([test x$with_extract_to=xmem], [AC_DEFINE([ZHFST_EXTRACT_TO_MEM], [1], 
-          [Define to extract zhfst archives to char buffer])],
-      [AS_IF([test x$with_extract_to=tmpdir], [AC_DEFINE([ZHFST_EXTRACT_TO_TMPDIR], [1],
-                 [Define to extract zhfst to tmp dir])],
-                 [AC_MSG_ERROR([must define --with-extract-to=mem or =tmpdir])])])
+AC_ARG_WITH([extract],
+            [AS_HELP_STRING([--with-extract=TARGET],
+                           [extract zhfst archives to tmpdir or mem @<:@default=mem@:>@])],
+            [with_extract=$withval], [with_extract=mem])
+AS_IF([test "x$with_extract" = xmem], [AC_DEFINE([ZHFST_EXTRACT_TO_MEM], [1], 
+                        [Define to extract zhfst archives to char buffer])],
+          [AS_IF([test "x$with_extract" = xtmpdir], 
+                 [AC_DEFINE([ZHFST_EXTRACT_TO_TMPDIR], [1],
+                            [Define to extract zhfst to tmp dir])],
+          [AC_MSG_ERROR([Use with-extract to mem or tmpdir])])])
 
 # Checks for programs
 AC_PROG_CC
@@ -92,6 +93,7 @@ AC_OUTPUT
 cat <<EOF
 -- Building $PACKAGE_STRING
  * zhfst support: $ac_cv_lib_archive_main
+    * extracting to: $with_extract
  * libxmlpp pkg: $pkg_cv_LIBXMLPP_LIBS
 EOF
 

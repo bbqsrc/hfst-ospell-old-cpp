@@ -39,6 +39,7 @@ using std::map;
 #include "hfst-ol.h"
 #include "ZHfstOspeller.h"
 
+
 #ifndef HAVE_STRNDUP
 char*
 strndup(const char* s, size_t n)
@@ -512,7 +513,7 @@ extract_to_mem(archive* ar, archive_entry* entry, size_t* n)
   }
 #endif
 
-#if ZHFST_EXTRACT_TO_TMP_DIR
+#if ZHFST_EXTRACT_TO_TMPDIR
 static
 char*
 extract_to_tmp_dir(archive* ar)
@@ -520,13 +521,9 @@ extract_to_tmp_dir(archive* ar)
     char* rv = strdup("/tmp/zhfstospellXXXXXXXX");
     int temp_fd = mkstemp(rv);
     int rr = archive_read_data_into_fd(ar, temp_fd);
-    if (rr == ARCHIVE_EOF)
+    if ((rr != ARCHIVE_EOF) && (rr != ARCHIVE_OK))
       {
-        rr = ARCHIVE_OK;
-      }
-    else 
-      {
-        throw ZHfstZipReadingError("Archive not EOF'd");
+        throw ZHfstZipReadingError("Archive not EOF'd or OK'd");
       }
     close(temp_fd);
     return rv;
@@ -592,17 +589,9 @@ void
 ZHfstOspeller::read_zhfst(const string& filename)
   {
     struct archive* ar = archive_read_new();
-#if ZHFST_EXTRACT_TO_TMP_DIR
-    struct archive* aw = archive_write_disk_new();
-#endif
     struct archive_entry* entry = 0;
     archive_read_support_compression_all(ar);
     archive_read_support_format_all(ar);
-#if ZHFST_EXTRACT_TO_TMP_DIR
-    archive_write_disk_set_options(aw, 
-                                   ZHFST_EXTRACT_TIME);
-    archive_write_disk_set_standard_lookup(aw);
-#endif
     int rr = archive_read_open_filename(ar, filename.c_str(), 10240);
     if (rr != ARCHIVE_OK)
       {
@@ -619,7 +608,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
         char* filename = strdup(archive_entry_pathname(entry));
         if (strncmp(filename, "acceptor.", strlen("acceptor.")) == 0)
           {
-#if ZHFST_EXTRACT_TO_TMP_DIR
+#if ZHFST_EXTRACT_TO_TMPDIR
             char* temporary = extract_to_tmp_dir(ar);
 #elif ZHFST_EXTRACT_TO_MEM
             size_t total_length = 0;
@@ -640,7 +629,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
                     }
               }
             char* descr = strndup(p, descr_len);
-#if ZHFST_EXTRACT_TO_TMP_DIR
+#if ZHFST_EXTRACT_TO_TMPDIR
             FILE* f = fopen(temporary, "r");
             if (f == NULL)
               {
@@ -655,7 +644,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
           }
         else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
           {
-#if ZHFST_EXTRACT_TO_TMP_DIR
+#if ZHFST_EXTRACT_TO_TMPDIR
             char* temporary = extract_to_tmp_dir(ar);
 #elif ZHFST_EXTRACT_TO_MEM
             size_t total_length = 0;
@@ -676,7 +665,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
                   }
               }
             char* descr = strndup(p, descr_len);
-#if ZHFST_EXTRACT_TO_TMP_DIR
+#if ZHFST_EXTRACT_TO_TMPDIR
             FILE* f = fopen(temporary, "r");
             if (NULL == f)
               {
@@ -691,7 +680,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
           } // if acceptor or errmodel
         else if (strcmp(filename, "index.xml") == 0)
           {
-#if ZHFST_EXTRACT_TO_TMP_DIR
+#if ZHFST_EXTRACT_TO_TMPDIR
             char* temporary = extract_to_tmp_dir(ar);
             metadata_.read_xml(temporary);
 #elif ZHFST_EXTRACT_TO_MEM
