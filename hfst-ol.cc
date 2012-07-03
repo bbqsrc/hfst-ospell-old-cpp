@@ -74,7 +74,7 @@ void TransducerHeader::skip_hfst3_header(char ** raw)
 {
     const char* header1 = "HFST";
     unsigned int header_loc = 0; // how much of the header has been found
-    int c;
+    //int c;
     for(header_loc = 0; header_loc < strlen(header1) + 1; header_loc++)
     {
 	if(**raw != header1[header_loc]) {

@@ -24,6 +24,9 @@
 
 using std::map;
 
+#if HAVE_LIBXML
+#  include <libxml++/libxml++.h>
+#endif
 
 #include "ospell.h"
 #include "hfst-ol.h"
@@ -95,12 +98,17 @@ namespace hfst_ol
         //!        values
         ZHfstOspellerXmlMetadata();
         void read_xml(const std::string& filename);
+        void read_xml(const char* data, size_t data_length);
         std::string debug_dump() const;
 
         public:
         ZHfstOspellerInfoMetadata info_;
         std::map<std::string,ZHfstOspellerAcceptorMetadata> acceptor_;
         std::vector<ZHfstOspellerErrModelMetadata> errmodel_;
+#if HAVE_LIBXML
+        private:
+        void parse_xml(const xmlpp::Document* doc);
+#endif
       };
     //! @brief ZHfstOspeller class holds one speller contained in one
     //!        zhfst file.

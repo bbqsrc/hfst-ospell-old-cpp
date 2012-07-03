@@ -18,12 +18,16 @@
 #endif
 
 // C
-#include <libxml/tree.h>
-#include <libxml/parser.h>
-#include <libxml/xmlmemory.h>
-#include <archive.h>
-#include <archive_entry.h>
+#if HAVE_ARCHIVE_H
+#  include <archive.h>
+#endif
+#if HAVE_ARCHIVE_ENTRY_H
+#  include <archive_entry.h>
+#endif
 // C++
+#if HAVE_LIBXML
+#  include <libxml++/libxml++.h>
+#endif
 #include <string>
 #include <map>
 
@@ -42,7 +46,7 @@ strndup(const char* s, size_t n)
     char* rv = static_cast<char*>(malloc(sizeof(char)*n+1));
     if (rv == NULL)
       {
-        return rv;
+          return rv;
       }
     rv = static_cast<char*>(memcpy(rv, s, n));
     if (rv == NULL)
@@ -57,144 +61,162 @@ strndup(const char* s, size_t n)
 namespace hfst_ol 
   {
 
-    ZHfstOspellerXmlMetadata::ZHfstOspellerXmlMetadata()
-      {
-        info_.locale_ = "und";
-      }
-
-void
-ZHfstOspellerXmlMetadata::read_xml(const string& filename)
+ZHfstOspellerXmlMetadata::ZHfstOspellerXmlMetadata()
   {
-    xmlDocPtr doc;
-    xmlNodePtr cur;
-    doc = xmlParseFile(filename.c_str());
-    cur = xmlDocGetRootElement(doc);
+    info_.locale_ = "und";
+  }
+
+#if HAVE_LIBXML
+void
+ZHfstOspellerXmlMetadata::parse_xml(const xmlpp::Document* doc)
+  {
+    if (NULL == doc)
+      {
+        throw ZHfstMetaDataParsingError("Cannot parse XML data");
+      }
+    xmlpp::Node* cur = doc->get_root_node();
     // check validity
     if (NULL == cur)
       {
-        xmlFreeDoc(doc);
         throw ZHfstMetaDataParsingError("cannot parse XML file");
       }
-    if (xmlStrcmp(cur->name, xmlCharStrdup("hfstspeller")) != 0)
+    xmlpp::Element* el = dynamic_cast<xmlpp::Element*>(cur);
+    if (NULL == el)
       {
-        xmlFreeDoc(doc);
+        throw ZHfstMetaDataParsingError("cannot parse XML file");
+      }
+    else if (el->get_name() != "hfstspeller")
+      {
         throw ZHfstMetaDataParsingError("could not find <hfstspeller> "
-                                        "from XML file");
+                                        "root from XML file");
       }
     // check versions
-    // parse
-    cur = cur->xmlChildrenNode;
-    bool infoRead = false;
-    while (cur != NULL)
+    const xmlpp::Attribute* hfstversion = el->get_attribute("hfstversion");
+    if (NULL == hfstversion)
       {
-        if (xmlStrcmp(cur->name, xmlCharStrdup("info")) == 0)
+        throw ZHfstMetaDataParsingError("No hfstversion attribute in root");
+      }
+    else if (hfstversion->get_value() != "3")
+      {
+        throw ZHfstMetaDataParsingError("Unrecognised HFST version...");
+      }
+    const xmlpp::Attribute* dtdversion = el->get_attribute("dtdversion");
+    if (NULL == dtdversion)
+      {
+        throw ZHfstMetaDataParsingError("No dtdversion attribute in root");
+      }
+    else if (dtdversion->get_value() != "1.0")
+      {
+        throw ZHfstMetaDataParsingError("Unrecognised DTD version...");
+      }
+    // parse 
+    xmlpp::Node::NodeList nodes = cur->get_children();
+    for (xmlpp::Node::NodeList::iterator node = nodes.begin();
+         node != nodes.end();
+         ++node)
+      {
+        el = dynamic_cast<xmlpp::Element*>(*node);
+        if ((*node)->get_name() == "info")
           {
-            xmlNodePtr info = cur->xmlChildrenNode;
-            while (info != NULL)
+            xmlpp::Node::NodeList infos = (*node)->get_children();
+            for (xmlpp::Node::NodeList::iterator info = infos.begin();
+                 info != infos.end();
+                 ++info)
               {
-                xmlChar* data = xmlNodeListGetString(doc,
-                                                      info->xmlChildrenNode,
-                                                      1);
-                if (xmlStrcmp(info->name, 
-                              xmlCharStrdup("locale")) == 0)
+                el = dynamic_cast<xmlpp::Element*>(*info);
+                if ((*info)->get_name() == "locale")
                   {
                     if ((info_.locale_ != "und") && 
-                        (xmlStrcmp(xmlCharStrdup(info_.locale_.c_str()), data) != 0))
+                        (info_.locale_ != el->get_child_text()->get_content()))
                       {
                         // locale in XML mismatches previous definition
                         // warnable, but overridden as per spec.
+                        fprintf(stderr, "Warning: mismatched languages in "
+                                "file data (%s) and XML (%s)\n",
+                                info_.locale_.c_str(), el->get_child_text()->get_content().c_str());
                       }
-                    info_.locale_ = reinterpret_cast<char*>(data);
+                    info_.locale_ = el->get_child_text()->get_content();
                   }
-                else if (xmlStrcmp(info->name,
-                                   xmlCharStrdup("title")) == 0)
+                else if ((*info)->get_name() == "title")
                   {
-                    xmlChar* lang = xmlGetProp(info, xmlCharStrdup("lang"));
+                    const xmlpp::Attribute* lang = el->get_attribute("lang");
                     if (lang != NULL)
                       {
-                        info_.title_[reinterpret_cast<char*>(lang)] = reinterpret_cast<char*>(data);
+                        info_.title_[lang->get_value()] = el->get_child_text()->get_content();
                       }
                     else
                       {
-                        info_.title_[info_.locale_] = reinterpret_cast<char*>(data);
+                        info_.title_[info_.locale_] = el->get_child_text()->get_content();
                       }
                   }
-                else if (xmlStrcmp(info->name,
-                                   xmlCharStrdup("description")) == 0)
+                else if ((*info)->get_name() == "description")
                   {
-                    xmlChar* lang = xmlGetProp(info, xmlCharStrdup("lang"));
+                    const xmlpp::Attribute* lang = el->get_attribute("lang");
                     if (lang != NULL)
                       {
-                        info_.description_[reinterpret_cast<char*>(lang)] = reinterpret_cast<char*>(data);
+                        info_.description_[lang->get_value()] = el->get_child_text()->get_content();
                       }
                     else
                       {
-                        info_.description_[info_.locale_] = reinterpret_cast<char*>(data);
+                        info_.description_[info_.locale_] = el->get_child_text()->get_content();
                       }
                   }
-                else if (xmlStrcmp(info->name,
-                                   xmlCharStrdup("version")) == 0)
+                else if ((*info)->get_name() == "version")
                   {
-                    xmlChar* revision = xmlGetProp(info, xmlCharStrdup("vcsrev"));
+                    const xmlpp::Attribute* revision = el->get_attribute("vcsrev");
                     if (revision != NULL)
                       {
-                        info_.vcsrev_ = reinterpret_cast<char*>(revision);
+                        info_.vcsrev_ = revision->get_value();
                       }
-                    info_.version_ = reinterpret_cast<char*>(data);
+                    info_.version_ = el->get_child_text()->get_content();
                   }
-                else if (xmlStrcmp(info->name,
-                                   xmlCharStrdup("date")) == 0)
+                else if ((*info)->get_name() == "date")
                   {
-                    info_.date_ = reinterpret_cast<char*>(data);
+                    info_.date_ = el->get_child_text()->get_content();
                   }
-                else if (xmlStrcmp(info->name,
-                                   xmlCharStrdup("producer")) == 0)
+                else if ((*info)->get_name() == "producer")
                   {
-                    info_.producer_ = reinterpret_cast<char*>(data);
+                    info_.producer_ = el->get_child_text()->get_content();
                   }
-                else if (xmlStrcmp(info->name,
-                                   xmlCharStrdup("contact")) == 0)
+                else if ((*info)->get_name() == "contact")
                   {
-                    xmlChar* email = xmlGetProp(info, 
-                                                xmlCharStrdup("email"));
-                    xmlChar* website = xmlGetProp(info, 
-                                                  xmlCharStrdup("website"));
+                    const xmlpp::Attribute* email = el->get_attribute("email");
+                    const xmlpp::Attribute* website = el->get_attribute("website");
                     if (email != NULL)
                       {
-                        info_.email_ = reinterpret_cast<char*>(email);
+                        info_.email_ = email->get_value();
                       }
                     if (website != NULL)
                       {
-                        info_.website_ = reinterpret_cast<char*>(website);
+                        info_.website_ = website->get_value();
                       }
                   }
                 else
                   {
-                    if (!xmlIsBlankNode(info))
+                    const xmlpp::TextNode* text = dynamic_cast<xmlpp::TextNode*>(*info);
+                    if ((text == NULL) || (!text->is_white_space()))
                       {
                         fprintf(stderr, "DEBUG: unknown info node %s\n",
-                                reinterpret_cast<const char*>(info->name));
+                                (*info)->get_name().c_str());
                       }
                   }
-                info = info->next;
               } // while info childs
           } // if info node
-        else if (xmlStrcmp(cur->name,
-                           xmlCharStrdup("acceptor")) == 0)
+        else if ((*node)->get_name() == "acceptor")
           {
-            xmlChar* xid = xmlGetProp(cur, xmlCharStrdup("id"));
+            xmlpp::Attribute* xid = el->get_attribute("id");
             if (xid == NULL)
               {
                 throw ZHfstMetaDataParsingError("id missing in acceptor");
               }
-            char* id = reinterpret_cast<char*>(xid);
-            char* p = strchr(id, '.');
+            const char* id = xid->get_value().c_str();
+            const char* p = strchr(id, '.');
             if (p == NULL)
               {
                 throw ZHfstMetaDataParsingError("illegal id in acceptor");
               }
             size_t descr_len = 0;
-            for (char* q = p + 1; q != '\0'; q++)
+            for (const char* q = p + 1; q != '\0'; q++)
               {
                 if (*q == '.')
                   {
@@ -205,75 +227,68 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
             char* descr = strndup(p + 1, descr_len);
             acceptor_[descr].descr_ = descr;
             acceptor_[descr].id_ = id;
-            xmlChar* trtype = xmlGetProp(cur, xmlCharStrdup("transtype"));
+            const xmlpp::Attribute* trtype = el->get_attribute("transtype");
             if (trtype != NULL)
               {
-                acceptor_[descr].transtype_ = reinterpret_cast<char*>(trtype);
+                acceptor_[descr].transtype_ = trtype->get_value();
               }
-            xmlChar* xtype = xmlGetProp(cur, xmlCharStrdup("type"));
+            const xmlpp::Attribute* xtype = el->get_attribute("type");
             if (xtype != NULL)
               {
-                acceptor_[descr].type_ = reinterpret_cast<char*>(xtype);
+                acceptor_[descr].type_ = xtype->get_value();
               }
-            xmlNodePtr acc = cur->xmlChildrenNode;
-            while (acc != NULL)
+            xmlpp::Node::NodeList accs = (*node)->get_children();
+            for (xmlpp::Node::NodeList::iterator acc = accs.begin();
+                 acc != accs.end();
+                 ++acc)
               {
-                xmlChar* data = xmlNodeListGetString(doc,
-                                                      acc->xmlChildrenNode,
-                                                      1);
-                if (xmlStrcmp(acc->name,
-                                   xmlCharStrdup("title")) == 0)
+                el = dynamic_cast<xmlpp::Element*>(*acc);
+                if ((*acc)->get_name() == "title")
                   {
-                    xmlChar* lang = xmlGetProp(acc, xmlCharStrdup("lang"));
+                    const xmlpp::Attribute* lang = el->get_attribute("lang");
                     if (lang != NULL)
                       {
-                        acceptor_[descr].title_[reinterpret_cast<char*>(lang)] = reinterpret_cast<char*>(data);
+                        acceptor_[descr].title_[lang->get_value()] = el->get_child_text()->get_content();
                       }
                     else
                       {
-                        acceptor_[descr].title_[info_.locale_] = reinterpret_cast<char*>(data);
+                        acceptor_[descr].title_[info_.locale_] = el->get_child_text()->get_content();
                       }
                   }
-                else if (xmlStrcmp(acc->name,
-                                   xmlCharStrdup("description")) == 0)
+                else if ((*acc)->get_name() == "description")
                   {
-                    xmlChar* lang = xmlGetProp(acc, xmlCharStrdup("lang"));
+                    const xmlpp::Attribute* lang = el->get_attribute("lang");
                     if (lang != NULL)
                       {
-                        acceptor_[descr].description_[reinterpret_cast<char*>(lang)] = reinterpret_cast<char*>(data);
+                        acceptor_[descr].description_[lang->get_value()] = el->get_child_text()->get_content();
                       }
                     else
                       {
-                        acceptor_[descr].description_[info_.locale_] = reinterpret_cast<char*>(data);
+                        acceptor_[descr].description_[info_.locale_] = el->get_child_text()->get_content();
                       }
                   }
-                else
+                else if (el != NULL)
                   {
-                    if (!xmlIsBlankNode(acc))
-                      {
-                        fprintf(stderr, "DEBUG: unknown info node %s\n",
-                                reinterpret_cast<const char*>(acc->name));
-                      }
+                    fprintf(stderr, "DEBUG: unknown info node %s\n",
+                            el->get_name().c_str());
                   }
-                acc = acc->next;
               }
           } // acceptor node
-        else if (xmlStrcmp(cur->name,
-                           xmlCharStrdup("errmodel")) == 0)
+        else if ((*node)->get_name() == "errmodel")
           {
-            xmlChar* xid = xmlGetProp(cur, xmlCharStrdup("id"));
+            xmlpp::Attribute* xid = el->get_attribute("id");
             if (xid == NULL)
               {
                 throw ZHfstMetaDataParsingError("id missing in errmodel");
               }
-            char* id = reinterpret_cast<char*>(xid);
-            char* p = strchr(id, '.');
+            const char* id = (xid->get_value().c_str());
+            const char* p = strchr(id, '.');
             if (p == NULL)
               {
                 throw ZHfstMetaDataParsingError("illegal id in errmodel");
               }
             size_t descr_len = 0;
-            for (char* q = p + 1; q != '\0'; q++)
+            for (const char* q = p + 1; q != '\0'; q++)
               {
                 if (*q == '.')
                   {
@@ -288,45 +303,42 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
             errmodel_[0].descr_ = descr;
               }
             errmodel_[0].id_ = id;
-            xmlNodePtr errm = cur->xmlChildrenNode;
-            while (errm != NULL)
+            xmlpp::Node::NodeList errms = (*node)->get_children();
+            for (xmlpp::Node::NodeList::iterator errm = errms.begin();
+                   errm != errms.end();
+                   ++errm)
               {
-                xmlChar* data = xmlNodeListGetString(doc,
-                                                      errm->xmlChildrenNode,
-                                                      1);
-                if (xmlStrcmp(errm->name,
-                                   xmlCharStrdup("title")) == 0)
+                el = dynamic_cast<xmlpp::Element*>(*errm);
+                if ((*errm)->get_name() == "title")
                   {
-                    xmlChar* lang = xmlGetProp(errm, xmlCharStrdup("lang"));
+                    const xmlpp::Attribute* lang = el->get_attribute("lang");
                     if (lang != NULL)
                       {
-                        errmodel_[0].title_[reinterpret_cast<char*>(lang)] = reinterpret_cast<char*>(data);
+                        errmodel_[0].title_[lang->get_value()] = el->get_child_text()->get_content();
                       }
                     else
                       {
-                        errmodel_[0].title_[info_.locale_] = reinterpret_cast<char*>(data);
+                        errmodel_[0].title_[info_.locale_] = el->get_child_text()->get_content();
                       }
                   }
-                else if (xmlStrcmp(errm->name,
-                                   xmlCharStrdup("description")) == 0)
+                else if ((*errm)->get_name() == "description")
                   {
-                    xmlChar* lang = xmlGetProp(errm, xmlCharStrdup("lang"));
+                    const xmlpp::Attribute* lang = el->get_attribute("lang");
                     if (lang != NULL)
                       {
-                        errmodel_[0].description_[reinterpret_cast<char*>(lang)] = reinterpret_cast<char*>(data);
+                        errmodel_[0].description_[lang->get_value()] = el->get_child_text()->get_content();
                       }
                     else
                       {
-                        errmodel_[0].description_[info_.locale_] = reinterpret_cast<char*>(data);
+                        errmodel_[0].description_[info_.locale_] = el->get_child_text()->get_content();
                       }
                   }
-                else if (xmlStrcmp(errm->name,
-                                   xmlCharStrdup("type")) == 0)
+                else if ((*errm)->get_name() == "type")
                   {
-                    xmlChar* type = xmlGetProp(errm, xmlCharStrdup("type"));
-                    if (type != NULL)
+                    const xmlpp::Attribute* xtype = el->get_attribute("type");
+                    if (xtype != NULL)
                       {
-                        errmodel_[0].type_.push_back(reinterpret_cast<char*>(type));
+                        errmodel_[0].type_.push_back(xtype->get_value());
 
                       }
                     else
@@ -334,34 +346,52 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
                         throw ZHfstMetaDataParsingError("No type in type");
                       }
                   }
-                else if (xmlStrcmp(errm->name,
-                                   xmlCharStrdup("model")) == 0)
+                else if ((*errm)->get_name() == "model")
                   {
-                    errmodel_[0].model_.push_back(reinterpret_cast<char*>(data));
+                    errmodel_[0].model_.push_back(el->get_child_text()->get_content());
                   }
-                else
+                else if (el != NULL)
                   {
-                    if (!xmlIsBlankNode(errm))
-                      {
-                        fprintf(stderr, "DEBUG: unknown info node %s\n",
-                                reinterpret_cast<const char*>(errm->name));
-                      }
+                    fprintf(stderr, "DEBUG: unknown errm node %s\n",
+                            (*errm)->get_name().c_str());
                   }
-                errm = errm->next;
               }
           } // errmodel node
-        else
+        else if (el != NULL)
           {
-            if (!xmlIsBlankNode(cur))
-              {
-                fprintf(stderr, "DEBUG: unknown top level node %s\n",
-                        reinterpret_cast<const char*>(cur->name));
-              }
+            fprintf(stderr, "DEBUG: unknown top level node %s\n",
+                    el->get_name().c_str());
           } // unknown root child node
-        cur = cur->next;
       }
-    xmlFreeDoc(doc);
   }
+
+void
+ZHfstOspellerXmlMetadata::read_xml(const char* xml_data, size_t xml_len)
+  {
+    xmlpp::DomParser parser;
+    parser.set_substitute_entities();
+    parser.parse_memory_raw(reinterpret_cast<const unsigned char*>(xml_data),
+                            xml_len);
+    this->parse_xml(parser.get_document());
+  }
+
+void
+ZHfstOspellerXmlMetadata::read_xml(const string& filename)
+  {
+    xmlpp::DomParser parser;
+    parser.set_substitute_entities();
+    parser.parse_file(filename);
+    this->parse_xml(parser.get_document());
+  }
+#else
+void
+    ZHfstOspellerXmlMetadata::read_xml(const void*, size_t)
+      {}
+void
+    ZHfstOspellerXmlMetadata::read_xml(const char*)
+      {}
+#endif // HAVE_LIBXML
+
 
 string
 ZHfstOspellerXmlMetadata::debug_dump() const
@@ -445,11 +475,69 @@ ZHfstOspellerXmlMetadata::debug_dump() const
     return retval;
   }
 
+#if ZHFST_EXTRACT_TO_MEM
+static
+void*
+extract_to_mem(archive* ar, archive_entry* entry, size_t* n)
+  {
+    size_t full_length = 0;
+    const struct stat* st = archive_entry_stat(entry);
+    size_t buffsize = st->st_size;
+    void* buff = malloc(sizeof(char) * buffsize);
+    for (;;)
+      {
+        size_t curr = archive_read_data(ar, buff, buffsize);
+        if (0 == curr)
+          {
+            break;
+          }
+        else if (buffsize <= curr)
+          {
+            fprintf(stderr, "DEBUG: curr: %zu, buffsize: %zu\n",
+                    curr, buffsize);
+            full_length += curr;
+          } 
+        else if (curr < buffsize)
+          {
+            fprintf(stderr, "DEBUG: curr: %zu, buffsize: %zu\n",
+                    curr, buffsize);
+          }
+        else
+          {
+            throw ZHfstZipReadingError("Archive broken...");
+          }
+      }
+    *n = full_length;
+    return buff;
+  }
+#endif
+
+#if ZHFST_EXTRACT_TO_TMP_DIR
+static
+char*
+extract_to_tmp_dir(archive* ar)
+  {
+    char* rv = strdup("/tmp/zhfstospellXXXXXXXX");
+    int temp_fd = mkstemp(rv);
+    int rr = archive_read_data_into_fd(ar, temp_fd);
+    if (rr == ARCHIVE_EOF)
+      {
+        rr = ARCHIVE_OK;
+      }
+    else 
+      {
+        throw ZHfstZipReadingError("Archive not EOF'd");
+      }
+    close(temp_fd);
+    return rv;
+  }
+#endif
+
 ZHfstOspeller::ZHfstOspeller() :
-    current_speller_(0),
-    current_sugger_(0),
     can_spell_(false),
-    can_correct_(false)
+    can_correct_(false),
+    current_speller_(0),
+    current_sugger_(0)
     {
     }
 
@@ -504,13 +592,17 @@ void
 ZHfstOspeller::read_zhfst(const string& filename)
   {
     struct archive* ar = archive_read_new();
+#if ZHFST_EXTRACT_TO_TMP_DIR
     struct archive* aw = archive_write_disk_new();
+#endif
     struct archive_entry* entry = 0;
     archive_read_support_compression_all(ar);
     archive_read_support_format_all(ar);
+#if ZHFST_EXTRACT_TO_TMP_DIR
     archive_write_disk_set_options(aw, 
-                                   ARCHIVE_EXTRACT_TIME);
+                                   ZHFST_EXTRACT_TIME);
     archive_write_disk_set_standard_lookup(aw);
+#endif
     int rr = archive_read_open_filename(ar, filename.c_str(), 10240);
     if (rr != ARCHIVE_OK)
       {
@@ -525,126 +617,88 @@ ZHfstOspeller::read_zhfst(const string& filename)
             throw ZHfstZipReadingError("Archive not OK");
           }
         char* filename = strdup(archive_entry_pathname(entry));
-        if ((strncmp(filename, "acceptor.", strlen("acceptor.")) == 0) ||
-            (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0))
+        if (strncmp(filename, "acceptor.", strlen("acceptor.")) == 0)
           {
-            char* temporary = strdup("/tmp/zhfstaeXXXXXX");
-            int temp_fd = mkstemp(temporary);
-            archive_entry_set_pathname(entry, temporary);
-            close(temp_fd);
-            // FIXME: potential race condition
-            archive_write_header(aw, entry);
-            const void* buf;
-            size_t size = 0;
-            off_t offset = 0;
-            while (rr == ARCHIVE_OK)
+#if ZHFST_EXTRACT_TO_TMP_DIR
+            char* temporary = extract_to_tmp_dir(ar);
+#elif ZHFST_EXTRACT_TO_MEM
+            size_t total_length = 0;
+            void* full_data = extract_to_mem(ar, entry, &total_length);
+#endif
+            char* p = filename;
+            p += strlen("acceptor.");
+            size_t descr_len = 0;
+            for (const char* q = p; *q != '\0'; q++)
               {
-                rr = archive_read_data_block(ar, &buf, &size, &offset);
-                int rw = archive_write_data_block(aw, buf, size, offset);
-                if (rw != ARCHIVE_OK)
+                if (*q == '.')
                   {
-                    throw ZHfstTemporaryWritingError("Writing to temporary"
-                                                      "dir failed");
+                    break;
+                  }
+                else
+                    {
+                      descr_len++;
+                    }
+              }
+            char* descr = strndup(p, descr_len);
+#if ZHFST_EXTRACT_TO_TMP_DIR
+            FILE* f = fopen(temporary, "r");
+            if (f == NULL)
+              {
+                  throw ZHfstTemporaryWritingError("reading acceptor back "
+                                                   "from temp file");
+              }
+            Transducer* trans = new Transducer(f);
+#elif ZHFST_EXTRACT_TO_MEM
+            Transducer* trans = new Transducer(reinterpret_cast<char*>(full_data));
+#endif
+            acceptors_[descr] = trans;
+          }
+        else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
+          {
+#if ZHFST_EXTRACT_TO_TMP_DIR
+            char* temporary = extract_to_tmp_dir(ar);
+#elif ZHFST_EXTRACT_TO_MEM
+            size_t total_length = 0;
+            void* full_data = extract_to_mem(ar, entry, &total_length);
+#endif
+            const char* p = filename;
+            p += strlen("errmodel.");
+            size_t descr_len = 0;
+            for (const char* q = p; *q != '\0'; q++)
+              {
+                if (*q == '.')
+                  {
+                    break;
+                  }
+                else
+                  {
+                    descr_len++;
                   }
               }
-            if (rr == ARCHIVE_EOF)
+            char* descr = strndup(p, descr_len);
+#if ZHFST_EXTRACT_TO_TMP_DIR
+            FILE* f = fopen(temporary, "r");
+            if (NULL == f)
               {
-                rr = ARCHIVE_OK;
+                throw ZHfstTemporaryWritingError("reading errmodel back "
+                                                 "from temp file");
               }
-            else 
-              {
-                throw ZHfstZipReadingError("Archive not EOF'd");
-              }
-
-            archive_write_finish_entry(aw);
-            char* p = filename;
-            if (strncmp(filename, "acceptor.", strlen("acceptor.")) == 0)
-                {
-                  p += strlen("acceptor.");
-                  size_t descr_len = 0;
-                  for (const char* q = p; *q != '\0'; q++)
-                    {
-                      if (*q == '.')
-                        {
-                          break;
-                        }
-                      else
-                        {
-                          descr_len++;
-                        }
-                    }
-                  char* descr = strndup(p, descr_len);
-                  FILE* f = fopen(temporary, "r");
-                  if (f == NULL)
-                    {
-                      throw ZHfstTemporaryWritingError("reading acceptor back "
-                                                       "from temp file");
-                    }
-                  Transducer* trans = new Transducer(f);
-                  acceptors_[descr] = trans;
-                }
-            else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
-                {
-                  p += strlen("errmodel.");
-                  size_t descr_len = 0;
-                  for (const char* q = p; *q != '\0'; q++)
-                    {
-                      if (*q == '.')
-                        {
-                          break;
-                        }
-                      else
-                        {
-                          descr_len++;
-                        }
-                    }
-                  char* descr = strndup(p, descr_len);
-                  FILE* f = fopen(temporary, "r");
-                  if (NULL == f)
-                    {
-                      throw ZHfstTemporaryWritingError("reading errmodel back "
-                                                       "from temp file");
-                    }
-                  Transducer* trans = new Transducer(f);
-                  errmodels_[descr] = trans;
-                }
-            else
-              {
-                throw std::logic_error("acceptor || errmodel && "
-                                       "!acceptor && !errmodel in substring");
-              }
+            Transducer* trans = new Transducer(f);
+#elif ZHFST_EXTRACT_TO_MEM
+            Transducer* trans = new Transducer(reinterpret_cast<char*>(full_data));
+#endif
+            errmodels_[descr] = trans;
           } // if acceptor or errmodel
         else if (strcmp(filename, "index.xml") == 0)
           {
-            char* temporary = strdup("/tmp/zhfstidxXXXXXX");
-            int temp_fd = mkstemp(temporary);
-            archive_entry_set_pathname(entry, temporary);
-            close(temp_fd);
-            // FIXME: potential race condition
-            archive_write_header(aw, entry);
-            const void* buf;
-            size_t size = 0;
-            off_t offset = 0;
-            while (rr == ARCHIVE_OK)
-              {
-                rr = archive_read_data_block(ar, &buf, &size, &offset);
-                int rw = archive_write_data_block(aw, buf, size, offset);
-                if (rw != ARCHIVE_OK)
-                  {
-                    throw ZHfstTemporaryWritingError("Writing to temporary"
-                                                      "dir failed");
-                  }
-              }
-            if (rr == ARCHIVE_EOF)
-              {
-                rr = ARCHIVE_OK;
-              }
-            else
-              {
-                throw ZHfstZipReadingError("Archive not EOF'd");
-              }
-            archive_write_finish_entry(aw);
+#if ZHFST_EXTRACT_TO_TMP_DIR
+            char* temporary = extract_to_tmp_dir(ar);
             metadata_.read_xml(temporary);
+#elif ZHFST_EXTRACT_TO_MEM
+            size_t xml_len = 0;
+            void* full_data = extract_to_mem(ar, entry, &xml_len);
+            metadata_.read_xml(reinterpret_cast<char*>(full_data), xml_len);
+#endif
 
           }
         else
@@ -654,8 +708,6 @@ ZHfstOspeller::read_zhfst(const string& filename)
         free(filename);
       } // while r != ARCHIVE_EOF
     archive_read_close(ar);
-    archive_write_close(aw);
-    archive_write_finish(aw);
     if ((errmodels_.find("default") != errmodels_.end()) &&
         (acceptors_.find("default") != acceptors_.end()))
       {

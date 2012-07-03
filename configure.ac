@@ -33,12 +33,23 @@ AC_CONFIG_HEADERS([config.h])
 HFSTOSPELL_NAME=hfstospell
 HFSTOSPELL_MAJOR=0
 HFSTOSPELL_MINOR=2
-HFSTOSPELL_EXTENSION=.0_beta
+HFSTOSPELL_EXTENSION=.1
 HFSTOSPELL_VERSION=$HFSTOSPELL_MAJOR.$HFSTOSPELL_MINOR$HFSTOSPELL_EXTENSION
 AC_SUBST(HFSTOSPELL_MAJOR)
 AC_SUBST(HFSTOSPELL_MINOR)
 AC_SUBST(HFSTOSPELL_VERSION)
 AC_SUBST(HFSTOSPELL_NAME)
+
+# Settings
+AC_ARG_WITH([extract_to],
+            [AS_HELP_STRING([--with-extract-to=TARGET],
+                           [extract zhfst archives to tmpdir or mem @<:@default=mem@:>@])]
+            [], [with_extract_to=mem])
+AS_IF([test x$with_extract_to=xmem], [AC_DEFINE([ZHFST_EXTRACT_TO_MEM], [1], 
+          [Define to extract zhfst archives to char buffer])],
+      [AS_IF([test x$with_extract_to=tmpdir], [AC_DEFINE([ZHFST_EXTRACT_TO_TMPDIR], [1],
+                 [Define to extract zhfst to tmp dir])],
+                 [AC_MSG_ERROR([must define --with-extract-to=mem or =tmpdir])])])
 
 # Checks for programs
 AC_PROG_CC
@@ -51,7 +62,8 @@ AC_PROG_MAKE_SET
 
 # Checks for libraries
 AC_CHECK_LIB([archive], [main])
-PKG_CHECK_MODULES([LIBXML], [libxml-2.0 >= 2.6.19])
+PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
+                  [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])])
 
 # Checks for header files
 AC_HEADER_STDBOOL
@@ -77,10 +89,10 @@ AC_CONFIG_FILES([Makefile hfstospell.pc])
 # output
 AC_OUTPUT
 
-## keep the list alphabetically sorted (vim; !sort)
 cat <<EOF
 -- Building $PACKAGE_STRING
  * zhfst support: $ac_cv_lib_archive_main
+ * libxmlpp pkg: $pkg_cv_LIBXMLPP_LIBS
 EOF
 
 AS_IF([test "x$ac_cv_lib_archive_main" == xno -o "x$ac_cv_header_archive_h" == xno], 
