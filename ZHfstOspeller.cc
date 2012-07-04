@@ -59,422 +59,8 @@ strndup(const char* s, size_t n)
   }
 #endif
 
-namespace hfst_ol 
+namespace hfst_ol
   {
-
-ZHfstOspellerXmlMetadata::ZHfstOspellerXmlMetadata()
-  {
-    info_.locale_ = "und";
-  }
-
-#if HAVE_LIBXML
-void
-ZHfstOspellerXmlMetadata::parse_xml(const xmlpp::Document* doc)
-  {
-    if (NULL == doc)
-      {
-        throw ZHfstMetaDataParsingError("Cannot parse XML data");
-      }
-    xmlpp::Node* cur = doc->get_root_node();
-    // check validity
-    if (NULL == cur)
-      {
-        throw ZHfstMetaDataParsingError("cannot parse XML file");
-      }
-    xmlpp::Element* el = dynamic_cast<xmlpp::Element*>(cur);
-    if (NULL == el)
-      {
-        throw ZHfstMetaDataParsingError("cannot parse XML file");
-      }
-    else if (el->get_name() != "hfstspeller")
-      {
-        throw ZHfstMetaDataParsingError("could not find <hfstspeller> "
-                                        "root from XML file");
-      }
-    // check versions
-    const xmlpp::Attribute* hfstversion = el->get_attribute("hfstversion");
-    if (NULL == hfstversion)
-      {
-        throw ZHfstMetaDataParsingError("No hfstversion attribute in root");
-      }
-    else if (hfstversion->get_value() != "3")
-      {
-        throw ZHfstMetaDataParsingError("Unrecognised HFST version...");
-      }
-    const xmlpp::Attribute* dtdversion = el->get_attribute("dtdversion");
-    if (NULL == dtdversion)
-      {
-        throw ZHfstMetaDataParsingError("No dtdversion attribute in root");
-      }
-    else if (dtdversion->get_value() != "1.0")
-      {
-        throw ZHfstMetaDataParsingError("Unrecognised DTD version...");
-      }
-    // parse 
-    xmlpp::Node::NodeList nodes = cur->get_children();
-    for (xmlpp::Node::NodeList::iterator node = nodes.begin();
-         node != nodes.end();
-         ++node)
-      {
-        el = dynamic_cast<xmlpp::Element*>(*node);
-        if ((*node)->get_name() == "info")
-          {
-            xmlpp::Node::NodeList infos = (*node)->get_children();
-            for (xmlpp::Node::NodeList::iterator info = infos.begin();
-                 info != infos.end();
-                 ++info)
-              {
-                el = dynamic_cast<xmlpp::Element*>(*info);
-                if ((*info)->get_name() == "locale")
-                  {
-                    if ((info_.locale_ != "und") && 
-                        (info_.locale_ != el->get_child_text()->get_content()))
-                      {
-                        // locale in XML mismatches previous definition
-                        // warnable, but overridden as per spec.
-                        fprintf(stderr, "Warning: mismatched languages in "
-                                "file data (%s) and XML (%s)\n",
-                                info_.locale_.c_str(), el->get_child_text()->get_content().c_str());
-                      }
-                    info_.locale_ = el->get_child_text()->get_content();
-                  }
-                else if ((*info)->get_name() == "title")
-                  {
-                    const xmlpp::Attribute* lang = el->get_attribute("lang");
-                    if (lang != NULL)
-                      {
-                        info_.title_[lang->get_value()] = el->get_child_text()->get_content();
-                      }
-                    else
-                      {
-                        info_.title_[info_.locale_] = el->get_child_text()->get_content();
-                      }
-                  }
-                else if ((*info)->get_name() == "description")
-                  {
-                    const xmlpp::Attribute* lang = el->get_attribute("lang");
-                    if (lang != NULL)
-                      {
-                        info_.description_[lang->get_value()] = el->get_child_text()->get_content();
-                      }
-                    else
-                      {
-                        info_.description_[info_.locale_] = el->get_child_text()->get_content();
-                      }
-                  }
-                else if ((*info)->get_name() == "version")
-                  {
-                    const xmlpp::Attribute* revision = el->get_attribute("vcsrev");
-                    if (revision != NULL)
-                      {
-                        info_.vcsrev_ = revision->get_value();
-                      }
-                    info_.version_ = el->get_child_text()->get_content();
-                  }
-                else if ((*info)->get_name() == "date")
-                  {
-                    info_.date_ = el->get_child_text()->get_content();
-                  }
-                else if ((*info)->get_name() == "producer")
-                  {
-                    info_.producer_ = el->get_child_text()->get_content();
-                  }
-                else if ((*info)->get_name() == "contact")
-                  {
-                    const xmlpp::Attribute* email = el->get_attribute("email");
-                    const xmlpp::Attribute* website = el->get_attribute("website");
-                    if (email != NULL)
-                      {
-                        info_.email_ = email->get_value();
-                      }
-                    if (website != NULL)
-                      {
-                        info_.website_ = website->get_value();
-                      }
-                  }
-                else
-                  {
-                    const xmlpp::TextNode* text = dynamic_cast<xmlpp::TextNode*>(*info);
-                    if ((text == NULL) || (!text->is_white_space()))
-                      {
-                        fprintf(stderr, "DEBUG: unknown info node %s\n",
-                                (*info)->get_name().c_str());
-                      }
-                  }
-              } // while info childs
-          } // if info node
-        else if ((*node)->get_name() == "acceptor")
-          {
-            xmlpp::Attribute* xid = el->get_attribute("id");
-            if (xid == NULL)
-              {
-                throw ZHfstMetaDataParsingError("id missing in acceptor");
-              }
-            const char* id = xid->get_value().c_str();
-            const char* p = strchr(id, '.');
-            if (p == NULL)
-              {
-                throw ZHfstMetaDataParsingError("illegal id in acceptor");
-              }
-            size_t descr_len = 0;
-            for (const char* q = p + 1; q != '\0'; q++)
-              {
-                if (*q == '.')
-                  {
-                    break;
-                  }
-                descr_len++;
-              }
-            char* descr = strndup(p + 1, descr_len);
-            acceptor_[descr].descr_ = descr;
-            acceptor_[descr].id_ = id;
-            const xmlpp::Attribute* trtype = el->get_attribute("transtype");
-            if (trtype != NULL)
-              {
-                acceptor_[descr].transtype_ = trtype->get_value();
-              }
-            const xmlpp::Attribute* xtype = el->get_attribute("type");
-            if (xtype != NULL)
-              {
-                acceptor_[descr].type_ = xtype->get_value();
-              }
-            xmlpp::Node::NodeList accs = (*node)->get_children();
-            for (xmlpp::Node::NodeList::iterator acc = accs.begin();
-                 acc != accs.end();
-                 ++acc)
-              {
-                el = dynamic_cast<xmlpp::Element*>(*acc);
-                if ((*acc)->get_name() == "title")
-                  {
-                    const xmlpp::Attribute* lang = el->get_attribute("lang");
-                    if (lang != NULL)
-                      {
-                        acceptor_[descr].title_[lang->get_value()] = el->get_child_text()->get_content();
-                      }
-                    else
-                      {
-                        acceptor_[descr].title_[info_.locale_] = el->get_child_text()->get_content();
-                      }
-                  }
-                else if ((*acc)->get_name() == "description")
-                  {
-                    const xmlpp::Attribute* lang = el->get_attribute("lang");
-                    if (lang != NULL)
-                      {
-                        acceptor_[descr].description_[lang->get_value()] = el->get_child_text()->get_content();
-                      }
-                    else
-                      {
-                        acceptor_[descr].description_[info_.locale_] = el->get_child_text()->get_content();
-                      }
-                  }
-                else if (el != NULL)
-                  {
-                    fprintf(stderr, "DEBUG: unknown info node %s\n",
-                            el->get_name().c_str());
-                  }
-              }
-          } // acceptor node
-        else if ((*node)->get_name() == "errmodel")
-          {
-            xmlpp::Attribute* xid = el->get_attribute("id");
-            if (xid == NULL)
-              {
-                throw ZHfstMetaDataParsingError("id missing in errmodel");
-              }
-            const char* id = (xid->get_value().c_str());
-            const char* p = strchr(id, '.');
-            if (p == NULL)
-              {
-                throw ZHfstMetaDataParsingError("illegal id in errmodel");
-              }
-            size_t descr_len = 0;
-            for (const char* q = p + 1; q != '\0'; q++)
-              {
-                if (*q == '.')
-                  {
-                    break;
-                  }
-                descr_len++;
-              }
-            char* descr = strndup(p + 1, descr_len);
-            errmodel_.push_back(ZHfstOspellerErrModelMetadata());
-            if (descr != NULL)
-              {
-            errmodel_[0].descr_ = descr;
-              }
-            errmodel_[0].id_ = id;
-            xmlpp::Node::NodeList errms = (*node)->get_children();
-            for (xmlpp::Node::NodeList::iterator errm = errms.begin();
-                   errm != errms.end();
-                   ++errm)
-              {
-                el = dynamic_cast<xmlpp::Element*>(*errm);
-                if ((*errm)->get_name() == "title")
-                  {
-                    const xmlpp::Attribute* lang = el->get_attribute("lang");
-                    if (lang != NULL)
-                      {
-                        errmodel_[0].title_[lang->get_value()] = el->get_child_text()->get_content();
-                      }
-                    else
-                      {
-                        errmodel_[0].title_[info_.locale_] = el->get_child_text()->get_content();
-                      }
-                  }
-                else if ((*errm)->get_name() == "description")
-                  {
-                    const xmlpp::Attribute* lang = el->get_attribute("lang");
-                    if (lang != NULL)
-                      {
-                        errmodel_[0].description_[lang->get_value()] = el->get_child_text()->get_content();
-                      }
-                    else
-                      {
-                        errmodel_[0].description_[info_.locale_] = el->get_child_text()->get_content();
-                      }
-                  }
-                else if ((*errm)->get_name() == "type")
-                  {
-                    const xmlpp::Attribute* xtype = el->get_attribute("type");
-                    if (xtype != NULL)
-                      {
-                        errmodel_[0].type_.push_back(xtype->get_value());
-
-                      }
-                    else
-                      {
-                        throw ZHfstMetaDataParsingError("No type in type");
-                      }
-                  }
-                else if ((*errm)->get_name() == "model")
-                  {
-                    errmodel_[0].model_.push_back(el->get_child_text()->get_content());
-                  }
-                else if (el != NULL)
-                  {
-                    fprintf(stderr, "DEBUG: unknown errm node %s\n",
-                            (*errm)->get_name().c_str());
-                  }
-              }
-          } // errmodel node
-        else if (el != NULL)
-          {
-            fprintf(stderr, "DEBUG: unknown top level node %s\n",
-                    el->get_name().c_str());
-          } // unknown root child node
-      }
-  }
-
-void
-ZHfstOspellerXmlMetadata::read_xml(const char* xml_data, size_t xml_len)
-  {
-    xmlpp::DomParser parser;
-    parser.set_substitute_entities();
-    parser.parse_memory_raw(reinterpret_cast<const unsigned char*>(xml_data),
-                            xml_len);
-    this->parse_xml(parser.get_document());
-  }
-
-void
-ZHfstOspellerXmlMetadata::read_xml(const string& filename)
-  {
-    xmlpp::DomParser parser;
-    parser.set_substitute_entities();
-    parser.parse_file(filename);
-    this->parse_xml(parser.get_document());
-  }
-#else
-void
-    ZHfstOspellerXmlMetadata::read_xml(const void*, size_t)
-      {}
-void
-    ZHfstOspellerXmlMetadata::read_xml(const char*)
-      {}
-#endif // HAVE_LIBXML
-
-
-string
-ZHfstOspellerXmlMetadata::debug_dump() const
-  {
-    string retval = "locale: " + info_.locale_ + "\n"
-        "version: " + info_.version_ + " [vcsrev: " + info_.vcsrev_ + "]\n"
-        "date: " + info_.date_ + "\n"
-        "producer: " + info_.producer_ + "[email: <" + info_.email_ + ">, "
-        "website: <" + info_.website_ + ">]\n";
-    for (map<string,string>::const_iterator title = info_.title_.begin();
-         title != info_.title_.end();
-         ++title)
-      {
-        retval.append("title [" + title->first + "]: " + title->second + "\n");
-      }
-    for (map<string,string>::const_iterator description = info_.description_.begin();
-         description != info_.description_.end();
-         ++description)
-      {
-        retval.append("description [" + description->first + "]: " +
-            description->second + "\n");
-      }
-    for (map<string,ZHfstOspellerAcceptorMetadata>::const_iterator acc = acceptor_.begin();
-         acc != acceptor_.end();
-         ++acc)
-      {
-        retval.append("acceptor[" + acc->second.descr_ + "] [id: " + acc->second.id_ +
-                      ", type: " + acc->second.type_ + "trtype: " + acc->second.transtype_ +
-                      "]\n");
-
-        for (LanguageVersions::const_iterator title = acc->second.title_.begin();
-             title != acc->second.title_.end();
-             ++title)
-          {
-            retval.append("title [" + title->first + "]: " + title->second +
-                          "\n");
-          }
-        for (LanguageVersions::const_iterator description = acc->second.description_.begin();
-             description != acc->second.description_.end();
-             ++description)
-          {
-            retval.append("description[" + description->first + "]: "
-                          + description->second + "\n");
-          }
-      }
-    for (std::vector<ZHfstOspellerErrModelMetadata>::const_iterator errm = errmodel_.begin();
-         errm != errmodel_.end();
-         ++errm)
-      {
-        retval.append("errmodel[" + errm->descr_ + "] [id: " + errm->id_ +
-                      "]\n");
-
-        for (LanguageVersions::const_iterator title = errm->title_.begin();
-             title != errm->title_.end();
-             ++title)
-          {
-            retval.append("title [" + title->first + "]: " + title->second +
-                          "\n");
-          }
-        for (LanguageVersions::const_iterator description = errm->description_.begin();
-             description != errm->description_.end();
-             ++description)
-          {
-            retval.append("description[" + description->first + "]: "
-                          + description->second + "\n");
-          }
-        for (std::vector<string>::const_iterator type = errm->type_.begin();
-             type != errm->type_.end();
-             ++type)
-          {
-            retval.append("type: " + *type + "\n");
-          }
-        for (std::vector<string>::const_iterator model = errm->model_.begin();
-             model != errm->model_.end();
-             ++model)
-          {
-            retval.append("model: " + *model + "\n");
-          }
-      }
-    
-    return retval;
-  }
 
 #if ZHFST_EXTRACT_TO_MEM
 static
@@ -494,13 +80,11 @@ extract_to_mem(archive* ar, archive_entry* entry, size_t* n)
           }
         else if (buffsize <= curr)
           {
-            fprintf(stderr, "DEBUG: curr: %zu, buffsize: %zu\n",
-                    curr, buffsize);
             full_length += curr;
           } 
         else if (curr < buffsize)
           {
-            fprintf(stderr, "DEBUG: curr: %zu, buffsize: %zu\n",
+            fprintf(stderr, "zhfst fail: curr: %zu, buffsize: %zu\n",
                     curr, buffsize);
           }
         else
@@ -553,6 +137,18 @@ ZHfstOspeller::~ZHfstOspeller()
           }
         current_sugger_ = 0;
         current_speller_ = 0;
+      }
+    for (map<string, Transducer*>::iterator acceptor = acceptors_.begin();
+         acceptor != acceptors_.end();
+         ++acceptor)
+      {
+        delete acceptor->second;
+      }
+    for (map<string, Transducer*>::iterator errmodel = errmodels_.begin();
+         errmodel != errmodels_.end();
+         ++errmodel)
+      {
+        delete errmodel->second;
       }
     can_spell_ = false;
     can_correct_ = false;
@@ -639,6 +235,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             Transducer* trans = new Transducer(f);
 #elif ZHFST_EXTRACT_TO_MEM
             Transducer* trans = new Transducer(reinterpret_cast<char*>(full_data));
+            free(full_data);
 #endif
             acceptors_[descr] = trans;
           }
@@ -675,6 +272,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             Transducer* trans = new Transducer(f);
 #elif ZHFST_EXTRACT_TO_MEM
             Transducer* trans = new Transducer(reinterpret_cast<char*>(full_data));
+            free(full_data);
 #endif
             errmodels_[descr] = trans;
           } // if acceptor or errmodel
@@ -687,6 +285,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             size_t xml_len = 0;
             void* full_data = extract_to_mem(ar, entry, &xml_len);
             metadata_.read_xml(reinterpret_cast<char*>(full_data), xml_len);
+            free(full_data);
 #endif
 
           }
@@ -697,6 +296,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
         free(filename);
       } // while r != ARCHIVE_EOF
     archive_read_close(ar);
+    archive_read_finish(ar);
     if ((errmodels_.find("default") != errmodels_.end()) &&
         (acceptors_.find("default") != acceptors_.end()))
       {
