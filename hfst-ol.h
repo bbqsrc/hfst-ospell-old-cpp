@@ -116,6 +116,7 @@ private:
     void read_property(bool &property, char ** raw)
 	{
             unsigned int prop = *((unsigned int *) *raw);
+            (*raw) += sizeof(unsigned int);
             if (prop == 0)
             {
                 property = false;
