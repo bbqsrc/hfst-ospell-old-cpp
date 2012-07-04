@@ -70,6 +70,9 @@ enum HeaderFlag {Weighted, Deterministic, Input_deterministic, Minimized,
                  Has_input_epsilon_transitions, Has_input_epsilon_cycles,
                  Has_unweighted_input_epsilon_cycles};
 
+// Utility function for dealing with raw memory
+void skip_c_string(char ** raw);
+
 class TransducerHeader
 {
 private:
