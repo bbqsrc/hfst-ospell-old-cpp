@@ -198,12 +198,12 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
     for (SymbolNumber k = 1; k < number_of_symbols; ++k) {
 	
 	// Detect and handle special symbols, which begin and end with @
-	if ((*raw)[0] == '@' && *raw[strlen(*raw) - 1] == '@') {
-	    if (strlen(*raw) >= 5 && *raw[2] == '.') { // flag diacritic
+	if ((*raw)[0] == '@' && (*raw)[strlen(*raw) - 1] == '@') {
+	    if (strlen(*raw) >= 5 && (*raw)[2] == '.') { // flag diacritic
 		std::string feat;
 		std::string val;
 		FlagDiacriticOperator op = P; // for the compiler
-		switch (*raw[1]) {
+		switch ((*raw)[1]) {
 		case 'P': op = P; break;
 		case 'N': op = N; break;
 		case 'R': op = R; break;
