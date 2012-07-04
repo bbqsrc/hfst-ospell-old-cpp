@@ -24,7 +24,8 @@ bin_PROGRAMS=hfst-ospell $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
 
 # library parts
-libhfstospell_la_SOURCES=hfst-ol.cc ospell.cc ZHfstOspeller.cc
+libhfstospell_la_SOURCES=hfst-ol.cc ospell.cc \
+						 ZHfstOspeller.cc ZHfstOspellerXmlMetadata.cc
 libhfstospell_la_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(LIBXMLPP_CFLAGS)
 libhfstospell_la_LDFLAGS=-no-undefined -version-info 2:0:0 $(LIBXMLPP_LIBS)
 
@@ -42,7 +43,8 @@ hfst_ospell_fsmnlp_2012_SOURCES=main-fsmnlp-2012.cc
 hfst_ospell_fsmnlp_2012_LDADD=libhfstospell.la
 hfst_ospell_fsmnlp_2012_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(LIBXMLPP_CFLAGS)
 # install headers for library in hfst's includedir
-include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h ZHfstOspeller.h
+include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h \
+				ZHfstOspeller.h ZHfstOspellerXmlMetadata.h
 
 # pkgconfig
 pkgconfigdir=$(libdir)/pkgconfig
