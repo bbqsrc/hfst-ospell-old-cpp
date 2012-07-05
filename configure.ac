@@ -20,7 +20,7 @@ AC_PREREQ([2.62])
 LT_PREREQ([2.2.6])
 
 # init
-AC_INIT([hfstospell], [0.2.0], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
+AC_INIT([hfstospell], [0.2.1], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules])
 AM_SILENT_RULES([yes])

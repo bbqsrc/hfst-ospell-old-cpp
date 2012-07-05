@@ -1,12 +1,303 @@
-2010-11-29 00:18  mie
+2012-07-04 10:28  hardwick
+
+	* Increment *raw when reading bools
+
+2012-07-04 10:23  hardwick
+
+	* Added utility function for iterating c strings in raw memory,
+	  use it in every branch of symbol reading
+
+2012-07-04 07:21  hardwick
+
+	* Fixed problems having to do with reading strings from a
+	  transducer in raw
+	  memory.
+
+2012-07-03 21:04  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* fix the tmpdir'd version again
+
+2012-07-03 19:42  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Version that extracts zhfst to memory iff it fits on one throw
+
+2012-07-02 22:19  hardwick
+
+	* Added raw memory constructors and table readers for slurping in
+	  transducers
+	  from char *
+
+2012-07-02 19:49  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Missing files lol
+
+2012-04-25 16:36  hardwick
+
+	* ...and in that case the final identity states also are greater by
+	  one.
+
+2012-04-25 16:33  hardwick
+
+	* When avoiding initial edits, there needs to be an extra inital
+	  state before
+	  we do any edits. So add the value of options.no_initial to the
+	  state range
+	  loop.
+
+2012-04-18 14:53  eaxelson
+
+	* Commented out hfst-ospell-cicling from Makefile.
+
+2012-04-18 14:48  hardwick
+
+	* Comment out missing cicling target
+
+2012-04-18 11:24  hardwick
+
+	* "else if" instead of incorrect "if" in option handling
+
+2012-04-17 13:23  hardwick
+
+	* --no-string-initial should have transitions to state 1, not 0
+
+2012-03-31 14:06  hardwick
+
+	* Don't exit on empty lines
+
+2012-03-31 13:12  hardwick
+
+	* Don't print unhelpful warnings
+
+2012-03-31 08:55  hardwick
+
+	* Silly default for minimum edit
+
+2012-03-19 08:26  hardwick
+
+	* fallback_spell()
+
+2012-03-19 07:40  hardwick
+
+	* --no-string-initial-correction
+
+2012-03-05 08:58  hardwick
+
+	* Corrected eliminations (hopefully), added --minimum-edit option
+
+2012-02-24 05:02  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Profiled version for fsmnlp-2012 measurements§
+
+2011-11-08 11:18  hardwick
+
+	* Don't skip state numbers when certain options are turned off
+	  (and don't print debugging lines)
+
+2011-11-08 11:16  hardwick
+
+	* Corrections to redundancy elimination
+
+2011-11-01 13:55  hardwick
+
+	* redundancy elimination was being performed one state too late
+	  (too little)
+
+2011-10-25 10:40  hardwick
+
+	* Add option to disable redundancy elimination
+
+2011-10-25 10:35  hardwick
+
+	* Initial support for redundancy elimination
+	  (refuse to do insertion after deletion or deletion after
+	  insertion)
+
+2011-10-11 19:30  hardwick
+
+	* Bugfix: identity transitions were being forgotten in the last
+	  edit state
+
+2011-10-07 10:28  hardwick
+
+	* Enforce @_UNKNOWN_SYMBOL_@ instead of @?@, which users didn't
+	  know about
+
+2011-10-03 14:23  moshagen
+
+	* Fixed one remaining UTF-8 stderr printing bug.
+
+2011-09-28 08:52  hardwick
+
+	* Fixed bug with the newline character not being stripped from
+	  excluded symbols
+
+2011-09-28 08:42  hardwick
+
+	* Lines that start with ## are comments
+
+2011-09-28 08:24  hardwick
+
+	* Updated help message & added exclusion of symbols by prepending a
+	  ~
+
+2011-09-28 07:44  hardwick
+
+	* Wrap stderr with a utf-8 codec so we can print non-ascii symbols
+	  when verbose
+
+2011-09-28 07:32  hardwick
+
+	* Write alphabet with weights when verbose
+
+2011-09-28 07:24  hardwick
+
+	* Order of preference of alphabet definition is now
+	  configfile - commandline - transducer.
+	  If configfile gives a weight after a tab for symbols,
+	  they are used additively for all edits involving those symbols.
+
+2011-09-28 06:42  hardwick
+
+	* Some clarifying comments
+
+2011-09-28 06:36  hardwick
+
+	* Rescue identities from being considered substitutions
+
+2011-09-28 05:50  hardwick
+
+	* utf-8 -decode the user-specified transitions from a conf file
+	  (so easy to forget one of these...)
+
+2011-09-13 22:03  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* use same includedir in pc as makefile
+
+2011-09-13 20:54  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* don't declare strndup in public headers
+
+2011-09-06 07:46  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* make ol exceptions in hfst_ol namespace, provide stdexception
+	  style what()
+
+2011-09-02 06:12  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Add verbose, quiet
+
+2011-09-01 21:41  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* * parse all of the metadata if possible
+	  * use c++ ``struct''s for metadata
+
+2011-09-01 21:36  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* * Use temporary filenames by tmpsnam
+	  * Do not delete Transducers in data structures since it will
+	  segfault all
+	  enchant-based applications in dtor
+
+2011-08-31 08:56  hardwick
+
+	* libhfst-style exception macros and some more informative messages
+
+2011-08-31 08:26  hardwick
+
+	* Document dependencies
+
+2011-08-17 11:14  moshagen
+
+	* Ignore generated files.
+
+2011-08-17 08:20  moshagen
+
+	* Ignore generated files.
+
+2011-08-17 02:50  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* mac os x fixes:
+	  * strndup
+	  * libarchive installed without headers
+
+2011-08-08 02:49  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Preliminary zhfst support
+
+2011-07-21 01:05  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Example from: http://norvig.com/spell-correct.html and similar
+	  tests
+
+2011-07-20 11:22  hardwick
+
+	* The test for final weighted transitions involves
+	  target_index == 1 instead of weight == INFINITE_WEIGHT
+	  
+	  (I wish I remembered why this was changed)
+
+2011-07-20 07:44  hardwick
+
+	* Fixed bug involving bytewise casting of longs to floats (I
+	  misunderstood
+	  what static_cast really does I guess).
+
+2011-05-24 10:19  hardwick
+
+	* fread returns element count, not byte count
+
+2011-05-09 19:22  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* duplicate definitions
+
+2011-05-09 19:04  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* fix msvc problems
+
+2011-04-25 14:04  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* check fread return value as advised by gcc
+
+2011-04-20 13:29  hardwick
+
+	* Removed unnecessary test
+
+2011-04-20 13:12  hardwick
+
+	* Understand hfst3 headers, don't demand weightedness at
+	  header-reading stage
+
+2011-03-03 10:45  moshagen
+
+	* Ignore (autotools-)generated files.
+
+2011-02-22 01:20  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* use hfstospell library name for compatibility or whatever
+
+2011-02-19 14:19  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* MSVC fixes:
+	  * include <string> when using strinG
+	  * use boolean operators instead of aliases?
+
+2011-02-03 01:07  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* add pkgconfig stuff
+
+2011-02-03 00:36  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* autoconfiscate :-)
+
+2010-11-29 00:18  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
 	* Add licences everywhere for release
 
-2010-11-07 00:29  mie
+2010-11-07 00:29  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
 	* make directories that do not exist
 
-2010-11-07 00:24  mie
+2010-11-07 00:24  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
 	* Install to destdir
 
@@ -14,15 +305,15 @@
 
 	* Ignore compiled libraries.
 
-2010-11-02 18:55  mie
+2010-11-02 18:55  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
 	* fix missing dash in mac dylib magic
 
-2010-11-02 18:44  mie
+2010-11-02 18:44  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
 	* Silently ignore if empty labels are missing
 
-2010-11-02 15:45  mie
+2010-11-02 15:45  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
 	* Make dynamic or share libraries
 
@@ -147,7 +438,7 @@
 
 	* Minor improvement to demo
 
-2010-08-09 22:02  mie
+2010-08-09 22:02  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
 	* Static lib and fixes to xamples in readme
 

@@ -154,7 +154,6 @@ zhfst_spell(char* zhfst_filename)
   catch (hfst_ol::ZHfstZipReadingError zhzre)
     {
       std::cerr << "cannot read zhfst archive " << zhfst_filename << ":" 
-          << std::endl
           << zhzre.what() << "." << std::endl
           << "trying to read as legacy automata directory" << std::endl;
       speller.read_legacy(zhfst_filename);
@@ -204,6 +203,7 @@ int main(int argc, char **argv)
 {
     
     int c;
+    //std::locale::global(std::locale(""));
   
 #if HAVE_GETOPT_H
     while (true) {

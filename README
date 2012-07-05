@@ -1,73 +1,101 @@
-hfst-ospell library and toy commandline tester
+.. -*- mode: rst -*-
+================================================
+ Hfst-ospell library and toy commandline tester
+================================================
 
 This is a minimal hfst optimized lookup format based spell checker library and
 a demonstrational implementation of command line based spell checker. The
 library is licenced under Apache licence version 2, other licences can be
 obtained from University of Helsinki.
 
-Usage in external programs:
 
-	#include <ospell.h>
+Dependencies
+============
 
-and compile your project with
+ - libxml++2
+ - libarchive
 
-	-lhfst-ospell
+Debian packages for dependencies
+--------------------------------
 
-Dependencies:
-	-libxml2
-	(from the gnome project, eg. the package libxml++2.6-dev in Debian)
-	-zlib
-	(a compression library, eg. the package zlib1g-dev in Debian)
-	-libarchive
-	(eg. the package libarchive-dev in Debian)
+  - libxml++2-dev
+  - libarchive-dev
+
+Usage
+=====
+
+Usage in external programs::
+
+    #include <ospell.h>
+
+and compile your project with::
+
+    $(pkg-config --cflags hfstospell)
+
+and link with::
+
+    $(pkg-config --libs hfstospell)
+
+Programming examples
+--------------------
 
 The library lives in a namespace called hfst_ol. Pass (weighted!) Transducer
-pointers to the Speller constructor, eg.:
+pointers to the Speller constructor, eg.::
 
-	FILE * error_source = fopen(error_filename, "r");
-	FILE * lexicon_file = fopen(lexicon_filename, "r");
-	hfst_ol::Transducer * error;
-	hfst_ol::Transducer * lexicon;
-	try {
-		error = new hfst_ol::Transducer(error_source);
-		lexicon = new hfst_ol::Transducer(lexicon_file);
-	} catch (hfst_ol::TransducerParsingException& e) {
-			/* problem with transducer file, usually completely
-			different type of file - there's no magic number
-			in the header to check for this */
-		}
-	hfst_ol::Speller * speller;
-	try {
-		speller = new hfst_ol::Speller(error, lexicon);
-	} catch (hfst_ol::AlphabetTranslationException& e) {
-		/* problem with translating between the two alphabets */
-	}
-
-
-And use the functions
-
-	// returns true if line is found in lexicon
-	bool hfst_ol::Speller::check(char * line);
-
-	// CorrectionQueue is a priority queue, sorted by weight
-	hfst_ol::CorrectionQueue hfst_ol::Speller::correct(char * line);
-
-to communicate with it. See main.cc for a concrete usage example. It provides a
-demo utility with the following help message:
-
---------------------------------------------------------------------------------
-
-The command line program:
-
-Usage: hfst-ospell [OPTIONS] ERRORSOURCE LEXICON
-Run a composition of ERRORSOURCE and LEXICON on standard input and
-print corrected output
-
-  -h, --help                  Print this help message
-  -V, --version               Print version information
-  -v, --verbose               Be verbose
-  -q, --quiet                 Don't be verbose (default)
-  -s, --silent                Same as quiet
+    FILE * error_source = fopen(error_filename, "r");
+    FILE * lexicon_file = fopen(lexicon_filename, "r");
+    hfst_ol::Transducer * error;
+    hfst_ol::Transducer * lexicon;
+    try {
+        error = new hfst_ol::Transducer(error_source);
+        lexicon = new hfst_ol::Transducer(lexicon_file);
+    } catch (hfst_ol::TransducerParsingException& e) {
+            /* problem with transducer file, usually completely
+            different type of file - there's no magic number
+            in the header to check for this */
+        }
+    hfst_ol::Speller * speller;
+    try {
+        speller = new hfst_ol::Speller(error, lexicon);
+    } catch (hfst_ol::AlphabetTranslationException& e) {
+        /* problem with translating between the two alphabets */
+    }
 
 
-Report bugs to hfst-bugs@ling.helsinki.fi
+And use the functions::
+
+    // returns true if line is found in lexicon
+    bool hfst_ol::Speller::check(char * line);
+
+    // CorrectionQueue is a priority queue, sorted by weight
+    hfst_ol::CorrectionQueue hfst_ol::Speller::correct(char * line);
+
+
+to communicate with it. See main.cc for a concrete usage example. 
+
+Command-line tool
+-----------------
+
+Main.cc provides a demo utility with the following help message::
+
+    Usage: hfst-ospell [OPTIONS] ERRORSOURCE LEXICON
+    Run a composition of ERRORSOURCE and LEXICON on standard input and
+    print corrected output
+
+      -h, --help                  Print this help message
+      -V, --version               Print version information
+      -v, --verbose               Be verbose
+      -q, --quiet                 Don't be verbose (default)
+      -s, --silent                Same as quiet
+
+
+    Report bugs to hfst-bugs@ling.helsinki.fi
+
+Use in real-world applications
+------------------------------
+
+The HFST based spellers can be used in real applications with help of
+`voikko <http://voikko.sf.net>`_. Voikko in turn can be used with enchant,
+libreoffice, and firefox.
+
+.. vim: set ft=rst:
