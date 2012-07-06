@@ -122,6 +122,13 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
         if (str[0] == '\0') {
         break;
         }
+        if (str[strlen(str) - 1] == '\r')
+          {
+            std::cerr << "There is a WINDOWS linebreak in this file" <<
+                std::endl <<
+                "Please convert with dos2unix or fromdos" << std::endl;
+            exit(1);
+          }
         if (speller->check(str)) {
         std::cout << "\"" << str << "\" is in the lexicon\n\n";
         } else {
@@ -178,6 +185,13 @@ zhfst_spell(char* zhfst_filename)
         if (str[0] == '\0') {
         break;
         }
+        if (str[strlen(str) - 1] == '\r')
+          {
+            std::cerr << "There is a WINDOWS linebreak in this file" <<
+                std::endl <<
+                "Please convert with dos2unix or fromdos" << std::endl;
+            exit(1);
+          }
         if (speller.spell(str)) {
         std::cout << "\"" << str << "\" is in the lexicon\n\n";
         } else {
