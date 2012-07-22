@@ -53,6 +53,7 @@ AS_IF([test "x$with_extract" = xmem], [AC_DEFINE([ZHFST_EXTRACT_TO_MEM], [1],
           [AC_MSG_ERROR([Use with-extract to mem or tmpdir])])])
 
 # Checks for programs
+AM_PROG_AR
 AC_PROG_CC
 AC_PROG_CXX
 AC_LIBTOOL_WIN32_DLL
