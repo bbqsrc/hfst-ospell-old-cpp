@@ -41,6 +41,14 @@ AC_SUBST(HFSTOSPELL_VERSION)
 AC_SUBST(HFSTOSPELL_NAME)
 
 # Settings
+AC_ARG_ENABLE([zhfst],
+              [AS_HELP_STRING([--enable-zhfst],
+                              [support zipped complex automaton sets @<:@default=check@:>@])],
+              [enable_zhfst=$enableval], [enable_zhfst=check])
+AC_ARG_ENABLE([xml],
+              [AS_HELP_STRING([--enable-xml],
+                              [support xml metadata for zipped automaton sets @<:@default=check@:>@])],
+              [enable_xml=$enableval], [enable_xml=check])
 AC_ARG_WITH([extract],
             [AS_HELP_STRING([--with-extract=TARGET],
                            [extract zhfst archives to tmpdir or mem @<:@default=mem@:>@])],
@@ -53,7 +61,7 @@ AS_IF([test "x$with_extract" = xmem], [AC_DEFINE([ZHFST_EXTRACT_TO_MEM], [1],
           [AC_MSG_ERROR([Use with-extract to mem or tmpdir])])])
 
 # Checks for programs
-AM_PROG_AR
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_PROG_CC
 AC_PROG_CXX
 AC_LIBTOOL_WIN32_DLL
@@ -63,15 +71,25 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
 # Checks for libraries
-AC_CHECK_LIB([archive], [main])
-PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
-                  [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])])
+AS_IF([test x$enable_zhfst != xno],
+      [AC_CHECK_LIB([archive], [main],
+                    , [enable_zhfst=no])])
+AS_IF([test x$ac_cv_lib_archive_main = xno],
+      [enable_zhfst=no])
+AS_IF([test x$enable_xml != xno],
+      [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
+                  [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])
+                   enable_xml=yes],
+                  [enable_xml=no])])
 
 # Checks for header files
 AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([getopt.h])
-AC_CHECK_HEADERS([archive.h archive_entry.h])
-AM_CONDITIONAL([CAN_ZIP], [test "x$ac_cv_lib_archive_main" != xno -a "x$ac_cv_header_archive_h" != xno])
+AS_IF([test x$enable_xml != xno],
+      [AC_CHECK_HEADERS([archive.h archive_entry.h], 
+                        [enable_xml=yes], [enable_xml=no])])
+
+AM_CONDITIONAL([CAN_ZIP], [test x$enable_zhfst != xno])
 
 # Checks for types
 AC_TYPE_SIZE_T
@@ -93,12 +111,10 @@ AC_OUTPUT
 
 cat <<EOF
 -- Building $PACKAGE_STRING
- * zhfst support: $ac_cv_lib_archive_main
+ * zhfst support: $enable_zhfst
     * extracting to: $with_extract
- * libxmlpp pkg: $pkg_cv_LIBXMLPP_LIBS
+    * xml support: $enable_xml
 EOF
 
-AS_IF([test "x$ac_cv_lib_archive_main" == xno -o "x$ac_cv_header_archive_h" == xno], 
-      [AC_MSG_WARN([libarchive missing, support for zhfst files disabled])])
 
 
