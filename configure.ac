@@ -85,7 +85,7 @@ AS_IF([test x$enable_xml != xno],
 # Checks for header files
 AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([getopt.h])
-AS_IF([test x$enable_xml != xno],
+AS_IF([test x$enable_zhfst != xno],
       [AC_CHECK_HEADERS([archive.h archive_entry.h], 
                         [enable_xml=yes], [enable_xml=no])])
 

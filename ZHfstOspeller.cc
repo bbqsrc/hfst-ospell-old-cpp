@@ -62,6 +62,7 @@ strndup(const char* s, size_t n)
 namespace hfst_ol
   {
 
+#if HAVE_LIBARCHIVE
 #if ZHFST_EXTRACT_TO_MEM
 static
 void*
@@ -113,6 +114,8 @@ extract_to_tmp_dir(archive* ar)
     return rv;
   }
 #endif
+
+#endif // HAVE_LIBARCHIVE
 
 ZHfstOspeller::ZHfstOspeller() :
     can_spell_(false),
@@ -184,6 +187,7 @@ ZHfstOspeller::suggest(const string& wordform)
 void
 ZHfstOspeller::read_zhfst(const string& filename)
   {
+#if HAVE_LIBARCHIVE
     struct archive* ar = archive_read_new();
     struct archive_entry* entry = 0;
     archive_read_support_compression_all(ar);
@@ -336,6 +340,9 @@ ZHfstOspeller::read_zhfst(const string& filename)
         can_spell_ = true;
         can_correct_ = false;
       }
+#else
+    throw ZHfstZipReadingError("Zip support was disabled");
+#endif // HAVE_LIBARCHIVE
   }
 
 void
@@ -403,14 +410,14 @@ ZHfstException::ZHfstException(const std::string& message) :
     what_(message)
       {}
 
-            
+
 const char* 
 ZHfstException::what()
   {
     return what_.c_str();
   }
 
-            
+
 ZHfstMetaDataParsingError::ZHfstMetaDataParsingError(const std::string& message):
     ZHfstException(message)
   {}
@@ -428,5 +435,5 @@ ZHfstLegacyReadingError::ZHfstLegacyReadingError(const std::string& message):
     {}
  
 } // namespace hfst_ol
-    
+
 
