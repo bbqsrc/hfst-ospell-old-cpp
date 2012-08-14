@@ -158,6 +158,12 @@ zhfst_spell(char* zhfst_filename)
     {
       speller.read_zhfst(zhfst_filename);
     }
+  catch (hfst_ol::ZHfstMetaDataParsingError zhmdpe)
+    {
+      std::cerr << "cannot finish reading zhfst archive " << zhfst_filename <<
+                   ":" << zhmdpe.what() << "." << std::endl;
+      return EXIT_FAILURE;
+    }
   catch (hfst_ol::ZHfstZipReadingError zhzre)
     {
       std::cerr << "cannot read zhfst archive " << zhfst_filename << ":" 
