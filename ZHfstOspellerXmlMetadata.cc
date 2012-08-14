@@ -518,10 +518,10 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
   }
 #else
 void
-    ZHfstOspellerXmlMetadata::read_xml(const void*, size_t)
+    ZHfstOspellerXmlMetadata::read_xml(const char*, size_t)
       {}
 void
-    ZHfstOspellerXmlMetadata::read_xml(const char*)
+    ZHfstOspellerXmlMetadata::read_xml(const string&)
       {}
 #endif // HAVE_LIBXML
 
