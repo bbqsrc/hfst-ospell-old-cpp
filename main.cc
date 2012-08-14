@@ -169,14 +169,18 @@ zhfst_spell(char* zhfst_filename)
       std::cerr << "cannot read zhfst archive " << zhfst_filename << ":" 
           << zhzre.what() << "." << std::endl
           << "trying to read as legacy automata directory" << std::endl;
-      speller.read_legacy(zhfst_filename);
-    }
-  catch (hfst_ol::ZHfstLegacyReadingError zhlre)
-    {
-      std::cerr << "cannot read legacy hfst speller dir " << zhfst_filename 
-          << ":" << std::endl
-          << zhlre.what() << "." << std::endl;
-      return EXIT_FAILURE;
+      try 
+        {
+          speller.read_legacy(zhfst_filename);
+        }
+      catch (hfst_ol::ZHfstLegacyReadingError zhlre)
+        {
+          std::cerr << "cannot fallback to read legacy hfst speller dir " 
+              << zhfst_filename 
+              << ":" << std::endl
+              << zhlre.what() << "." << std::endl;
+          return EXIT_FAILURE;
+        }
     }
 
   if (verbose)

@@ -360,16 +360,16 @@ ZHfstOspeller::read_legacy(const std::string& path)
         Transducer* trans = new Transducer(f);
         acceptors_["default"] = trans;
         speller = true;
+        fclose(f);
       }
-    fclose(f);
     f = fopen(suggerfile.c_str(), "r");
     if (f != NULL)
       {
         Transducer* trans = new Transducer(f);
         acceptors_["suggestion"] = trans;
         sugger = true;
+        fclose(f);
       }
-    fclose(f);
     f = fopen(errorfile.c_str(), "r");
     if (f != NULL)
       {
