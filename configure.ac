@@ -69,6 +69,11 @@ LT_INIT
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AC_PATH_PROG([HFST_TXT2FST], [hfst-txt2fst], [false])
+AC_PATH_PROG([HFST_FST2FST], [hfst-fst2fst], [false])
+AC_PATH_PROG([ZIP], [zip], [false])
+AM_CONDITIONAL([CAN_TEST], 
+               [test x$HFST_TXT2FST != xfalse -a x$HFST_FST2FST != xfalse -a x$ZIP != xfalse])
 
 # Checks for libraries
 AS_IF([test x$enable_zhfst != xno],

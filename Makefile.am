@@ -50,3 +50,23 @@ include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h \
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA=hfstospell.pc
 
+# tests
+if CAN_TEST
+TXTS=acceptor.default.txt errmodel.default.txt
+check_DATA=speller.zhfst \
+		   test.strings
+TESTS=basic-zhfst.sh basic-legacy.sh
+EXTRA_DIST=$(TXTS)
+
+clean-local:
+	-rm -rf $(CHECK_data)
+endif
+
+speller.zhfst: acceptor.default.hfst errmodel.default.hfst index.xml
+	$(ZIP) $(ZIPFLAGS) $@ $^
+
+%.hfst: %.txt
+	hfst-txt2fst $(HFST_FLAGS) $< | hfst-fst2fst $(HFST_FLAGS) -f olw -o $@
+
+%.hfstol: %.txt
+	hfst-txt2fst $(HFST_FLAGS) $< | hfst-fst2fst $(HFST_FLAGS) -f olw -o $@
