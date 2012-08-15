@@ -109,7 +109,7 @@ AC_CHECK_FUNCS([strndup])
 # Checks for system services
 
 # config files
-AC_CONFIG_FILES([Makefile hfstospell.pc])
+AC_CONFIG_FILES([Makefile hfstospell.pc basic-legacy.sh basic-zhfst.sh])
 
 # output
 AC_OUTPUT
