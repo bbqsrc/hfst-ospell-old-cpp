@@ -33,15 +33,19 @@ libhfstospell_la_LDFLAGS=-no-undefined -version-info 2:0:0 $(LIBXMLPP_LIBS)
 hfst_ospell_SOURCES=main.cc
 hfst_ospell_LDADD=libhfstospell.la
 hfst_ospell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(LIBXMLPP_CFLAGS)
+
 hfst_ospell_norvig_SOURCES=main-norvig.cc
 hfst_ospell_norvig_LDADD=libhfstospell.la
 hfst_ospell_norvig_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(LIBXMLPP_CFLAGS)
+
 hfst_ospell_cicling_SOURCES=main-cicling.cc
 hfst_ospell_cicling_LDADD=libhfstospell.la
 hfst_ospell_cicling_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(LIBXMLPP_CFLAGS)
+
 hfst_ospell_fsmnlp_2012_SOURCES=main-fsmnlp-2012.cc
 hfst_ospell_fsmnlp_2012_LDADD=libhfstospell.la
 hfst_ospell_fsmnlp_2012_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(LIBXMLPP_CFLAGS)
+
 # install headers for library in hfst's includedir
 include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h \
 				ZHfstOspeller.h ZHfstOspellerXmlMetadata.h
@@ -65,8 +69,8 @@ endif
 speller.zhfst: acceptor.default.hfst errmodel.default.hfst index.xml
 	$(ZIP) $(ZIPFLAGS) $@ $^
 
-%.hfst: %.txt
+.txt.hfst:
 	hfst-txt2fst $(HFST_FLAGS) $< | hfst-fst2fst $(HFST_FLAGS) -f olw -o $@
 
-%.hfstol: %.txt
+.txt.hfstol:
 	hfst-txt2fst $(HFST_FLAGS) $< | hfst-fst2fst $(HFST_FLAGS) -f olw -o $@
