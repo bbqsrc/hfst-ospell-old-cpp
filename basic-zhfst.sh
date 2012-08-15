@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if test -x ./hfst-ospell ; then
-    if ! cat @top_srcdir@/test.strings | ./hfst-ospell speller.zhfst ; then
+    if ! cat $srcdir/test.strings | ./hfst-ospell speller.zhfst ; then
         exit 1
     fi
 else

@@ -109,7 +109,7 @@ AC_CHECK_FUNCS([strndup])
 # Checks for system services
 
 # config files
-AC_CONFIG_FILES([Makefile hfstospell.pc basic-legacy.sh basic-zhfst.sh])
+AC_CONFIG_FILES([Makefile hfstospell.pc])
 
 # output
 AC_OUTPUT
@@ -120,6 +120,3 @@ cat <<EOF
     * extracting to: $with_extract
     * xml support: $enable_xml
 EOF
-
-
-
