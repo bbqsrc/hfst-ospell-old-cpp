@@ -116,7 +116,7 @@ AC_OUTPUT
 
 cat <<EOF
 -- Building $PACKAGE_STRING
- * zhfst support: $enable_zhfst
+    * zhfst support: $enable_zhfst
     * extracting to: $with_extract
     * xml support: $enable_xml
 EOF
