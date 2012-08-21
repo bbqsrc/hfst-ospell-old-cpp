@@ -381,17 +381,17 @@ ZHfstOspeller::read_legacy(const std::string& path)
       {
         can_spell_ = true;
         can_correct_ = true;
-        current_speller_ = new Speller(acceptors_["default"],
-                                       errmodels_["default"]);
-        current_sugger_ = new Speller(acceptors_["suggestion"],
-                                      errmodels_["default"]);
+        current_speller_ = new Speller(errmodels_["default"],
+                                       acceptors_["default"]);
+        current_sugger_ = new Speller(errmodels_["default"],
+                                      acceptors_["suggestion"]);
       }
     else if (speller && error)
       {
         can_spell_ = true;
         can_correct_ = true;
-        current_speller_ = new Speller(acceptors_["default"],
-                                       errmodels_["default"]);
+        current_speller_ = new Speller(errmodels_["default"],
+                                       acceptors_["default"]);
         current_sugger_ = current_speller_;
       }
     else
