@@ -57,9 +57,9 @@ pkgconfig_DATA=hfstospell.pc
 # tests
 if CAN_TEST
 TXTS=acceptor.default.txt errmodel.default.txt
-check_DATA=speller.zhfst \
+check_DATA=speller.zhfst spl.hfstol sug.hfstol err.hfstol \
 		   test.strings
-TESTS=basic-zhfst.sh basic-legacy.sh
+TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh
 EXTRA_DIST=$(TXTS)
 
 clean-local:
@@ -68,6 +68,15 @@ endif
 
 speller.zhfst: acceptor.default.hfst errmodel.default.hfst index.xml
 	$(ZIP) $(ZIPFLAGS) $@ $^
+
+sug.hfstol: acceptor.default.hfst
+	-ln -sf $< $@
+
+spl.hfstol: acceptor.default.hfst
+	-ln -sf $< $@
+
+err.hfstol: errmodel.default.hfst
+	-ln -sf $< $@
 
 .txt.hfst:
 	hfst-txt2fst $(HFST_FLAGS) $< | hfst-fst2fst $(HFST_FLAGS) -f olw -o $@
