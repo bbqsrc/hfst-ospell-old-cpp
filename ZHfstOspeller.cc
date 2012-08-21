@@ -379,6 +379,8 @@ ZHfstOspeller::read_legacy(const std::string& path)
       }
     if (speller && sugger && error)
       {
+        can_spell_ = true;
+        can_correct_ = true;
         current_speller_ = new Speller(acceptors_["default"],
                                        errmodels_["default"]);
         current_sugger_ = new Speller(acceptors_["suggestion"],
@@ -386,6 +388,8 @@ ZHfstOspeller::read_legacy(const std::string& path)
       }
     else if (speller && error)
       {
+        can_spell_ = true;
+        can_correct_ = true;
         current_speller_ = new Speller(acceptors_["default"],
                                        errmodels_["default"]);
         current_sugger_ = current_speller_;
