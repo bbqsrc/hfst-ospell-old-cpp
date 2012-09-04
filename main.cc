@@ -119,9 +119,11 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
     
     while (!std::cin.eof()) {
         std::cin.getline(str, 2000);
-        if (str[0] == '\0') {
-        break;
-        }
+        if (str[0] == '\0') 
+          {
+            std::cerr << "Skipping empty lines" << std::endl;
+            continue;
+          }
         if (str[strlen(str) - 1] == '\r')
           {
             std::cerr << "There is a WINDOWS linebreak in this file" <<
