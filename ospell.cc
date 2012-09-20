@@ -428,7 +428,7 @@ void Transducer::set_symbol_table(void)
     }
 }
 
-CorrectionQueue Speller::correct(char * line)
+CorrectionQueue Speller::correct(char * line, int nbest)
 {
     // if input initialization fails, return empty correction queue
     if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
@@ -438,7 +438,16 @@ CorrectionQueue Speller::correct(char * line)
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     queue.assign(1, start_node);
 
+    // A queue to keep track of the current n best results
+    WeightQueue nbest_queue;
+
     while (queue.size() > 0) {
+        // if we can't get an acceptable result, never mind
+        if (nbest > 0 && nbest_queue.size() > nbest &&
+            queue.front().weight > nbest_queue.top()) {
+            queue.pop_front();
+            continue;
+        }
 	lexicon_epsilons();
 	mutator_epsilons();
 	if (queue.front().input_state == input.len()) {
@@ -447,15 +456,24 @@ CorrectionQueue Speller::correct(char * line)
 	     */
 	    if (mutator->is_final(queue.front().mutator_state)&&
 		lexicon->is_final(queue.front().lexicon_state)) {
-		std::string string = stringify(queue.front().string);
-		Weight weight = queue.front().weight +
+                Weight weight = queue.front().weight +
 		    lexicon->final_weight(queue.front().lexicon_state) +
 		    mutator->final_weight(queue.front().mutator_state);
+                if (nbest_queue.size() > nbest &&
+                    weight > nbest_queue.top()) {
+                    queue.pop_front();
+                    continue;
+                }
+		std::string string = stringify(queue.front().string);
 		/* if the correction is novel or better than before, insert it
 		 */
 		if (corrections.count(string) == 0||
 		    corrections[string] > weight) {
 		    corrections[string] = weight;
+                    nbest_queue.push(weight);
+                    if (nbest_queue.size() > nbest) {
+                        nbest_queue.pop();
+                    }
 		}
 	    }
 	} else {

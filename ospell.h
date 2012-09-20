@@ -79,6 +79,7 @@ typedef std::priority_queue<StringWeightPair,
 typedef std::priority_queue<StringWeightPair,
 			    std::vector<StringWeightPair>,
 			    StringWeightComparison> HyphenationQueue;
+typedef std::priority_queue<Weight> WeightQueue;
 
 class Transducer
 {
@@ -330,7 +331,7 @@ public:
     void consume_input(void);
     void lexicon_consume(void);
     bool check(char * line);
-    CorrectionQueue correct(char * line);
+    CorrectionQueue correct(char * line, int nbest = 0);
     std::string stringify(SymbolVector symbol_vector);
 };
 
