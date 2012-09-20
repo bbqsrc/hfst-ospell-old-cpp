@@ -444,7 +444,7 @@ CorrectionQueue Speller::correct(char * line, int nbest)
     while (queue.size() > 0) {
         // if we can't get an acceptable result, never mind
         if (nbest > 0 && nbest_queue.size() > nbest &&
-            queue.front().weight > nbest_queue.top()) {
+            queue.front().weight >= nbest_queue.top()) {
             queue.pop_front();
             continue;
         }
@@ -459,8 +459,8 @@ CorrectionQueue Speller::correct(char * line, int nbest)
                 Weight weight = queue.front().weight +
 		    lexicon->final_weight(queue.front().lexicon_state) +
 		    mutator->final_weight(queue.front().mutator_state);
-                if (nbest_queue.size() > nbest &&
-                    weight > nbest_queue.top()) {
+                if (nbest > 0 && nbest_queue.size() > nbest &&
+                    weight >= nbest_queue.top()) {
                     queue.pop_front();
                     continue;
                 }
@@ -471,7 +471,7 @@ CorrectionQueue Speller::correct(char * line, int nbest)
 		    corrections[string] > weight) {
 		    corrections[string] = weight;
                     nbest_queue.push(weight);
-                    if (nbest_queue.size() > nbest) {
+                    if (nbest > 0 && nbest_queue.size() > nbest) {
                         nbest_queue.pop();
                     }
 		}
