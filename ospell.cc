@@ -444,27 +444,27 @@ CorrectionQueue Speller::correct(char * line, int nbest)
     while (queue.size() > 0) {
         // if we can't get an acceptable result, never mind
         if (nbest > 0 && nbest_queue.size() > nbest &&
-            queue.front().weight >= nbest_queue.top()) {
-            queue.pop_front();
+            queue.back().weight >= nbest_queue.top()) {
+            queue.pop_back();
             continue;
         }
 	lexicon_epsilons();
 	mutator_epsilons();
-	if (queue.front().input_state == input.len()) {
+	if (queue.back().input_state == input.len()) {
 	    /* if our transducers are in final states
 	     * we generate the correction
 	     */
-	    if (mutator->is_final(queue.front().mutator_state)&&
-		lexicon->is_final(queue.front().lexicon_state)) {
-                Weight weight = queue.front().weight +
-		    lexicon->final_weight(queue.front().lexicon_state) +
-		    mutator->final_weight(queue.front().mutator_state);
+	    if (mutator->is_final(queue.back().mutator_state)&&
+		lexicon->is_final(queue.back().lexicon_state)) {
+                Weight weight = queue.back().weight +
+		    lexicon->final_weight(queue.back().lexicon_state) +
+		    mutator->final_weight(queue.back().mutator_state);
                 if (nbest > 0 && nbest_queue.size() > nbest &&
                     weight >= nbest_queue.top()) {
-                    queue.pop_front();
+                    queue.pop_back();
                     continue;
                 }
-		std::string string = stringify(queue.front().string);
+		std::string string = stringify(queue.back().string);
 		/* if the correction is novel or better than before, insert it
 		 */
 		if (corrections.count(string) == 0||
@@ -479,7 +479,7 @@ CorrectionQueue Speller::correct(char * line, int nbest)
 	} else {
 	    consume_input();
 	}
-	queue.pop_front();
+	queue.pop_back();
     }
     CorrectionQueue correction_queue;
     std::map<std::string, Weight>::iterator it;
