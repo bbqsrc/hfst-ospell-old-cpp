@@ -134,7 +134,7 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
         if (speller->check(str)) {
         std::cout << "\"" << str << "\" is in the lexicon\n\n";
         } else {
-        hfst_ol::CorrectionQueue corrections = speller->correct(str);
+        hfst_ol::CorrectionQueue corrections = speller->correct(str, 5);
         if (corrections.size() > 0) {
             std::cout << "Corrections for \"" << str << "\":\n";
             while (corrections.size() > 0)
