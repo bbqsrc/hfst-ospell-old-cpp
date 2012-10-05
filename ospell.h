@@ -305,7 +305,6 @@ public:
     SymbolVector alphabet_translator;
     OperationMap * operations;
     std::vector<const char*> * symbol_table;
-    TreeNode agenda;
     
     Speller(Transducer * mutator_ptr, Transducer * lexicon_ptr):
 	mutator(mutator_ptr),
@@ -314,7 +313,6 @@ public:
 	queue(TreeNodeQueue()),
 	alphabet_translator(SymbolVector()),
 	operations(lexicon->get_operations()),
-        agenda(FlagDiacriticState(get_state_size(), 0)),
 	symbol_table(lexicon->get_symbol_table())
 	{
 	    build_alphabet_translator();
