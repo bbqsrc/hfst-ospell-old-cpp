@@ -31,19 +31,19 @@ public:
     Weight weight;
 
     STransition(TransitionTableIndex i,
-		SymbolNumber s):
-	index(i),
-	symbol(s),
-	weight(0.0)
-	{}
+                SymbolNumber s):
+        index(i),
+        symbol(s),
+        weight(0.0)
+        {}
 
     STransition(TransitionTableIndex i,
-		SymbolNumber s,
-		Weight w):
-	index(i),
-	symbol(s),
-	weight(w)
-	{}
+                SymbolNumber s,
+                Weight w):
+        index(i),
+        symbol(s),
+        weight(w)
+        {}
 
 };
 
@@ -57,28 +57,28 @@ class StringWeightComparison
     bool reverse;
 public:
     StringWeightComparison(bool reverse_result=false):
-	reverse(reverse_result)
-	{}
+        reverse(reverse_result)
+        {}
     
     bool operator() (StringWeightPair lhs, StringWeightPair rhs)
-	{ // return true when we want rhs to appear before lhs
-	    if (reverse) {
-		return (lhs.second < rhs.second);
-	    } else {
-		return (lhs.second > rhs.second);
-	    }
-	}
+        { // return true when we want rhs to appear before lhs
+            if (reverse) {
+                return (lhs.second < rhs.second);
+            } else {
+                return (lhs.second > rhs.second);
+            }
+        }
 };
 
 typedef std::priority_queue<StringWeightPair,
-			    std::vector<StringWeightPair>,
-			    StringWeightComparison> CorrectionQueue;
+                            std::vector<StringWeightPair>,
+                            StringWeightComparison> CorrectionQueue;
 typedef std::priority_queue<StringWeightPair,
-			    std::vector<StringWeightPair>,
-			    StringWeightComparison> AnalysisQueue;
+                            std::vector<StringWeightPair>,
+                            StringWeightComparison> AnalysisQueue;
 typedef std::priority_queue<StringWeightPair,
-			    std::vector<StringWeightPair>,
-			    StringWeightComparison> HyphenationQueue;
+                            std::vector<StringWeightPair>,
+                            StringWeightComparison> HyphenationQueue;
 typedef std::priority_queue<Weight> WeightQueue;
 
 class Transducer
@@ -87,8 +87,6 @@ protected:
     TransducerHeader header;
     TransducerAlphabet alphabet;
     KeyTable * keys;
-    IndexTableReader index_reader;
-    TransitionTableReader transition_reader;
     Encoder encoder;
 
     static const TransitionTableIndex START_INDEX = 0;
@@ -97,104 +95,100 @@ protected:
   
     void set_symbol_table(void);
 
-    bool final_transition(TransitionTableIndex i)
-	{
-	    return transitions[i]->final();
-	}
-    
-    bool final_index(TransitionTableIndex i)
-	{
-	    return indices[i]->final();
-	}
-
-  
+ 
 public:
     Transducer(FILE * f):
-	header(TransducerHeader(f)),
-	alphabet(TransducerAlphabet(f, header.symbol_count())),
-	keys(alphabet.get_key_table()),
-	index_reader(f,header.index_table_size()),
-	transition_reader(f,header.target_table_size()),
-	encoder(keys,header.input_symbol_count()),
-	indices(index_reader()),
-	transitions(transition_reader())
-	{
-	    set_symbol_table();
-	}
+    header(TransducerHeader(f)),
+    alphabet(TransducerAlphabet(f, header.symbol_count())),
+    keys(alphabet.get_key_table()),
+    indices(f,header.index_table_size()),
+    transitions(f,header.target_table_size()),
+    encoder(keys,header.input_symbol_count())
+        {
+            set_symbol_table();
+        }
 
     Transducer(char * raw):
-	header(TransducerHeader(&raw)),
-	alphabet(TransducerAlphabet(&raw, header.symbol_count())),
-	keys(alphabet.get_key_table()),
-	index_reader(&raw,header.index_table_size()),
-	transition_reader(&raw,header.target_table_size()),
-	encoder(keys,header.input_symbol_count()),
-	indices(index_reader()),
-	transitions(transition_reader())
-	{
-	    set_symbol_table();
-	}
+    header(TransducerHeader(&raw)),
+    alphabet(TransducerAlphabet(&raw, header.symbol_count())),
+    keys(alphabet.get_key_table()),
+    indices(&raw,header.index_table_size()),
+    transitions(&raw,header.target_table_size()),
+    encoder(keys,header.input_symbol_count())
+        {
+            set_symbol_table();
+        }
 
-    TransitionIndexVector &indices;
-  
-    TransitionVector &transitions;
+    IndexTable indices;
+    TransitionTable transitions;
+
+    bool final_transition(TransitionTableIndex i)
+        {
+            return transitions.final(i);
+        }
     
+    bool final_index(TransitionTableIndex i)
+        {
+            return indices.final(i);
+        }
+
     KeyTable * get_key_table(void)
-	{
-	    return keys;
-	}
+        {
+            return keys;
+        }
 
     SymbolNumber find_next_key(char ** p)
-	{
-	    return encoder.find_key(p);
-	}
+        {
+            return encoder.find_key(p);
+        }
 
     Encoder * get_encoder(void)
-	{
-	    return &encoder;
-	}
+        {
+            return &encoder;
+        }
 
     unsigned int get_state_size(void)
-	{
-	    return alphabet.get_state_size();
-	}
+        {
+            return alphabet.get_state_size();
+        }
 
     std::vector<const char*> * get_symbol_table(void)
-	{
-	    return &symbol_table;
-	}
+        {
+            return &symbol_table;
+        }
 
     SymbolNumber get_other(void)
-	{
-	    return alphabet.get_other();
-	}
+        {
+            return alphabet.get_other();
+        }
 
     TransducerAlphabet * get_alphabet(void)
-	{
-	    return &alphabet;
-	}
+        {
+            return &alphabet;
+        }
 
     OperationMap * get_operations(void)
-	{
-	    return alphabet.get_operation_map();
-	}
+        {
+            return alphabet.get_operation_map();
+        }
+
 
     STransition take_epsilons(const TransitionTableIndex i) const;
     STransition take_epsilons_and_flags(const TransitionTableIndex i);
     STransition take_non_epsilons(const TransitionTableIndex i,
-				  const SymbolNumber symbol) const;
+                                  const SymbolNumber symbol) const;
     TransitionTableIndex next(const TransitionTableIndex i,
-			      const SymbolNumber symbol) const;
+                              const SymbolNumber symbol) const;
     TransitionTableIndex next_e(const TransitionTableIndex i) const;
     bool has_transitions(const TransitionTableIndex i,
-			 const SymbolNumber symbol) const;
+                         const SymbolNumber symbol) const;
     bool has_epsilons_or_flags(const TransitionTableIndex i);
     bool is_final(const TransitionTableIndex i);
     Weight final_weight(const TransitionTableIndex i) const;
     bool is_flag(const SymbolNumber symbol)
-	{ return alphabet.is_flag(symbol); }
+        { return alphabet.is_flag(symbol); }
     bool is_weighted(void)
-	{ return header.probe_flag(Weighted);}
+        { return header.probe_flag(Weighted);}
 
 };
 
@@ -209,50 +203,50 @@ public:
     Weight weight;
 
     TreeNode(SymbolVector prev_string,
-	     unsigned int i,
-	     TransitionTableIndex mutator,
-	     TransitionTableIndex lexicon,
-	     FlagDiacriticState state,
-	     Weight w):
-	string(prev_string),
-	input_state(i),
-	mutator_state(mutator),
-	lexicon_state(lexicon),
-	flag_state(state),
-	weight(w)
-	{ }
+             unsigned int i,
+             TransitionTableIndex mutator,
+             TransitionTableIndex lexicon,
+             FlagDiacriticState state,
+             Weight w):
+        string(prev_string),
+        input_state(i),
+        mutator_state(mutator),
+        lexicon_state(lexicon),
+        flag_state(state),
+        weight(w)
+        { }
 
     TreeNode(FlagDiacriticState start_state): // starting state node
-	string(SymbolVector()),
-	input_state(0),
-	mutator_state(0),
-	lexicon_state(0),
-	flag_state(start_state),
-	weight(0.0)
-	{ }
+    string(SymbolVector()),
+    input_state(0),
+    mutator_state(0),
+    lexicon_state(0),
+    flag_state(start_state),
+    weight(0.0)
+        { }
 
     bool try_compatible_with(FlagDiacriticOperation op);
 
     TreeNode update_lexicon(SymbolNumber next_symbol,
-			    TransitionTableIndex next_lexicon,
-			    Weight weight);
+                            TransitionTableIndex next_lexicon,
+                            Weight weight);
 
     TreeNode update_mutator(SymbolNumber next_symbol,
-			    TransitionTableIndex next_mutator,
-			    Weight weight);
+                            TransitionTableIndex next_mutator,
+                            Weight weight);
 
     void increment_mutator(void);
 
     TreeNode update(SymbolNumber next_symbol,
-		    unsigned int next_input,
-		    TransitionTableIndex next_mutator,
-		    TransitionTableIndex next_lexicon,
-		    Weight weight);
+                    unsigned int next_input,
+                    TransitionTableIndex next_mutator,
+                    TransitionTableIndex next_lexicon,
+                    Weight weight);
 
     TreeNode update(SymbolNumber next_symbol,
-		    TransitionTableIndex next_mutator,
-		    TransitionTableIndex next_lexicon,
-		    Weight weight);
+                    TransitionTableIndex next_mutator,
+                    TransitionTableIndex next_lexicon,
+                    Weight weight);
 
 
 };
@@ -269,30 +263,30 @@ private:
 
 public:
     InputString():
-	s(SymbolVector())
-	{ }
+        s(SymbolVector())
+        { }
 
     bool initialize(Encoder * encoder, char * input, SymbolNumber other);
     
     unsigned int len(void)
-	{
-	    return s.size();
-	}
+        {
+            return s.size();
+        }
 
     SymbolNumber operator[](unsigned int i)
-	{
-	    return s[i];
-	}
+        {
+            return s[i];
+        }
 
 };
 
-    class AlphabetTranslationException: public std::runtime_error
+class AlphabetTranslationException: public std::runtime_error
 { // "what" should hold the first untranslatable symbol
 public:
     
     AlphabetTranslationException(const std::string what):
-	std::runtime_error(what)
-	{ }
+        std::runtime_error(what)
+        { }
 };
 
 class Speller
@@ -307,23 +301,23 @@ public:
     std::vector<const char*> * symbol_table;
     
     Speller(Transducer * mutator_ptr, Transducer * lexicon_ptr):
-	mutator(mutator_ptr),
-	lexicon(lexicon_ptr),
-	input(InputString()),
-	queue(TreeNodeQueue()),
-	alphabet_translator(SymbolVector()),
-	operations(lexicon->get_operations()),
-	symbol_table(lexicon->get_symbol_table())
-	{
-	    build_alphabet_translator();
-	}
+        mutator(mutator_ptr),
+        lexicon(lexicon_ptr),
+        input(InputString()),
+        queue(TreeNodeQueue()),
+        alphabet_translator(SymbolVector()),
+        operations(lexicon->get_operations()),
+        symbol_table(lexicon->get_symbol_table())
+        {
+            build_alphabet_translator();
+        }
     
     bool init_input(char * str, Encoder * encoder, SymbolNumber other);
 
     SymbolNumber get_state_size(void)
-	{
-	    return lexicon->get_state_size();
-	}
+        {
+            return lexicon->get_state_size();
+        }
 
     void build_alphabet_translator(void);
     void lexicon_epsilons(void);

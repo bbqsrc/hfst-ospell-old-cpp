@@ -72,7 +72,7 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
     {
         ungetc(c, f); // first the non-matching character
         for(int i = header_loc - 1; i>=0; i--) {
-// then the characters that did match (if any)
+            // then the characters that did match (if any)
             ungetc(header1[i], f);
         }
     }
@@ -98,7 +98,7 @@ void TransducerHeader::skip_hfst3_header(char ** raw)
     {
         --(*raw); // first the non-matching character
         for(int i = header_loc - 1; i>=0; i--) {
-// then the characters that did match (if any)
+            // then the characters that did match (if any)
             --(*raw);
         }
     }
@@ -116,7 +116,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
     kt->push_back(std::string("")); // zeroth symbol is epsilon
     int byte;
     while ( (byte = fgetc(f)) != 0 ) {
-/* pass over epsilon */
+        /* pass over epsilon */
         if (byte == EOF) {
             HFST_THROW(AlphabetParsingException);
         }
@@ -132,7 +132,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
             ++sym;
         }
         *sym = 0;
-// Detect and handle special symbols, which begin and end with @
+        // Detect and handle special symbols, which begin and end with @
         if (line[0] == '@' && line[strlen(line) - 1] == '@') {
             if (strlen(line) >= 5 && line[2] == '.') { // flag diacritic
                 std::string feat;
@@ -201,7 +201,7 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
 
     for (SymbolNumber k = 1; k < number_of_symbols; ++k) {
 
-// Detect and handle special symbols, which begin and end with @
+        // Detect and handle special symbols, which begin and end with @
         if ((*raw)[0] == '@' && (*raw)[strlen(*raw) - 1] == '@') {
             if (strlen(*raw) >= 5 && (*raw)[2] == '.') { // flag diacritic
                 std::string feat;
@@ -260,98 +260,43 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
     flag_state_size = feature_bucket.size();
 }
 
-void IndexTableReader::read(FILE * f,
-                            TransitionTableIndex number_of_table_entries)
+void IndexTable::read(FILE * f,
+                      TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
-    char * index_area = (char*)(malloc(table_size));
-    if (fread(index_area,table_size, 1, f) != 1) {
+    indices = (char*)(malloc(table_size));
+    if (fread(indices,table_size, 1, f) != 1) {
         HFST_THROW(IndexTableReadingException);
     }
-
-    for (size_t i = 0;
-         i < number_of_table_entries;
-         ++i)
-    {
-        size_t j = i * TransitionIndex::SIZE;
-        SymbolNumber * input = (SymbolNumber*)(index_area + j);
-        TransitionTableIndex * index = 
-            (TransitionTableIndex*)(index_area + j + sizeof(SymbolNumber));
-        indices.push_back(new TransitionIndex(*input,*index));
-    }
-    free(index_area);
 }
 
-void IndexTableReader::read(char ** raw,
-                            TransitionTableIndex number_of_table_entries)
+void IndexTable::read(char ** raw,
+                      TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
-
-    for (size_t i = 0;
-         i < number_of_table_entries;
-         ++i)
-    {
-        size_t j = i * TransitionIndex::SIZE;
-        SymbolNumber * input = (SymbolNumber*)((*raw) + j);
-        TransitionTableIndex * index = 
-            (TransitionTableIndex*)((*raw) + j + sizeof(SymbolNumber));
-        indices.push_back(new TransitionIndex(*input,*index));
-    }
+    // indices = (char*)(malloc(table_size));
+    // memcpy((void *) indices, (const void *) *raw, table_size);
+    indices = *raw;
     (*raw) += table_size;
 }
 
-void TransitionTableReader::read(FILE * f,
-                                 TransitionTableIndex number_of_table_entries)
+void TransitionTable::read(FILE * f,
+                           TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*Transition::SIZE;
-    char * transition_area = (char*)(malloc(table_size));
-    if (fread(transition_area, table_size, 1, f) != 1) {
+    transitions = (char*)(malloc(table_size));
+    if (fread(transitions, table_size, 1, f) != 1) {
         HFST_THROW(TransitionTableReadingException);
     }
-
-    for (size_t i = 0; i < number_of_table_entries; ++i)
-    {
-        size_t j = i * Transition::SIZE;
-        SymbolNumber * input = (SymbolNumber*)(transition_area + j);
-        SymbolNumber * output = 
-            (SymbolNumber*)(transition_area + j + sizeof(SymbolNumber));
-        TransitionTableIndex * target = 
-            (TransitionTableIndex*)(transition_area + j + 2 * sizeof(SymbolNumber));
-        Weight * weight =
-            (Weight*)(transition_area + j + 2 * sizeof(SymbolNumber) +
-                      sizeof(TransitionTableIndex));
-
-        transitions.push_back(new Transition(*input,
-                                             *output,
-                                             *target,
-                                             *weight));
-
-    }
-    free(transition_area);
 }
 
-void TransitionTableReader::read(char ** raw,
-                                 TransitionTableIndex number_of_table_entries)
+void TransitionTable::read(char ** raw,
+                           TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*Transition::SIZE;
-    for (size_t i = 0; i < number_of_table_entries; ++i)
-    {
-        size_t j = i * Transition::SIZE;
-        SymbolNumber * input = (SymbolNumber*)((*raw) + j);
-        SymbolNumber * output = 
-            (SymbolNumber*)((*raw) + j + sizeof(SymbolNumber));
-        TransitionTableIndex * target = 
-            (TransitionTableIndex*)((*raw) + j + 2 * sizeof(SymbolNumber));
-        Weight * weight =
-            (Weight*)((*raw) + j + 2 * sizeof(SymbolNumber) +
-                      sizeof(TransitionTableIndex));
-
-        transitions.push_back(new Transition(*input,
-                                             *output,
-                                             *target,
-                                             *weight));
-
-    }
+    // char * transitions = (char*)(malloc(table_size));
+    // memcpy((void *) transitions, (const void *) *raw, table_size);
+    transitions = *raw;
     (*raw) += table_size;
 }
 
