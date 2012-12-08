@@ -472,26 +472,28 @@ private:
               TransitionTableIndex number_of_table_entries);
     void read(char ** raw,
               TransitionTableIndex number_of_table_entries);
-
+    bool memory_handled_by_me;
 
 public:
     IndexTable(FILE * f,
                TransitionTableIndex number_of_table_entries):
-        indices(NULL)
+        indices(NULL),
+        memory_handled_by_me(true)
         {
             read(f, number_of_table_entries);
         }
     
     IndexTable(char ** raw,
                TransitionTableIndex number_of_table_entries):
-        indices(NULL)
+        indices(NULL),
+        memory_handled_by_me(false)
         {
             read(raw, number_of_table_entries);
         }
 
     ~IndexTable(void)
         {
-            if (indices) {
+            if (indices && memory_handled_by_me) {
                 free(indices);
             }
         }
@@ -525,25 +527,28 @@ protected:
               TransitionTableIndex number_of_table_entries);
     void read(char ** raw,
               TransitionTableIndex number_of_table_entries);
+    bool memory_handled_by_me;
 
 public:
     TransitionTable(FILE * f,
                     TransitionTableIndex transition_count):
-        transitions(NULL)
+        transitions(NULL),
+        memory_handled_by_me(true)
         {
             read(f, transition_count);
         }
   
     TransitionTable(char ** raw,
                     TransitionTableIndex transition_count):
-        transitions(NULL)
+        transitions(NULL),
+        memory_handled_by_me(false)
         {
             read(raw, transition_count);
         }
 
     ~TransitionTable(void)
         {
-            if (transitions) {
+            if (transitions && memory_handled_by_me) {
                 free(transitions);
             }
         }
