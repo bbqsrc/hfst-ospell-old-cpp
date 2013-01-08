@@ -399,7 +399,13 @@ ZHfstOspeller::read_legacy(const std::string& path)
         throw ZHfstLegacyReadingError("no readable legacy automata found");
       }
   }
- 
+
+const ZHfstOspellerXmlMetadata&
+ZHfstOspeller::get_metadata() const
+  {
+    return metadata_;
+  }
+
 string
 ZHfstOspeller::metadata_dump() const
   {

@@ -59,6 +59,8 @@ namespace hfst_ol
             //! @brief hyphenate word form
             HyphenationQueue hyphenate(const std::string& wordform);
 
+            //! @brief get access to metadata read from XML.
+            const ZHfstOspellerXmlMetadata& get_metadata() const;
             //! @brief create string representation of the speller for
             //!        programmer to debug
             std::string metadata_dump() const;
