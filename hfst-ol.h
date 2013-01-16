@@ -472,28 +472,26 @@ private:
               TransitionTableIndex number_of_table_entries);
     void read(char ** raw,
               TransitionTableIndex number_of_table_entries);
-    bool memory_handled_by_me;
+
 
 public:
     IndexTable(FILE * f,
                TransitionTableIndex number_of_table_entries):
-        indices(NULL),
-        memory_handled_by_me(true)
+        indices(NULL)
         {
             read(f, number_of_table_entries);
         }
     
     IndexTable(char ** raw,
                TransitionTableIndex number_of_table_entries):
-        indices(NULL),
-        memory_handled_by_me(false)
+        indices(NULL)
         {
             read(raw, number_of_table_entries);
         }
 
     ~IndexTable(void)
         {
-            if (indices && memory_handled_by_me) {
+            if (indices) {
                 free(indices);
             }
         }
@@ -508,7 +506,7 @@ public:
     
     bool final(TransitionTableIndex i) const
         {
-            return input_symbol(i)  == NO_SYMBOL && target(i) != NO_TABLE_INDEX;
+            return input_symbol(i) == NO_SYMBOL && target(i) != NO_TABLE_INDEX;
         }
 
     Weight final_weight(TransitionTableIndex i) const
@@ -527,28 +525,25 @@ protected:
               TransitionTableIndex number_of_table_entries);
     void read(char ** raw,
               TransitionTableIndex number_of_table_entries);
-    bool memory_handled_by_me;
 
 public:
     TransitionTable(FILE * f,
                     TransitionTableIndex transition_count):
-        transitions(NULL),
-        memory_handled_by_me(true)
+        transitions(NULL)
         {
             read(f, transition_count);
         }
   
     TransitionTable(char ** raw,
                     TransitionTableIndex transition_count):
-        transitions(NULL),
-        memory_handled_by_me(false)
+        transitions(NULL)
         {
             read(raw, transition_count);
         }
 
     ~TransitionTable(void)
         {
-            if (transitions && memory_handled_by_me) {
+            if (transitions) {
                 free(transitions);
             }
         }

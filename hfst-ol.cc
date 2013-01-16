@@ -274,9 +274,8 @@ void IndexTable::read(char ** raw,
                       TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
-    // indices = (char*)(malloc(table_size));
-    // memcpy((void *) indices, (const void *) *raw, table_size);
-    indices = *raw;
+    indices = (char*)(malloc(table_size));
+    memcpy((void *) indices, (const void *) *raw, table_size);
     (*raw) += table_size;
 }
 
@@ -294,9 +293,8 @@ void TransitionTable::read(char ** raw,
                            TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*Transition::SIZE;
-    // char * transitions = (char*)(malloc(table_size));
-    // memcpy((void *) transitions, (const void *) *raw, table_size);
-    transitions = *raw;
+    transitions = (char*)(malloc(table_size));
+    memcpy((void *) transitions, (const void *) *raw, table_size);
     (*raw) += table_size;
 }
 
