@@ -296,6 +296,7 @@ public:
     Transducer * lexicon;
     InputString input;
     TreeNodeQueue queue;
+    TreeNode next_node;
     SymbolVector alphabet_translator;
     OperationMap * operations;
     std::vector<const char*> * symbol_table;
@@ -305,6 +306,7 @@ public:
         lexicon(lexicon_ptr),
         input(InputString()),
         queue(TreeNodeQueue()),
+        next_node(FlagDiacriticState(get_state_size(), 0)),
         alphabet_translator(SymbolVector()),
         operations(lexicon->get_operations()),
         symbol_table(lexicon->get_symbol_table())
