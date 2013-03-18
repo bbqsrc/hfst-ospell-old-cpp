@@ -113,7 +113,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
     ValueNumber val_num = 1;
     SymbolNumber feat_num = 0;
 
-    kt->push_back(std::string("")); // zeroth symbol is epsilon
+    kt.push_back(std::string("")); // zeroth symbol is epsilon
     int byte;
     while ( (byte = fgetc(f)) != 0 ) {
         /* pass over epsilon */
@@ -163,26 +163,26 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
                     ++val_num;
                 }
 
-                operations->insert(
+                operations.insert(
                     std::pair<SymbolNumber, FlagDiacriticOperation>(
                         k,
                         FlagDiacriticOperation(
                             op, feature_bucket[feat], value_bucket[val])));
 
-                kt->push_back(std::string(""));
+                kt.push_back(std::string(""));
                 continue;
 
             } else if (strcmp(line, "@_UNKNOWN_SYMBOL_@") == 0) { // other symbol
                 other_symbol = k;
-                kt->push_back(std::string(""));
+                kt.push_back(std::string(""));
                 continue;
             } else { // we don't know what this is, ignore and suppress
-                kt->push_back(std::string(""));
+                kt.push_back(std::string(""));
                 continue;
             }
         }
-        kt->push_back(std::string(line));
-        string_to_symbol->operator[](std::string(line)) = k;
+        kt.push_back(std::string(line));
+        string_to_symbol[std::string(line)] = k;
     }
     free(line);
     flag_state_size = feature_bucket.size();
@@ -196,7 +196,7 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
     ValueNumber val_num = 1;
     SymbolNumber feat_num = 0;
 
-    kt->push_back(std::string("")); // zeroth symbol is epsilon
+    kt.push_back(std::string("")); // zeroth symbol is epsilon
     skip_c_string(raw);
 
     for (SymbolNumber k = 1; k < number_of_symbols; ++k) {
@@ -232,29 +232,29 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
                     ++val_num;
                 }
 
-                operations->insert(
+                operations.insert(
                     std::pair<SymbolNumber, FlagDiacriticOperation>(
                         k,
                         FlagDiacriticOperation(
                             op, feature_bucket[feat], value_bucket[val])));
 
-                kt->push_back(std::string(""));
+                kt.push_back(std::string(""));
                 skip_c_string(raw);
                 continue;
 
             } else if (strcmp(*raw, "@_UNKNOWN_SYMBOL_@") == 0) { // other symbol
                 other_symbol = k;
-                kt->push_back(std::string(""));
+                kt.push_back(std::string(""));
                 skip_c_string(raw);
                 continue;
             } else { // we don't know what this is, ignore and suppress
-                kt->push_back(std::string(""));
+                kt.push_back(std::string(""));
                 skip_c_string(raw);
                 continue;
             }
         }
-        kt->push_back(std::string(*raw));
-        string_to_symbol->operator[](std::string(*raw)) = k;
+        kt.push_back(std::string(*raw));
+        string_to_symbol[std::string(*raw)] = k;
         skip_c_string(raw);
     }
     flag_state_size = feature_bucket.size();

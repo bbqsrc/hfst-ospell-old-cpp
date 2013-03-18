@@ -242,6 +242,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             free(full_data);
 #endif
             acceptors_[descr] = trans;
+            free(descr);
           }
         else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
           {
@@ -279,6 +280,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             free(full_data);
 #endif
             errmodels_[descr] = trans;
+            free(descr);
           } // if acceptor or errmodel
         else if (strcmp(filename, "index.xml") == 0)
           {

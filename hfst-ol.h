@@ -261,11 +261,11 @@ public:
 class TransducerAlphabet
 {
 private:
-    KeyTable * kt;
-    OperationMap * operations;
+    KeyTable kt;
+    OperationMap operations;
     SymbolNumber other_symbol;
     SymbolNumber flag_state_size;
-    StringSymbolMap * string_to_symbol;
+    StringSymbolMap string_to_symbol;
     void process_symbol(char * line);
     
     void read(FILE * f, SymbolNumber number_of_symbols);
@@ -273,28 +273,22 @@ private:
     
 public:
     TransducerAlphabet(FILE * f, SymbolNumber number_of_symbols):
-        kt(new KeyTable),
-        operations(new OperationMap),
-        other_symbol(NO_SYMBOL),
-        string_to_symbol(new StringSymbolMap)
+        other_symbol(NO_SYMBOL)
         {
             read(f, number_of_symbols);
         }
 
     TransducerAlphabet(char ** raw, SymbolNumber number_of_symbols):
-        kt(new KeyTable),
-        operations(new OperationMap),
-        other_symbol(NO_SYMBOL),
-        string_to_symbol(new StringSymbolMap)
+        other_symbol(NO_SYMBOL)
         {
             read(raw, number_of_symbols);
         }
 
     KeyTable * get_key_table(void)
-        { return kt; }
+        { return &kt; }
     
     OperationMap * get_operation_map(void)
-        { return operations; }
+        { return &operations; }
     
     SymbolNumber get_state_size(void)
         { return flag_state_size; }
@@ -306,14 +300,13 @@ public:
 
     StringSymbolMap * get_string_to_symbol(void)
         {
-            return string_to_symbol;
+            return &string_to_symbol;
         }
 
     bool is_flag(SymbolNumber symbol)
         {
-            return operations->count(symbol) == 1;
+            return operations.count(symbol) == 1;
         }
-  
 };
 
 class LetterTrie;
@@ -335,6 +328,16 @@ public:
 
     SymbolNumber find_key(char ** p);
 
+    ~LetterTrie()
+        {
+            for (LetterTrieVector::iterator i = letters.begin(); i != letters.end(); ++i)
+            {
+                if (*i)
+                { 
+                    delete *i;
+                }
+            }
+        }
 };
 
 class Encoder {

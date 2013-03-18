@@ -101,9 +101,9 @@ public:
     header(TransducerHeader(f)),
     alphabet(TransducerAlphabet(f, header.symbol_count())),
     keys(alphabet.get_key_table()),
+    encoder(keys,header.input_symbol_count()),
     indices(f,header.index_table_size()),
-    transitions(f,header.target_table_size()),
-    encoder(keys,header.input_symbol_count())
+    transitions(f,header.target_table_size())
         {
             set_symbol_table();
         }
@@ -112,9 +112,9 @@ public:
     header(TransducerHeader(&raw)),
     alphabet(TransducerAlphabet(&raw, header.symbol_count())),
     keys(alphabet.get_key_table()),
+    encoder(keys,header.input_symbol_count()),
     indices(&raw,header.index_table_size()),
-    transitions(&raw,header.target_table_size()),
-    encoder(keys,header.input_symbol_count())
+    transitions(&raw,header.target_table_size())
         {
             set_symbol_table();
         }
