@@ -221,6 +221,7 @@ zhfst_spell(char* zhfst_filename)
         }
         }
     }
+    free(str);
     return EXIT_SUCCESS;
   return EXIT_SUCCESS;
 }

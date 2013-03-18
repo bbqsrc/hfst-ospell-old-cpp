@@ -304,7 +304,7 @@ ZHfstOspellerXmlMetadata::parse_acceptor(xmlpp::Node* acceptorNode)
               }
           }
       }
-
+    free(descr);
   }
 
 void
@@ -362,6 +362,7 @@ ZHfstOspellerXmlMetadata::parse_errmodel(xmlpp::Node* errmodelNode)
       {
         errmodel_[errm_count].descr_ = descr;
       }
+    free(descr);
     errmodel_[errm_count].id_ = xidValue;
     xmlpp::Node::NodeList errms = errmodelNode->get_children();
     for (xmlpp::Node::NodeList::iterator errm = errms.begin();
