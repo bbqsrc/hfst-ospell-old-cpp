@@ -1,3 +1,145 @@
+2013-03-18 10:26  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Fixes to [#165] by Harri Pitkänen
+
+2013-02-04 13:54  hardwick
+
+	* Made some changes to depth-first searching to prevent just-added
+	  nodes getting removed. This appears fo fix a very long-standing
+	  and serious bug dating from r2763.
+
+2013-01-16 12:46  hardwick
+
+	* When data is in memory, allocate & copy it in ospell rather than
+	  expect caller to keep track of it (which it usually doesn't)
+
+2013-01-08 06:21  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Add access to metadata
+
+2012-12-08 10:32  hardwick
+
+	* When initialised from memory, don't assume responsibility for
+	  freeing it
+
+2012-12-04 08:48  hardwick
+
+	* Somewhat experimental (no checking) way of saving memory by
+	  ignoring alignment
+	  issues (4-5 x memory savings)
+
+2012-10-05 07:48  hardwick
+
+	* Remove leftover agenda variable
+
+2012-10-05 05:18  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Add stuff for survey article
+
+2012-10-03 12:19  hardwick
+
+	* Revert to breadth-first searching pending bugfix
+
+2012-09-25 09:20  hardwick
+
+	* Search depth-first by preference for hope
+
+2012-09-20 16:30  hardwick
+
+	* Forgot some important checks that we actually want to limit the
+	  results
+
+2012-09-20 16:27  hardwick
+
+	* Enforce an n-best limit for continuing the search, just for
+	  breadth-first for
+	  now
+
+2012-09-04 19:11  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Don’t just break on empty lines
+
+2012-08-21 17:59  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Switch order of errmodels and acceptors in legacy read
+
+2012-08-21 17:50  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* set spelling caps on legacy read
+
+2012-08-21 17:50  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Test fallback
+
+2012-08-15 08:48  moshagen
+
+	* The VPATH approach to the test shell scripts was wrong. Now
+	  everything is working as it should.
+
+2012-08-15 04:57  moshagen
+
+	* Proper linebreaks.
+
+2012-08-15 04:56  moshagen
+
+	* Enabling VPATH building for 'make check'.
+
+2012-08-15 04:15  moshagen
+
+	* Whitespace change only in configure.ac. More generated files to
+	  ignore.
+
+2012-08-15 03:57  moshagen
+
+	* Added some whitespace to ease readability. Replaced pattern rules
+	  with suffix rules to make automake happy.
+
+2012-08-14 20:19  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Fix compilation without xml,
+	  as suggested by Harri Pitkänen on libvoikko-devel
+
+2012-08-14 18:06  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* do not close unopened files, handle legacy fallback reading
+	  errors
+
+2012-08-14 17:25  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* print details of xml parsing errors
+
+2012-08-14 16:13  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Add the very basic test suite
+
+2012-08-13 20:23  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Throw exception if reading a zip without existing zip file.
+
+2012-08-13 20:02  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Optionalise the libraries
+
+2012-07-22 01:52  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Update for automake-1.12 and AM_PROG_AR
+
+2012-07-06 19:03  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* kill everyone if windows linebreaks
+
+2012-07-05 18:13  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Fix documentation and set for 0.2.1 release
+
+2012-07-04 15:38  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* free more things and stuff
+
+2012-07-04 15:37  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Move Xml metadata parsing and storing into own file and class
+
 2012-07-04 10:28  hardwick
 
 	* Increment *raw when reading bools
