@@ -77,8 +77,10 @@ AM_CONDITIONAL([CAN_TEST],
 
 # Checks for libraries
 AS_IF([test x$enable_zhfst != xno],
-      [AC_CHECK_LIB([archive], [main],
-                    , [enable_zhfst=no])])
+      [PKG_CHECK_MODULES([LIBARCHIVE], [libarchive < 3],
+                  [AC_DEFINE([HAVE_LIBARCHIVE], [1], [Use archives]) 
+                   enable_zhfst=no].
+                  [enable_zhfst=yes])])
 AS_IF([test x$ac_cv_lib_archive_main = xno],
       [enable_zhfst=no])
 AS_IF([test x$enable_xml != xno],
@@ -88,13 +90,7 @@ AS_IF([test x$enable_xml != xno],
                   [enable_xml=no])])
 
 # Checks for header files
-AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([getopt.h])
-AS_IF([test x$enable_zhfst != xno],
-      [AC_CHECK_HEADERS([archive.h archive_entry.h], 
-                        [enable_xml=yes], [enable_xml=no])])
-
-AM_CONDITIONAL([CAN_ZIP], [test x$enable_zhfst != xno])
 
 # Checks for types
 AC_TYPE_SIZE_T

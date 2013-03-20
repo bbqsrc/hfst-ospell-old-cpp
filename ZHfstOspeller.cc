@@ -18,10 +18,8 @@
 #endif
 
 // C
-#if HAVE_ARCHIVE_H
+#if HAVE_LIBARCHIVE
 #  include <archive.h>
-#endif
-#if HAVE_ARCHIVE_ENTRY_H
 #  include <archive_entry.h>
 #endif
 // C++
