@@ -69,12 +69,12 @@ pkgconfig_DATA=hfstospell.pc
 if CAN_TEST
 TXTS=acceptor.default.txt errmodel.default.txt
 check_DATA=speller.zhfst spl.hfstol sug.hfstol err.hfstol \
-		   test.strings
+		   test.strings acceptor.default.hfst errmodel.default.hfst
 TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh
-EXTRA_DIST=$(TXTS)
+EXTRA_DIST=$(TXTS) index.xml test.strings $(TESTS)
 
 clean-local:
-	-rm -rf $(CHECK_data)
+	-rm -rf $(check_DATA)
 endif
 
 speller.zhfst: acceptor.default.hfst errmodel.default.hfst index.xml
