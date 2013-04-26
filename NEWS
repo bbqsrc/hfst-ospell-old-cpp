@@ -5,6 +5,12 @@
 This file contains all noteworthy changes in HFST-ospell development between
 releases.  For full listing of changes see ChangeLog.
 
+Noteworthy changes in 0.2.3
+---------------------------
+
+* fixed a bug that caused certain types of paths with flag diacritics not to
+  be accepted.
+
 Noteworthy changes in 0.2.2
 ---------------------------
 
