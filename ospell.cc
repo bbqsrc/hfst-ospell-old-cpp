@@ -190,12 +190,14 @@ void Speller::lexicon_epsilons(void)
                                                          i_s.index,
                                                          i_s.weight));
         } else {
+            FlagDiacriticState old_flags = next_node.flag_state;
             if (next_node.try_compatible_with( // this is terrible
                     operations->operator[](
                         lexicon->transitions.input_symbol(next)))) {
                 queue.push_back(next_node.update_lexicon(i_s.symbol,
                                                          i_s.index,
                                                          i_s.weight));
+                next_node.flag_state = old_flags;
             }
         }
         ++next;
@@ -503,7 +505,7 @@ bool Speller::check(char * line)
     while (queue.size() > 0) {
         next_node = queue.back();
         queue.pop_back();
-        if (next_node.input_state == input.len()&&
+        if (next_node.input_state == input.len() &&
             lexicon->is_final(next_node.lexicon_state)) {
             return true;
         }
