@@ -1,3 +1,42 @@
+2013-04-26 17:58  moshagen
+
+	* Preparing for 0.2.3 release.
+
+2013-04-26 14:34  moshagen
+
+	* Changed version number to 0.2.3, and renamed the package and tool
+	  name to 'hfst-ospell', since that is what the command-line tool
+	  is actually called, and it is consistent with the rest of the
+	  hfst tool names.
+
+2013-04-26 12:44  hardwick
+
+	* Should fix #176
+	  Flag state from the stack back was getting clobbered in some
+	  situations.
+	  Now we restore flag state after modifying it for new nodes.
+
+2013-03-22 07:49  moshagen
+
+	* More ignore patterns to ignore files generated during 'make
+	  check'.
+
+2013-03-22 06:21  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Fix dist stuff, wrap.
+
+2013-03-20 10:13  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Use pkg-config instead of autoconf to check libarchive
+
+2013-03-18 12:43  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Prepare files for 0.2.2
+
+2013-03-18 12:37  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Fix few leaks
+
 2013-03-18 10:26  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
 	* Fixes to [#165] by Harri Pitkänen
