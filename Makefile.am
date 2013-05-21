@@ -28,7 +28,7 @@ lib_LTLIBRARIES=libhfstospell.la
 libhfstospell_la_SOURCES=hfst-ol.cc ospell.cc \
 						 ZHfstOspeller.cc ZHfstOspellerXmlMetadata.cc
 libhfstospell_la_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
-libhfstospell_la_LDFLAGS=-no-undefined -version-info 3:1:1 \
+libhfstospell_la_LDFLAGS=-no-undefined -version-info 3:2:1 \
 						 $(LIBXMLPP_LIBS) $(LIBARCHIVE_LIBS)
 
 # link sample program against library here

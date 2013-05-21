@@ -5,6 +5,12 @@
 This file contains all noteworthy changes in HFST-ospell development between
 releases.  For full listing of changes see ChangeLog.
 
+Noteworthy changes in 0.2.4
+---------------------------
+
+* renamed the package hfstospell (from hfst-ospell), the previous rename caused
+  build issues.
+
 Noteworthy changes in 0.2.3
 ---------------------------
 
