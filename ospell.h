@@ -14,7 +14,7 @@
 //  limitations under the License.
 
 #ifndef HFST_OSPELL_OSPELL_H_
-#define HFST_OSPELL_OSPELL_H_
+#define HFST_OSPELL_OSPELL_H_ 1
 
 #include <string>
 #include <deque>
@@ -334,20 +334,6 @@ public:
 } // namespace hfst_ol
 
 // Some platforms lack strndup
-char* hfst_strndup(const char* s, size_t n)
-  {
-    char* rv = static_cast<char*>(malloc(sizeof(char)*n+1));
-    if (rv == NULL)
-      {
-          return rv;
-      }
-    rv = static_cast<char*>(memcpy(rv, s, n));
-    if (rv == NULL)
-      {
-        return rv;
-      }
-    rv[n] = '\0';
-    return rv;
-  }
+char* hfst_strndup(const char* s, size_t n);
     
 #endif // HFST_OSPELL_OSPELL_H_

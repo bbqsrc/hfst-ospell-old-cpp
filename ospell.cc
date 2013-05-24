@@ -11,6 +11,11 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
+
+#if HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include "ospell.h"
 
 namespace hfst_ol {
@@ -560,4 +565,21 @@ void Speller::build_alphabet_translator(void)
 }
 
 } // namespace hfst_ol
+  
+char*
+hfst_strndup(const char* s, unsigned long n)
+  {
+    char* rv = static_cast<char*>(malloc(sizeof(char)*n+1));
+    if (rv == NULL)
+      {
+          return rv;
+      }
+    rv = static_cast<char*>(memcpy(rv, s, n));
+    if (rv == NULL)
+      {
+        return rv;
+      }
+    rv[n] = '\0';
+    return rv;
+  }
     
