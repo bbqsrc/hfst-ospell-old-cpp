@@ -332,5 +332,25 @@ public:
 };
 
 } // namespace hfst_ol
+
+// Some platforms lack strndup
+#ifndef HAVE_STRNDUP
+char*
+strndup(const char* s, size_t n)
+  {
+    char* rv = static_cast<char*>(malloc(sizeof(char)*n+1));
+    if (rv == NULL)
+      {
+          return rv;
+      }
+    rv = static_cast<char*>(memcpy(rv, s, n));
+    if (rv == NULL)
+      {
+        return rv;
+      }
+    rv[n] = '\0';
+    return rv;
+  }
+#endif
     
 #endif // HFST_OSPELL_OSPELL_H_
