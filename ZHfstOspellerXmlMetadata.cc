@@ -248,7 +248,7 @@ get_automaton_descr_from_id(const Glib::ustring idstring)
     const char* id = idstring.c_str();
     const char* p = strchr(id, '.');
     const char* q = strchr(p + 1, '.');
-    return strndup(p + 1, q - p);
+    return hfst_strndup(p + 1, q - p);
   }
 
 void

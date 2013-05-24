@@ -206,7 +206,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
                       descr_len++;
                     }
               }
-            char* descr = strndup(p, descr_len);
+            char* descr = hfst_strndup(p, descr_len);
 #if ZHFST_EXTRACT_TO_TMPDIR
             FILE* f = fopen(temporary, "r");
             if (f == NULL)
@@ -244,7 +244,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
                     descr_len++;
                   }
               }
-            char* descr = strndup(p, descr_len);
+            char* descr = hfst_strndup(p, descr_len);
 #if ZHFST_EXTRACT_TO_TMPDIR
             FILE* f = fopen(temporary, "r");
             if (NULL == f)

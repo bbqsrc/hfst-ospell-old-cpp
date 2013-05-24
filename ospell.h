@@ -334,10 +334,7 @@ public:
 } // namespace hfst_ol
 
 // Some platforms lack strndup
-#ifndef HAVE_STRNDUP
-#define HAVE_STRNDUP
-char*
-strndup(const char* s, size_t n)
+char* hfst_strndup(const char* s, size_t n)
   {
     char* rv = static_cast<char*>(malloc(sizeof(char)*n+1));
     if (rv == NULL)
@@ -352,6 +349,5 @@ strndup(const char* s, size_t n)
     rv[n] = '\0';
     return rv;
   }
-#endif
     
 #endif // HFST_OSPELL_OSPELL_H_
