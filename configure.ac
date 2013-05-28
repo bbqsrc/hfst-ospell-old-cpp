@@ -77,12 +77,10 @@ AM_CONDITIONAL([CAN_TEST],
 
 # Checks for libraries
 AS_IF([test x$enable_zhfst != xno],
-      [PKG_CHECK_MODULES([LIBARCHIVE], [libarchive < 3],
+      [PKG_CHECK_MODULES([LIBARCHIVE], [libarchive > 3],
                   [AC_DEFINE([HAVE_LIBARCHIVE], [1], [Use archives]) 
-                   enable_zhfst=no].
-                  [enable_zhfst=yes])])
-AS_IF([test x$ac_cv_lib_archive_main = xno],
-      [enable_zhfst=no])
+                   enable_zhfst=yes],
+                  [enable_zhfst=no])])
 AS_IF([test x$enable_xml != xno],
       [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
                   [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])
