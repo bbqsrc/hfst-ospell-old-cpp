@@ -20,7 +20,7 @@ AC_PREREQ([2.62])
 LT_PREREQ([2.2.6])
 
 # init
-AC_INIT([hfstospell], [0.2.4], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
+AC_INIT([hfstospell], [0.2.5_beta], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules])
 AM_SILENT_RULES([yes])
@@ -33,7 +33,7 @@ AC_CONFIG_HEADERS([config.h])
 HFSTOSPELL_NAME=hfstospell
 HFSTOSPELL_MAJOR=0
 HFSTOSPELL_MINOR=2
-HFSTOSPELL_EXTENSION=.4
+HFSTOSPELL_EXTENSION=.4_beta
 HFSTOSPELL_VERSION=$HFSTOSPELL_MAJOR.$HFSTOSPELL_MINOR$HFSTOSPELL_EXTENSION
 AC_SUBST(HFSTOSPELL_MAJOR)
 AC_SUBST(HFSTOSPELL_MINOR)
@@ -46,9 +46,9 @@ AC_ARG_ENABLE([zhfst],
                               [support zipped complex automaton sets @<:@default=check@:>@])],
               [enable_zhfst=$enableval], [enable_zhfst=check])
 AC_ARG_ENABLE([xml],
-              [AS_HELP_STRING([--enable-xml],
-                              [support xml metadata for zipped automaton sets @<:@default=check@:>@])],
-              [enable_xml=$enableval], [enable_xml=check])
+              [AS_HELP_STRING([--enable-xml=LIBXML],
+                              [support xml metadata for zipped automaton sets with library LIBXML @<:@default=libxmlpp@:>@])],
+              [enable_xml=$enableval], [enable_xml=libxmlpp])
 AC_ARG_WITH([extract],
             [AS_HELP_STRING([--with-extract=TARGET],
                            [extract zhfst archives to tmpdir or mem @<:@default=mem@:>@])],
@@ -78,14 +78,19 @@ AM_CONDITIONAL([CAN_TEST],
 # Checks for libraries
 AS_IF([test x$enable_zhfst != xno],
       [PKG_CHECK_MODULES([LIBARCHIVE], [libarchive > 3],
-                  [AC_DEFINE([HAVE_LIBARCHIVE], [1], [Use archives]) 
+                  [AC_DEFINE([HAVE_LIBARCHIVE], [1], [Use archives])
                    enable_zhfst=yes],
                   [enable_zhfst=no])])
-AS_IF([test x$enable_xml != xno],
+AS_IF([test x$enable_xml = xlibxmlpp],
       [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
-                  [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])
-                   enable_xml=yes],
-                  [enable_xml=no])])
+                         [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])],
+                         [AC_MSG_WARN([libxml++ failed, disabling xml])
+                          enable_xml=no])])
+AS_IF([test x$enable_xml = xtinyxml2],
+      [PKG_CHECK_MODULES([TINYXML2], [tinyxml2],
+                         [AC_DEFINE([HAVE_TINYXML2], [1], [Use tinyxml])],
+                         [AC_MSG_WARN([tinyxml missing, xml disabled])
+                          enable_xml=no])])
 
 # Checks for header files
 AC_CHECK_HEADERS([getopt.h])
