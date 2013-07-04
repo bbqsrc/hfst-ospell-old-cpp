@@ -23,7 +23,10 @@
 // C++
 #if HAVE_LIBXML
 #  include <libxml++/libxml++.h>
+#elif HAVE_TINYXML
+#  include <tinyxml2.h>
 #endif
+
 #include <string>
 #include <map>
 
@@ -516,6 +519,75 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
     parser.set_substitute_entities();
     parser.parse_file(filename);
     this->parse_xml(parser.get_document());
+  }
+#elif HAVE_TINYXML
+
+void
+ZHfstOspellerXmlMetadata::parse_xml(const tinyxml::XmlDocument& doc)
+  {
+    tinyxml2::XMLElement* rootNode = doc.RootElement();
+    // check validity
+    if (NULL == rootNode)
+      {
+        throw ZHfstMetaDataParsingError("No root node in index XML");
+      }
+  }
+void
+ZHfstOspellerXmlMetadata::verify_hfstspeller(const tinyxml::XmlNode& hfstspellerNode);
+void
+ZHfstOspellerXmlMetadata::parse_info(const tinyxml::XmlNode& infoNode);
+void
+ZHfstOspellerXmlMetadata::parse_locale(const tinyxml::XmlNode& localeNode);
+void
+ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XmlNode& titleNode);
+void
+ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XmlNode& descriptionNode);
+void
+ZHfstOspellerXmlMetadata::parse_version(const tinyxml::XmlNode& versionNode);
+void
+ZHfstOspellerXmlMetadata::parse_date(const tinyxml::XmlNode& dateNode);
+void
+ZHfstOspellerXmlMetadata::parse_producer(const tinyxml::XmlNode& producerNode);
+void
+ZHfstOspellerXmlMetadata::parse_contact(const tinyxml::XmlNode& contactNode);
+void
+ZHfstOspellerXmlMetadata::parse_acceptor(const tinyxml::XmlNode& acceptorNode);
+void
+ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XmlNode& titleNode, const std::string& accName);
+void
+ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XmlNode& descriptionNode,
+                       const std::string& accName);
+void
+ZHfstOspellerXmlMetadata::parse_errmodel(const tinyxml::XmlNode& errmodelNode);
+void
+ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XmlNode& titleNode, size_t errm_count);
+void
+ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XmlNode& descriptionNode, size_t errm_count);
+void
+ZHfstOspellerXmlMetadata::parse_type(const tinyxml::XmlNode& typeNode, size_t errm_count);
+void
+ZHfstOspellerXmlMetadata::parse_model(const tinyxml::XmlNode& modelNode, size_t errm_count);
+
+void
+ZHfstOspellerXmlMetadata::read_xml(const char* xml_data, size_t xml_len)
+  {
+    tinyxml2::XmlDocument doc;
+    if (doc.ParseFile(xml_data) != tinyxml2::XML_NO_ERROR)
+      {
+        throw;
+      }
+    this->parse_xml(doc);
+  }
+
+void
+ZHfstOspellerXmlMetadata::read_xml(const string& filename)
+  {
+    tinyxml2::XmlDocument doc;
+    if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_NO_ERROR)
+      {
+        throw;
+      }
+    this->parse_xml(doc);
   }
 #else
 void

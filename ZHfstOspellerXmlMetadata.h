@@ -26,6 +26,8 @@ using std::map;
 
 #if HAVE_LIBXML
 #  include <libxml++/libxml++.h>
+#elif HAVE_TINYXML
+#  include <tinyxml2.h>
 #endif
 
 #include "ospell.h"
@@ -126,6 +128,28 @@ namespace hfst_ol
         void parse_description(xmlpp::Node* descriptionNode, size_t errm_count);
         void parse_type(xmlpp::Node* typeNode, size_t errm_count);
         void parse_model(xmlpp::Node* modelNode, size_t errm_count);
+#elif HAVE_TINYXML
+        private:
+        void parse_xml(const tinyxml::XmlDocument& doc);
+        void verify_hfstspeller(const tinyxml::XmlNode& hfstspellerNode);
+        void parse_info(const tinyxml::XmlNode& infoNode);
+        void parse_locale(const tinyxml::XmlNode& localeNode);
+        void parse_title(const tinyxml::XmlNode& titleNode);
+        void parse_description(const tinyxml::XmlNode& descriptionNode);
+        void parse_version(const tinyxml::XmlNode& versionNode);
+        void parse_date(const tinyxml::XmlNode& dateNode);
+        void parse_producer(const tinyxml::XmlNode& producerNode);
+        void parse_contact(const tinyxml::XmlNode& contactNode);
+        void parse_acceptor(const tinyxml::XmlNode& acceptorNode);
+        void parse_title(const tinyxml::XmlNode& titleNode, const std::string& accName);
+        void parse_description(const tinyxml::XmlNode& descriptionNode,
+                               const std::string& accName);
+        void parse_errmodel(const tinyxml::XmlNode& errmodelNode);
+        void parse_title(const tinyxml::XmlNode& titleNode, size_t errm_count);
+        void parse_description(const tinyxml::XmlNode& descriptionNode, size_t errm_count);
+        void parse_type(const tinyxml::XmlNode& typeNode, size_t errm_count);
+        void parse_model(const tinyxml::XmlNode& modelNode, size_t errm_count);
+
 #endif
       };
 }
