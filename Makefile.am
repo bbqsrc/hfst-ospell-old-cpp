@@ -20,7 +20,7 @@ ACLOCAL_AMFLAGS=-I m4
 
 # targets
 CONFERENCE_DEMOS=hfst-ospell-norvig hfst-ospell-fsmnlp-2012 hfst-ospell-cicling\
-				 hfst-ospell-survey
+				 hfst-ospell-survey hfst-ospell-lrec2013
 bin_PROGRAMS=hfst-ospell $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
 
@@ -46,6 +46,11 @@ hfst_ospell_cicling_SOURCES=main-cicling.cc
 hfst_ospell_cicling_LDADD=libhfstospell.la
 hfst_ospell_cicling_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 							 $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+
+hfst_ospell_lrec2013_SOURCES=main-lrec2013.cc
+hfst_ospell_lrec2013_LDADD=libhfstospell.la
+hfst_ospell_lrec2013_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
+							$(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
 
 hfst_ospell_survey_SOURCES=main-survey.cc
 hfst_ospell_survey_LDADD=libhfstospell.la

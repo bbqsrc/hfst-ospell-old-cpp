@@ -33,7 +33,7 @@ AC_CONFIG_HEADERS([config.h])
 HFSTOSPELL_NAME=hfstospell
 HFSTOSPELL_MAJOR=0
 HFSTOSPELL_MINOR=2
-HFSTOSPELL_EXTENSION=.4_beta
+HFSTOSPELL_EXTENSION=.5_beta
 HFSTOSPELL_VERSION=$HFSTOSPELL_MAJOR.$HFSTOSPELL_MINOR$HFSTOSPELL_EXTENSION
 AC_SUBST(HFSTOSPELL_MAJOR)
 AC_SUBST(HFSTOSPELL_MINOR)
@@ -93,7 +93,7 @@ AS_IF([test x$enable_xml = xtinyxml2],
                           enable_xml=no])])
 
 # Checks for header files
-AC_CHECK_HEADERS([getopt.h])
+AC_CHECK_HEADERS([getopt.h error.h])
 
 # Checks for types
 AC_TYPE_SIZE_T
@@ -104,7 +104,7 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([strndup])
+AC_CHECK_FUNCS([strndup error])
 # Checks for system services
 
 # config files
