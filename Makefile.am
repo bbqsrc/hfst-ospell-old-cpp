@@ -20,7 +20,7 @@ ACLOCAL_AMFLAGS=-I m4
 
 # targets
 CONFERENCE_DEMOS=hfst-ospell-norvig hfst-ospell-fsmnlp-2012 hfst-ospell-cicling\
-				 hfst-ospell-survey hfst-ospell-lrec2013
+				 hfst-ospell-survey hfst-ospell-lrec2013 hfst-ispell
 bin_PROGRAMS=hfst-ospell $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
 
@@ -61,6 +61,11 @@ hfst_ospell_fsmnlp_2012_SOURCES=main-fsmnlp-2012.cc
 hfst_ospell_fsmnlp_2012_LDADD=libhfstospell.la
 hfst_ospell_fsmnlp_2012_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 								 $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+
+hfst_ispell_SOURCES=main-ispell.cc
+hfst_ispell_LDADD=libhfstospell.la
+hfst_ispell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
+							$(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
 
 # install headers for library in hfst's includedir
 include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h \
