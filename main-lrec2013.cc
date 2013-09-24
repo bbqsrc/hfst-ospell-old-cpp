@@ -131,11 +131,19 @@ zhfst_spell(char* zhfst_filename)
         fprintf(stdout, "Following metadata was read from ZHFST archive:\n%s",
                 speller.metadata_dump().c_str());
       }
-
     char * str = (char*) malloc(2000);
     char* always_incorrect = strdup("\001\002@ALWAYS INCORRECT@"); 
     bool correcting = false;
     unsigned long linen = 0;
+    if (verbose)
+      {
+        fprintf(stdout, "Reading corrections from <stdin>\n");
+      }
+    else
+      {
+        fprintf(stdout, 
+                "Misspelled\tCorrect\tSuggestion 1\tSuggestion 2\t...\n");
+      }
     while (!std::cin.eof()) {
         linen++;
         std::cin.getline(str, 2000);
@@ -178,7 +186,7 @@ zhfst_spell(char* zhfst_filename)
           }
         else
           {
-            fprintf(stdout, "%s", str);
+            fprintf(stdout, "%s\t%s", str, correct);
           }
         lines++;
         int i = 0;
@@ -201,7 +209,7 @@ zhfst_spell(char* zhfst_filename)
               }
             else
               {
-                fprintf(stdout, "\t%s\n", str);
+                fprintf(stdout, "\t%s", str);
               }
           }
         hfst_ol::CorrectionQueue corrections = speller.suggest(str /*,
@@ -244,7 +252,7 @@ zhfst_spell(char* zhfst_filename)
                 any_corrects = true;
               }
             corrections.pop();
-          }
+          } // while corrections
         if (!any_corrects)
           {
             no_corrects++;
