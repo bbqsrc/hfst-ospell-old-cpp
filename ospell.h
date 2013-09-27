@@ -119,6 +119,8 @@ public:
             set_symbol_table();
         }
 
+    AnalysisQueue lookup(char * line);
+
     IndexTable indices;
     TransitionTable transitions;
 
@@ -328,8 +330,11 @@ public:
     void lexicon_consume(void);
     bool check(char * line);
     CorrectionQueue correct(char * line, int nbest = 0);
-    std::string stringify(SymbolVector symbol_vector);
 };
+
+std::string stringify(std::vector<const char *> * symbol_table,
+                      SymbolVector & symbol_vector);
+
 
 } // namespace hfst_ol
 

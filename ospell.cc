@@ -475,7 +475,7 @@ CorrectionQueue Speller::correct(char * line, int nbest)
                     weight >= nbest_queue.top()) {
                     continue;
                 }
-                std::string string = stringify(next_node.string);
+                std::string string = stringify(symbol_table, next_node.string);
                 /* if the correction is novel or better than before, insert it
                  */
                 if (corrections.count(string) == 0||
@@ -520,12 +520,104 @@ bool Speller::check(char * line)
     return false;
 }
 
-std::string Speller::stringify(SymbolVector symbol_vector)
+AnalysisQueue Transducer::lookup(char * line)
+{
+    std::map<std::string, Weight> outputs;
+    AnalysisQueue analyses;
+    InputString input;
+    TreeNodeQueue queue;
+    if (!input.initialize(&encoder, line, NO_SYMBOL)) {
+        return analyses;
+    }
+    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    queue.assign(1, start_node);
+
+    while (queue.size() > 0) {
+        TreeNode next_node = queue.back();
+        queue.pop_back();
+
+        // Final states
+        if (next_node.input_state == input.len() &&
+            is_final(next_node.lexicon_state)) {
+            Weight weight = next_node.weight +
+                final_weight(next_node.lexicon_state);
+            std::string output = stringify(&symbol_table,
+                                           next_node.string);
+            /* if the result is novel or lower weighted than before, insert it */
+            if (outputs.count(output) == 0 ||
+                outputs[output] > weight) {
+                outputs[output] = weight;
+            }
+        }
+
+        TransitionTableIndex next_index;
+        // epsilon loop
+        if (has_epsilons_or_flags(next_node.lexicon_state + 1)) {
+            next_index = next(next_node.lexicon_state, 0);
+            STransition i_s = take_epsilons_and_flags(next_index);
+            while (i_s.symbol != NO_SYMBOL) {
+                if (transitions.input_symbol(next_index) == 0) {
+                    queue.push_back(next_node.update_lexicon(i_s.symbol,
+                                                             i_s.index,
+                                                             i_s.weight));
+                    // Not a true epsilon but a flag diacritic
+                } else {
+                    FlagDiacriticState old_flags = next_node.flag_state;
+                    if (next_node.try_compatible_with(
+                            get_operations()->operator[](
+                                transitions.input_symbol(next_index)))) {
+                        queue.push_back(next_node.update_lexicon(i_s.symbol,
+                                                                 i_s.index,
+                                                                 i_s.weight));
+                        next_node.flag_state = old_flags;
+                    }
+                }
+                ++next_index;
+                i_s = take_epsilons_and_flags(next_index);
+            }
+        }
+        
+        // input consumption loop
+        unsigned int input_state = next_node.input_state;
+        if (input_state < input.len() &&
+            has_transitions(
+                next_node.lexicon_state + 1, input[input_state])) {
+            
+            next_index = next(next_node.lexicon_state,
+                              input[input_state]);
+            STransition i_s = take_non_epsilons(next_index,
+                                                input[input_state]);
+            
+            while (i_s.symbol != NO_SYMBOL) {
+                queue.push_back(next_node.update(
+                                    i_s.symbol,
+                                    input_state + 1,
+                                    next_node.mutator_state,
+                                    i_s.index,
+                                    i_s.weight));
+                
+                ++next_index;
+                i_s = take_non_epsilons(next_index, input[input_state]);
+            }
+        }
+        
+    }
+    
+    std::map<std::string, Weight>::const_iterator it;
+    for (it = outputs.begin(); it != outputs.end(); ++it) {
+        analyses.push(StringWeightPair(it->first, it->second));
+    }
+    
+    return analyses;
+}
+
+std::string stringify(std::vector<const char *> * symbol_table,
+                      SymbolVector & symbol_vector)
 {
     std::string s;
     for (SymbolVector::iterator it = symbol_vector.begin();
          it != symbol_vector.end(); ++it) {
-        s.append(symbol_table->operator[](*it));
+        s.append(symbol_table->at(*it));
     }
     return s;
 }
