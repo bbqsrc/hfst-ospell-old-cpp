@@ -168,7 +168,7 @@ zhfst_spell(char* zhfst_filename)
             while (*p != '\0')
               {
                 p++;
-                if (*p == '\n')
+                if ((*p == '\n') || (*p == '\t'))
                   {
                     *p = '\0';
                   }
