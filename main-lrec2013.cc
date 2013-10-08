@@ -31,7 +31,7 @@
 #  include <error.h>
 #else
 #define error(status, errnum, format, ...) fprintf(stderr, format, ##__VA_ARGS__); \
-  if (status != 0) exit(stats);
+  if (status != 0) exit(status);
 #endif
 #include <time.h>
 #include <sys/time.h>
