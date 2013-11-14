@@ -41,6 +41,11 @@ AC_SUBST(HFSTOSPELL_VERSION)
 AC_SUBST(HFSTOSPELL_NAME)
 
 # Settings
+AC_ARG_ENABLE([extra_demos],
+              [AS_HELP_STRING([--enable-extra-demos],
+                              [build conference demos for science reproduction @<:@default=no@:>@])],
+              [enable_extra_demos=$enableval], [enable_extra_demos=no])
+AM_CONDITIONAL([EXTRA_DEMOS], [test x$enable_extra_demos != xno])
 AC_ARG_ENABLE([zhfst],
               [AS_HELP_STRING([--enable-zhfst],
                               [support zipped complex automaton sets @<:@default=check@:>@])],
@@ -118,4 +123,5 @@ cat <<EOF
     * zhfst support: $enable_zhfst
     * extracting to: $with_extract
     * xml support: $enable_xml
+    * conference demos: $enable_extra_demos
 EOF

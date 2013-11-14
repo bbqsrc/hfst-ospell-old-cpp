@@ -19,8 +19,10 @@
 ACLOCAL_AMFLAGS=-I m4
 
 # targets
+if EXTRA_DEMOS
 CONFERENCE_DEMOS=hfst-ospell-norvig hfst-ospell-fsmnlp-2012 hfst-ospell-cicling\
 				 hfst-ospell-survey hfst-ospell-lrec2013 hfst-ispell
+endif
 bin_PROGRAMS=hfst-ospell $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
 
@@ -37,6 +39,7 @@ hfst_ospell_LDADD=libhfstospell.la
 hfst_ospell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 					 $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
 
+if EXTRA_DEMOS
 hfst_ospell_norvig_SOURCES=main-norvig.cc
 hfst_ospell_norvig_LDADD=libhfstospell.la
 hfst_ospell_norvig_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
@@ -61,6 +64,7 @@ hfst_ospell_fsmnlp_2012_SOURCES=main-fsmnlp-2012.cc
 hfst_ospell_fsmnlp_2012_LDADD=libhfstospell.la
 hfst_ospell_fsmnlp_2012_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 								 $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+endif
 
 hfst_ispell_SOURCES=main-ispell.cc
 hfst_ispell_LDADD=libhfstospell.la
