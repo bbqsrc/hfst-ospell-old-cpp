@@ -47,6 +47,33 @@ ZHfstOspellerXmlMetadata::ZHfstOspellerXmlMetadata()
     info_.locale_ = "und";
   }
 
+static
+bool
+validate_automaton_id(const char* id)
+  {
+    const char* p = strchr(id, '.');
+    if (p == NULL)
+      {
+        return false;
+      }
+    const char* q = strchr(p + 1, '.');
+    if (q == NULL)
+      {
+        return false;
+      }
+    return true;
+  }
+
+static
+char*
+get_automaton_descr_from_id(const char* id)
+  {
+    const char* p = strchr(id, '.');
+    const char* q = strchr(p + 1, '.');
+    return hfst_strndup(p + 1, q - p);
+  }
+
+
 #if HAVE_LIBXML
 void
 ZHfstOspellerXmlMetadata::verify_hfstspeller(xmlpp::Node* rootNode)
@@ -128,7 +155,7 @@ ZHfstOspellerXmlMetadata::parse_info(xmlpp::Node* infoNode)
             const xmlpp::TextNode* text = dynamic_cast<xmlpp::TextNode*>(*info);
             if ((text == NULL) || (!text->is_white_space()))
               {
-                fprintf(stderr, "DEBUG: unknown info node %s\n",
+                fprintf(stderr, "DEBUG: unknown info child %s\n",
                         infoName.c_str());
               }
           }
@@ -174,11 +201,13 @@ ZHfstOspellerXmlMetadata::parse_description(xmlpp::Node* descriptionNode)
     const xmlpp::Attribute* lang = descriptionElement->get_attribute("lang");
     if (lang != NULL)
       {
-        info_.description_[lang->get_value()] = descriptionElement->get_child_text()->get_content();
+        info_.description_[lang->get_value()] =
+          descriptionElement->get_child_text()->get_content();
       }
     else
       {
-        info_.description_[info_.locale_] = descriptionElement->get_child_text()->get_content();
+        info_.description_[info_.locale_] =
+          descriptionElement->get_child_text()->get_content();
       }
   }
 
@@ -226,33 +255,6 @@ ZHfstOspellerXmlMetadata::parse_contact(xmlpp::Node* contactNode)
       }
   }
 
-static
-bool
-validate_automaton_id(const Glib::ustring idstring)
-  {
-    const char* id = idstring.c_str();
-    const char* p = strchr(id, '.');
-    if (p == NULL)
-      {
-        return false;
-      }
-    const char* q = strchr(p + 1, '.');
-    if (q == NULL)
-      {
-        return false;
-      }
-    return true;
-  }
-
-static
-char*
-get_automaton_descr_from_id(const Glib::ustring idstring)
-  {
-    const char* id = idstring.c_str();
-    const char* p = strchr(id, '.');
-    const char* q = strchr(p + 1, '.');
-    return hfst_strndup(p + 1, q - p);
-  }
 
 void
 ZHfstOspellerXmlMetadata::parse_acceptor(xmlpp::Node* acceptorNode)
@@ -265,11 +267,11 @@ ZHfstOspellerXmlMetadata::parse_acceptor(xmlpp::Node* acceptorNode)
         throw ZHfstMetaDataParsingError("id missing in acceptor");
       }
     const Glib::ustring xidValue = xid->get_value();
-    if (validate_automaton_id(xidValue) == false)
+    if (validate_automaton_id(xidValue.c_str()) == false)
       {
         throw ZHfstMetaDataParsingError("Invalid id in acceptor");
       }
-    char* descr = get_automaton_descr_from_id(xidValue);
+    char* descr = get_automaton_descr_from_id(xidValue.c_str());
     acceptor_[descr].descr_ = descr;
     acceptor_[descr].id_ = xidValue;
     const xmlpp::Attribute* trtype = 
@@ -354,11 +356,11 @@ ZHfstOspellerXmlMetadata::parse_errmodel(xmlpp::Node* errmodelNode)
         throw ZHfstMetaDataParsingError("id missing in errmodel");
       }
     const Glib::ustring xidValue = xid->get_value();
-    if (validate_automaton_id(xidValue) == false)
+    if (validate_automaton_id(xidValue.c_str()) == false)
       {
         throw ZHfstMetaDataParsingError("Invalid id in errmodel");
       }
-    char* descr = get_automaton_descr_from_id(xidValue);
+    char* descr = get_automaton_descr_from_id(xidValue.c_str());
     errmodel_.push_back(ZHfstOspellerErrModelMetadata());
     size_t errm_count = errmodel_.size() - 1;
     if (descr != NULL)
@@ -495,7 +497,7 @@ ZHfstOspellerXmlMetadata::parse_xml(const xmlpp::Document* doc)
             const xmlpp::TextNode* text = dynamic_cast<xmlpp::TextNode*>(*node);
             if ((text == NULL) || (!text->is_white_space()))
               {
-                fprintf(stderr, "DEBUG: unknown root node %s\n",
+                fprintf(stderr, "DEBUG: unknown root child %s\n",
                         nodename.c_str());
               }
           } // unknown root child node
@@ -526,47 +528,353 @@ void
 ZHfstOspellerXmlMetadata::parse_xml(const tinyxml::XmlDocument& doc)
   {
     tinyxml2::XMLElement* rootNode = doc.RootElement();
-    // check validity
     if (NULL == rootNode)
       {
         throw ZHfstMetaDataParsingError("No root node in index XML");
       }
+    // check validity
+    if (strcmp(rootNode().Name(), "hfstversion") != 0)
+      {
+        throw ZHfstMetaDataParsingError("could not find <hfstspeller> "
+                                        "root from XML file");
+      }
+    verify_hfstspeller(*rootNode);
+    // parse
+    tinyxml::XMLElement* child = rootNode->firstChildElement();
+    while (child != NULL)
+      {
+        if (strcmp(child->Name(), "info") == 0)
+          {
+            parse_info(*child);
+          }
+        else if (strcmp(child->Name(), "acceptor") == 0)
+          {
+            parse_acceptor(*child);
+          }
+        else if (strcmp(child->Name(), "errmodel") == 0)
+          {
+            parse_errmodel(*child);
+          }
+        else
+          {
+            fprintf(stderr, "DEBUG: Unknown root child %s\n",
+                    child->Name());
+          }
+        child = child->NextSiblingElement();
+      }
   }
+
 void
-ZHfstOspellerXmlMetadata::verify_hfstspeller(const tinyxml::XmlNode& hfstspellerNode);
+ZHfstOspellerXmlMetadata::verify_hfstspeller(const tinyxml::XMLNode& hfstspellerNode)
+  {
+    if (!rootNode.Attribute("hfstversion"))
+      {
+        throw ZHfstMetaDataParsingError("No hfstversion attribute in root");
+      }
+    if (!rootNode.Attribute("hfstversion", "3"))
+      {
+        throw ZHfstVersionDataParsingError("Unrecognised HFST version...");
+      }
+    if (!rootNode.Attribute("dtdversion"))
+      {
+        throw ZHfstVersionDataParsingError("No dtdversion attribute in root");
+      }
+    if (!rootNode.Attribute("dtdversion", "1.0"))
+      {
+        throw ZHfstVersionDataParsingError("Unrecognised DTD version...");
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_info(const tinyxml::XmlNode& infoNode);
+ZHfstOspellerXmlMetadata::parse_info(const tinyxml::XMLNode& infoNode)
+  {
+    tinyxml::XMLNode* info = infoNode.FirstChildElement();
+    while (info != NULL)
+      {
+        if (strcmp(info->Name(), "locale") == 0)
+          {
+            parse_locale(*info);
+          }
+        else if (strcmp(info->Name(), "title") == 0)
+          {
+            parse_title(*info);
+          }
+        else if (strcmp(info->Name(), "description") == 0)
+          {
+            parse_description(*info);
+          }
+        else if (strcmp(info->Name(), "version") == 0)
+          {
+            parse_version(*info);
+          }
+        else if (strcmp(info->Name(), "date") == 0)
+          {
+            parse_date(*info);
+          }
+        else if (strcmp(info->Name(), "producer") == 0)
+          {
+            parse_producer(*info);
+          }
+        else if (strcmp(info->Name(), "contact") == 0)
+          {
+            parse_contact(*info);
+          }
+        else
+          {
+            fprintf(stderr, "DEBUG: unknown info child %s\n",
+                    info->Name());
+          }
+        info = info->NextSiblingElement();
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_locale(const tinyxml::XmlNode& localeNode);
+ZHfstOspellerXmlMetadata::parse_locale(const tinyxml::XMLNode& localeNode)
+  {
+    const char* localeContent = localeNode.GetText();
+    if ((info_.locale_ != "und") && (info_.locale_ != localeContent))
+      {
+        // locale in XML mismatches previous definition
+        // warnable, but overridden as per spec.
+        fprintf(stderr, "Warning: mismatched languages in "
+                "file data (%s) and XML (%s)\n",
+                info_.locale_.c_str(), localeContent);
+      }
+    info_.locale_ = localeContent;
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XmlNode& titleNode);
+ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XMLNode& titleNode)
+  {
+    if (titleNode.Attribute("lang"))
+      {
+        info_.title_[titleNode.Attribute("lang")] = titleNode.GetText();
+      }
+    else
+      {
+        info_.title_[info_.locale_] = titleNode.GetText();
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XmlNode& descriptionNode);
+ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XMLNode& descriptionNode)
+  {
+    if (descriptionNode.Attribute("lang"))
+      {
+        info_.description_[descriptionNode.Attribute("lang")] =
+          descriptionNode.GetText();
+      }
+    else
+      {
+        info_.description_[info_.locale_] = descriptionNode.GetText();
+      }
+    
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_version(const tinyxml::XmlNode& versionNode);
+ZHfstOspellerXmlMetadata::parse_version(const tinyxml::XMLNode& versionNode)
+  {
+    if (versionNode.Attribute("vcsrev"))
+      {
+        info_.vcsrev_ = versionNode.Attribute("vcsrev");
+      }
+    info_.version_ = versionNode.GetText();
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_date(const tinyxml::XmlNode& dateNode);
+ZHfstOspellerXmlMetadata::parse_date(const tinyxml::XMLNode& dateNode)
+  {
+    info_.date_ = dateNode.GetText();
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_producer(const tinyxml::XmlNode& producerNode);
+ZHfstOspellerXmlMetadata::parse_producer(const tinyxml::XMLNode& producerNode)
+  {
+    info_.producer_ = producerNode.GetText();
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_contact(const tinyxml::XmlNode& contactNode);
+ZHfstOspellerXmlMetadata::parse_contact(const tinyxml::XMLNode& contactNode)
+  {
+    if (contactNode.Attribute("email"))
+      {
+        info_.email_ = contactNode.Attribute("email");
+      }
+    if (contactNode.Attribute("website"))
+      {
+        info_.website_ = contactNode.Attribute("website");
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_acceptor(const tinyxml::XmlNode& acceptorNode);
+ZHfstOspellerXmlMetadata::parse_acceptor(const tinyxml::XMLNode& acceptorNode)
+  {
+    const char* xid = acceptorNode.Attribute("id");
+    if (xid == NULL)
+      {
+        throw ZHfstMetaDataParsingError("id missing in acceptor");
+      }
+    if (validate_automaton_id(xid) == false)
+      {
+        throw ZHfstMetaDataPArsingError("Invalid id in accpetor");
+      }
+    char* descr = get_automaton_descr_from_id(xid);
+    acceptor_[descr].descr_ = descr;
+    acceptor_[descr].id_ = xid;
+    if (acceptorNode.Attribute("trtype"))
+      {
+        acceptor_[descr].transtype_ = acceptorNode.Attribute("trtype");
+      }
+    if (acceptornode.Attribute("type"))
+      {
+        acceptor_[descr].type_ = acceptorNode.Attribute("type");
+      }
+    acc = acceptorNode.FirstChildElement();
+    while (acc != NULL)
+      {
+        if (strcmp(acc->Name, "title") == 0)
+          {
+            parse_title(*acc, descr);
+          }
+        else if (strcmp(acc->Name, "description") == 0)
+          {
+            parse_description(*acc, descr);
+          }
+        else
+          {
+            fprintf(stderr, "DEBUG: unknown acceptor child %s\n",
+                    acc->Name());
+          }
+        acc = acc->NextSiblingElement()
+      }
+    free(descr);
+  }
+                 
 void
-ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XmlNode& titleNode, const std::string& accName);
+ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XMLNode& titleNode,
+                                      const std::string& accName)
+  {
+    if (titleNode.Attribute("lang"))
+      {
+        acceptor_[accName].title_[titleNode.Attribute("lang")] =
+          titleNode.GetText();
+      }
+    else
+      {
+        acceptor_[accName].title_[info_.locale_] = 
+          titleNode.GetText();
+      }
+  }
+        
+
 void
-ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XmlNode& descriptionNode,
-                       const std::string& accName);
+ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XMLNode& descriptionNode,
+                       const std::string& accName)
+  {
+    if (descriptionNode.Attribute("lang"))
+      {
+        acceptor_[accName].description_[descriptionNode.Attribute("lang")] =
+          descriptionNode.GetText();
+      }
+    else
+      {
+        acceptor_[accName].description_[info_.locale_] = 
+          descriptionNode.GetText();
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_errmodel(const tinyxml::XmlNode& errmodelNode);
+ZHfstOspellerXmlMetadata::parse_errmodel(const tinyxml::XMLNode& errmodelNode)
+  {
+    const char* xid = errmodelNode.Attribute("id");
+    if (xid == NULL)
+      {
+        throw ZHfstMetaDataParsingError("id missing in errmodel");
+      }
+    if (validate_automaton_id(xid) == false)
+      {
+        throw ZHfstMetaDataParsingError("Invalid id in errmodel");
+      }
+    char* descr = get_automaton_descr_from_id(xid);
+    errmodel_.push_back(ZHfstOspellerErrModelMetadata());
+    size_t errm_count = errmodel_.size() - 1;
+    if (descr != NULL)
+      {
+        errmodel_[errm_count].descr_ = descr;
+      }
+    free(descr);
+    errmodel_[errm_count].id_ = xid;
+    errm = errmodelNode.FirstChildElement();
+    while (errm != NULL)
+      {
+        if (strcmp(errm->Name(), "title") == 0)
+          {
+            parse_title(*errm, errm_count);
+          }
+        else if (strcmp(errm->Name(), "description") == 0)
+          {
+            parse_description(*errm, errm_count);
+          }
+        else if (strcmp(errm->Name(), "type") == 0)
+          {
+            parse_type(*errm, errm_count);
+          }
+        else
+          {
+            fprintf(stderr, "DEBUG: unknown errmodel child %s\n",
+                    errm->Name());
+          }
+        errm = errm.NextSiblingElement();
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XmlNode& titleNode, size_t errm_count);
+ZHfstOspellerXmlMetadata::parse_title(const tinyxml::XMLNode& titleNode, size_t errm_count)
+  {
+    if (titleNode.Attribute("lang"))
+      {
+        errmodel_[errm_count].title_[titleNode.Attribute("lang")] =
+          titleNode.GetText();
+      }
+    else
+      {
+        errmodel_[errm_count].title_[info_.locale_] = titleNode.GetText();
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XmlNode& descriptionNode, size_t errm_count);
+ZHfstOspellerXmlMetadata::parse_description(const tinyxml::XMLNode& descriptionNode, size_t errm_count)
+  {
+    if (descriptionNode.Attribute("lang"))
+      {
+        errmodel_[errm_count].description_[titleNode.attribute("lang")] =
+          descriptionNode.GetText();
+      }
+    else
+      {
+        errmodel_[errm_count].description_[info_.locale_] = 
+          descriptionNode.GetText();
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_type(const tinyxml::XmlNode& typeNode, size_t errm_count);
+ZHfstOspellerXmlMetadata::parse_type(const tinyxml::XMLNode& typeNode, size_t errm_count)
+  {
+    if (typeNode.Attribute("type"))
+      {
+        errmodel_[errm_count].type_.push_back(typeNode.Attribute("type"));
+      }
+    else
+      {
+        throw ZHfstMetaDataParsingError("No type in type");
+      }
+  }
+
 void
-ZHfstOspellerXmlMetadata::parse_model(const tinyxml::XmlNode& modelNode, size_t errm_count);
+ZHfstOspellerXmlMetadata::parse_model(const tinyxml::XMLNode& modelNode, size_t errm_count)
+  {
+    errmodel_[errm_count].model_.push_back(modelNode.GetText());
+  }
 
 void
 ZHfstOspellerXmlMetadata::read_xml(const char* xml_data, size_t xml_len)
@@ -574,7 +882,7 @@ ZHfstOspellerXmlMetadata::read_xml(const char* xml_data, size_t xml_len)
     tinyxml2::XmlDocument doc;
     if (doc.ParseFile(xml_data) != tinyxml2::XML_NO_ERROR)
       {
-        throw;
+        throw ZHfstMetaDataParsingError("Reading XML from memory");
       }
     this->parse_xml(doc);
   }
@@ -585,7 +893,7 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
     tinyxml2::XmlDocument doc;
     if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_NO_ERROR)
       {
-        throw;
+        throw ZHfstMetaDataParsingError("Reading XML from file");
       }
     this->parse_xml(doc);
   }
