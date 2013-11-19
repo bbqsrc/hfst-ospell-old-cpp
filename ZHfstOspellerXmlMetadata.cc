@@ -819,6 +819,10 @@ ZHfstOspellerXmlMetadata::parse_errmodel(const tinyxml2::XMLElement& errmodelNod
           {
             parse_type(*errm, errm_count);
           }
+        else if (strcmp(errm->Name(), "model") == 0)
+          {
+            parse_model(*errm, errm_count);
+          }
         else
           {
             fprintf(stderr, "DEBUG: unknown errmodel child %s\n",
