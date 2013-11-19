@@ -86,16 +86,19 @@ AS_IF([test x$enable_zhfst != xno],
                   [AC_DEFINE([HAVE_LIBARCHIVE], [1], [Use archives])
                    enable_zhfst=yes],
                   [enable_zhfst=no])])
+AM_CONDITIONAL([WANT_ARCHIVE], [test x$enable_zhfst != xno])
 AS_IF([test x$enable_xml = xlibxmlpp],
       [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
                          [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])],
                          [AC_MSG_WARN([libxml++ failed, disabling xml])
                           enable_xml=no])])
+AM_CONDITIONAL([WANT_LIBXMLPP], [test x$enable_xml = xlibxmlpp])
 AS_IF([test x$enable_xml = xtinyxml2],
       [PKG_CHECK_MODULES([TINYXML2], [tinyxml2],
                          [AC_DEFINE([HAVE_TINYXML2], [1], [Use tinyxml])],
                          [AC_MSG_WARN([tinyxml missing, xml disabled])
                           enable_xml=no])])
+AM_CONDITIONAL([WANT_TINYXML2], [test x$enable_xml = xtinyxml2])
 
 # Checks for header files
 AC_CHECK_HEADERS([getopt.h error.h])

@@ -26,50 +26,65 @@ endif
 bin_PROGRAMS=hfst-ospell $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
 
+PKG_LIBS=
+PKG_CXXFLAGS=
+if WANT_ARCHIVE
+PKG_LIBS+=$(LIBARCHIVE_LIBS)
+PKG_CXXFLAGS+=$(LIBARCHIVE_CFLAGS)
+endif
+if WANT_LIBXMLPP
+PKG_LIBS+=$(LIBXMLPP_LIBS)
+PKG_CXXFLAGS+=$(LIBXMLPP_CFLAGS)
+endif
+if WANT_TINYXML2
+PKG_LIBS+=$(TINYXML2_LIBS)
+PKG_CXXFLAGS+=$(TINYXML2_CFLAGS)
+endif
+
 # library parts
 libhfstospell_la_SOURCES=hfst-ol.cc ospell.cc \
 						 ZHfstOspeller.cc ZHfstOspellerXmlMetadata.cc
-libhfstospell_la_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+libhfstospell_la_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
 libhfstospell_la_LDFLAGS=-no-undefined -version-info 3:2:1 \
-						 $(LIBXMLPP_LIBS) $(LIBARCHIVE_LIBS)
+						 $(PKG_LIBS)
 
 # link sample program against library here
 hfst_ospell_SOURCES=main.cc
 hfst_ospell_LDADD=libhfstospell.la
 hfst_ospell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
-					 $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+					 $(PKG_CXXFLAGS)
 
 if EXTRA_DEMOS
 hfst_ospell_norvig_SOURCES=main-norvig.cc
 hfst_ospell_norvig_LDADD=libhfstospell.la
 hfst_ospell_norvig_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
-							$(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+							$(PKG_CXXFLAGS)
 
 hfst_ospell_cicling_SOURCES=main-cicling.cc
 hfst_ospell_cicling_LDADD=libhfstospell.la
 hfst_ospell_cicling_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
-							 $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+							 $(PKG_CXXFLAGS)
 
 hfst_ospell_lrec2013_SOURCES=main-lrec2013.cc
 hfst_ospell_lrec2013_LDADD=libhfstospell.la
 hfst_ospell_lrec2013_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
-							$(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+							$(PKG_CXXFLAGS)
 
 hfst_ospell_survey_SOURCES=main-survey.cc
 hfst_ospell_survey_LDADD=libhfstospell.la
 hfst_ospell_survey_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
-							$(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+							$(PKG_CXXFLAGS)
 
 hfst_ospell_fsmnlp_2012_SOURCES=main-fsmnlp-2012.cc
 hfst_ospell_fsmnlp_2012_LDADD=libhfstospell.la
 hfst_ospell_fsmnlp_2012_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
-								 $(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+								 $(PKG_CXXFLAGS)
 endif
 
 hfst_ispell_SOURCES=main-ispell.cc
 hfst_ispell_LDADD=libhfstospell.la
 hfst_ispell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
-							$(LIBXMLPP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+							$(PKG_CXXFLAGS)
 
 # install headers for library in hfst's includedir
 include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h \
