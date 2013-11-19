@@ -20,11 +20,11 @@ AC_PREREQ([2.62])
 LT_PREREQ([2.2.6])
 
 # init
-AC_INIT([hfstospell], [0.2.5_beta], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
+AC_INIT([hfstospell], [0.2.5], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules])
 AM_SILENT_RULES([yes])
-AC_REVISION([$Revision: 1.9 $])
+AC_REVISION([$Revision$])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([ospell.cc])
 AC_CONFIG_HEADERS([config.h])
@@ -33,7 +33,7 @@ AC_CONFIG_HEADERS([config.h])
 HFSTOSPELL_NAME=hfstospell
 HFSTOSPELL_MAJOR=0
 HFSTOSPELL_MINOR=2
-HFSTOSPELL_EXTENSION=.5_beta
+HFSTOSPELL_EXTENSION=.5
 HFSTOSPELL_VERSION=$HFSTOSPELL_MAJOR.$HFSTOSPELL_MINOR$HFSTOSPELL_EXTENSION
 AC_SUBST(HFSTOSPELL_MAJOR)
 AC_SUBST(HFSTOSPELL_MINOR)
