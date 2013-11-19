@@ -26,7 +26,7 @@ using std::map;
 
 #if HAVE_LIBXML
 #  include <libxml++/libxml++.h>
-#elif HAVE_TINYXML
+#elif HAVE_TINYXML2
 #  include <tinyxml2.h>
 #endif
 
@@ -128,27 +128,27 @@ namespace hfst_ol
         void parse_description(xmlpp::Node* descriptionNode, size_t errm_count);
         void parse_type(xmlpp::Node* typeNode, size_t errm_count);
         void parse_model(xmlpp::Node* modelNode, size_t errm_count);
-#elif HAVE_TINYXML
+#elif HAVE_TINYXML2
         private:
-        void parse_xml(const tinyxml::XmlDocument& doc);
-        void verify_hfstspeller(const tinyxml::XmlNode& hfstspellerNode);
-        void parse_info(const tinyxml::XmlNode& infoNode);
-        void parse_locale(const tinyxml::XmlNode& localeNode);
-        void parse_title(const tinyxml::XmlNode& titleNode);
-        void parse_description(const tinyxml::XmlNode& descriptionNode);
-        void parse_version(const tinyxml::XmlNode& versionNode);
-        void parse_date(const tinyxml::XmlNode& dateNode);
-        void parse_producer(const tinyxml::XmlNode& producerNode);
-        void parse_contact(const tinyxml::XmlNode& contactNode);
-        void parse_acceptor(const tinyxml::XmlNode& acceptorNode);
-        void parse_title(const tinyxml::XmlNode& titleNode, const std::string& accName);
-        void parse_description(const tinyxml::XmlNode& descriptionNode,
+        void parse_xml(const tinyxml2::XMLDocument& doc);
+        void verify_hfstspeller(const tinyxml2::XMLElement& hfstspellerNode);
+        void parse_info(const tinyxml2::XMLElement& infoNode);
+        void parse_locale(const tinyxml2::XMLElement& localeNode);
+        void parse_title(const tinyxml2::XMLElement& titleNode);
+        void parse_description(const tinyxml2::XMLElement& descriptionNode);
+        void parse_version(const tinyxml2::XMLElement& versionNode);
+        void parse_date(const tinyxml2::XMLElement& dateNode);
+        void parse_producer(const tinyxml2::XMLElement& producerNode);
+        void parse_contact(const tinyxml2::XMLElement& contactNode);
+        void parse_acceptor(const tinyxml2::XMLElement& acceptorNode);
+        void parse_title(const tinyxml2::XMLElement& titleNode, const std::string& accName);
+        void parse_description(const tinyxml2::XMLElement& descriptionNode,
                                const std::string& accName);
-        void parse_errmodel(const tinyxml::XmlNode& errmodelNode);
-        void parse_title(const tinyxml::XmlNode& titleNode, size_t errm_count);
-        void parse_description(const tinyxml::XmlNode& descriptionNode, size_t errm_count);
-        void parse_type(const tinyxml::XmlNode& typeNode, size_t errm_count);
-        void parse_model(const tinyxml::XmlNode& modelNode, size_t errm_count);
+        void parse_errmodel(const tinyxml2::XMLElement& errmodelNode);
+        void parse_title(const tinyxml2::XMLElement& titleNode, size_t errm_count);
+        void parse_description(const tinyxml2::XMLElement& descriptionNode, size_t errm_count);
+        void parse_type(const tinyxml2::XMLElement& typeNode, size_t errm_count);
+        void parse_model(const tinyxml2::XMLElement& modelNode, size_t errm_count);
 
 #endif
       };
