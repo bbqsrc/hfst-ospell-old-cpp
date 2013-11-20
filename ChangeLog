@@ -1,3 +1,89 @@
+2013-11-19 21:07  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* update configuration for that
+
+2013-11-19 20:52  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Add tinyxml2 versions of XML parsing
+
+2013-11-14 02:06  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* conference demos as configure option
+
+2013-10-08 11:21  moshagen
+
+	* Ignore generated files.
+
+2013-10-08 07:55  spectre360
+
+	* stats -> status
+
+2013-10-02 16:03  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Allow to end correct correction
+
+2013-09-27 16:25  hardwick
+
+	* Merge lookup() from devbranch
+
+2013-09-24 14:52  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* This should be useful
+
+2013-09-24 11:25  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Fix the output tsv a bit more
+
+2013-09-23 15:56  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Slight udpate for new measure ments
+
+2013-07-04 05:02  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Few starts
+
+2013-07-04 02:29  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Allow selection of xml backend
+
+2013-05-28 14:34  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Switch <3 into >3 because it looks nicer.
+
+2013-05-24 15:32  moshagen
+
+	* strndup() fixed by Tommi.
+
+2013-05-24 11:44  hardwick
+
+	* Pending proper understanding of why strndup is getting defined
+	  several
+	  times over, let's always use hfst_strndup() instead.
+
+2013-05-24 11:29  hardwick
+
+	* Add include guard to custom strndup so it doesn't get compiled
+	  more than once
+
+2013-05-24 08:58  hardwick
+
+	* Move our custom strndup to ospell.h so it will be seen by
+	  all compilation units that need it
+
+2013-05-21 12:33  moshagen
+
+	* Renamed the hfstospell package and variables to what they used to
+	  be, in case that can help solve a build issue with
+	  libvoikko+hfst.
+
+2013-04-27 11:36  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Wrap and load
+
+2013-04-27 11:32  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* versioninfo 3:1:1
+
 2013-04-26 17:58  moshagen
 
 	* Preparing for 0.2.3 release.
