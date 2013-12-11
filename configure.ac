@@ -40,6 +40,10 @@ AC_SUBST(HFSTOSPELL_MINOR)
 AC_SUBST(HFSTOSPELL_VERSION)
 AC_SUBST(HFSTOSPELL_NAME)
 
+# Check for pkg-config first - the configuration won't work if it isn't available:
+AC_PATH_PROG([PKGCONFIG], [pkg-config], [no])
+AS_IF([test "x$PKGCONFIG" = xno], [AC_MSG_ERROR([pkg-config is required - please install])])
+
 # Settings
 AC_ARG_ENABLE([extra_demos],
               [AS_HELP_STRING([--enable-extra-demos],
@@ -58,9 +62,9 @@ AC_ARG_WITH([extract],
             [AS_HELP_STRING([--with-extract=TARGET],
                            [extract zhfst archives to tmpdir or mem @<:@default=mem@:>@])],
             [with_extract=$withval], [with_extract=mem])
-AS_IF([test "x$with_extract" = xmem], [AC_DEFINE([ZHFST_EXTRACT_TO_MEM], [1], 
+AS_IF([test "x$with_extract" = xmem], [AC_DEFINE([ZHFST_EXTRACT_TO_MEM], [1],
                         [Define to extract zhfst archives to char buffer])],
-          [AS_IF([test "x$with_extract" = xtmpdir], 
+          [AS_IF([test "x$with_extract" = xtmpdir],
                  [AC_DEFINE([ZHFST_EXTRACT_TO_TMPDIR], [1],
                             [Define to extract zhfst to tmp dir])],
           [AC_MSG_ERROR([Use with-extract to mem or tmpdir])])])
