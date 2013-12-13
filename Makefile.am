@@ -106,7 +106,7 @@ XFAIL_TESTS=empty-descriptions.sh
 EXTRA_DIST=$(TXTS) basic_test.xml empty_descriptions.xml test.strings $(TESTS)
 
 clean-local:
-	-rm -rf $(check_DATA)
+	-rm -rf $(check_DATA) index.xml
 endif
 
 # N.B. Do not parallel test, race condition exists
