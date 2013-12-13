@@ -98,7 +98,7 @@ pkgconfig_DATA=hfstospell.pc
 if CAN_TEST
 TXTS=acceptor.default.txt errmodel.default.txt
 check_DATA=speller.zhfst spl.hfstol sug.hfstol err.hfstol \
-		   test.strings acceptor.default.hfst errmodel.default.hfst
+		   acceptor.default.hfst errmodel.default.hfst
 TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh
 EXTRA_DIST=$(TXTS) index.xml test.strings $(TESTS)
 
