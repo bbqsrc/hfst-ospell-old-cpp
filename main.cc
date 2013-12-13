@@ -163,12 +163,12 @@ zhfst_spell(char* zhfst_filename)
   catch (hfst_ol::ZHfstMetaDataParsingError zhmdpe)
     {
       std::cerr << "cannot finish reading zhfst archive " << zhfst_filename <<
-                   ":" << zhmdpe.what() << "." << std::endl;
+                   ":\n" << zhmdpe.what() << "." << std::endl;
       return EXIT_FAILURE;
     }
   catch (hfst_ol::ZHfstZipReadingError zhzre)
     {
-      std::cerr << "cannot read zhfst archive " << zhfst_filename << ":" 
+      std::cerr << "cannot read zhfst archive " << zhfst_filename << ":\n" 
           << zhzre.what() << "." << std::endl
           << "trying to read as legacy automata directory" << std::endl;
       try 
@@ -179,7 +179,7 @@ zhfst_spell(char* zhfst_filename)
         {
           std::cerr << "cannot fallback to read legacy hfst speller dir " 
               << zhfst_filename 
-              << ":" << std::endl
+              << ":\n" << std::endl
               << zhlre.what() << "." << std::endl;
           return EXIT_FAILURE;
         }
