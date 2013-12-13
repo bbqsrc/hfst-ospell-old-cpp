@@ -650,6 +650,10 @@ ZHfstOspellerXmlMetadata::parse_locale(const tinyxml2::XMLElement& localeNode)
 void
 ZHfstOspellerXmlMetadata::parse_title(const tinyxml2::XMLElement& titleNode)
   {
+    if (NULL == titleNode.GetText())
+      {
+        throw ZHfstXmlParsingError("<title> must be non-empty");
+      }
     if (titleNode.Attribute("lang"))
       {
         info_.title_[titleNode.Attribute("lang")] = titleNode.GetText();
