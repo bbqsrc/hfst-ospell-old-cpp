@@ -199,6 +199,10 @@ ZHfstOspellerXmlMetadata::parse_description(xmlpp::Node* descriptionNode)
     xmlpp::Element* descriptionElement = 
         dynamic_cast<xmlpp::Element*>(descriptionNode);
     const xmlpp::Attribute* lang = descriptionElement->get_attribute("lang");
+    if (NULL == descriptionElement->get_child_text())
+      {
+        throw ZHfstXmlParsingError("<description> must be non-empty");
+      }
     if (lang != NULL)
       {
         info_.description_[lang->get_value()] =
@@ -659,6 +663,10 @@ ZHfstOspellerXmlMetadata::parse_title(const tinyxml2::XMLElement& titleNode)
 void
 ZHfstOspellerXmlMetadata::parse_description(const tinyxml2::XMLElement& descriptionNode)
   {
+    if (NULL == descriptionNode.GetText())
+      {
+        throw ZHfstXmlParsingError("<description> must be non-empty");
+      }
     if (descriptionNode.Attribute("lang"))
       {
         info_.description_[descriptionNode.Attribute("lang")] =

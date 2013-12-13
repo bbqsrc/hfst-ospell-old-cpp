@@ -184,7 +184,13 @@ zhfst_spell(char* zhfst_filename)
           return EXIT_FAILURE;
         }
     }
-
+  catch (hfst_ol::ZHfstXmlParsingError zhxpe)
+    {
+      std::cerr << "Cannot finish reading index.xml from " 
+        << zhfst_filename << ":" << std::endl
+        << zhxpe.what() << "." << std::endl;
+      return EXIT_FAILURE;
+    }
   if (verbose)
     {
       std::cout << "Following metadata was read from ZHFST archive:" << std::endl

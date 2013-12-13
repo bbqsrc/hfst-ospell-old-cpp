@@ -102,6 +102,7 @@ check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
 		   acceptor.default.hfst errmodel.default.hfst
 TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh \
 	  empty-descriptions.sh
+XFAIL_TESTS=empty-descriptions.sh
 EXTRA_DIST=$(TXTS) basic_test.xml empty_descriptions.xml test.strings $(TESTS)
 
 clean-local:
