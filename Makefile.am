@@ -97,17 +97,26 @@ pkgconfig_DATA=hfstospell.pc
 # tests
 if CAN_TEST
 TXTS=acceptor.default.txt errmodel.default.txt
-check_DATA=speller.zhfst spl.hfstol sug.hfstol err.hfstol \
+check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
+		   spl.hfstol sug.hfstol err.hfstol \
 		   acceptor.default.hfst errmodel.default.hfst
-TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh
-EXTRA_DIST=$(TXTS) index.xml test.strings $(TESTS)
+TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh \
+	  empty-descriptions.sh
+EXTRA_DIST=$(TXTS) basic_test.xml empty_descriptions.xml test.strings $(TESTS)
 
 clean-local:
 	-rm -rf $(check_DATA)
 endif
 
-speller.zhfst: acceptor.default.hfst errmodel.default.hfst index.xml
-	$(ZIP) $(ZIPFLAGS) $@ $^
+# N.B. Do not parallel test, race condition exists
+empty_descriptions.zhfst: acceptor.default.hfst errmodel.default.hfst empty_descriptions.xml
+	cp $(srcdir)/empty_descriptions.xml index.xml
+	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+
+# N.B. Do not parallel test, race condition exists
+speller_basic.zhfst: acceptor.default.hfst errmodel.default.hfst basic_test.xml
+	cp $(srcdir)/basic_test.xml index.xml
+	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
 
 sug.hfstol: acceptor.default.hfst
 	-ln -sf $< $@
