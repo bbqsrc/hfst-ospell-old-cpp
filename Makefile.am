@@ -22,20 +22,24 @@ ACLOCAL_AMFLAGS=-I m4
 if EXTRA_DEMOS
 CONFERENCE_DEMOS=hfst-ospell-norvig hfst-ospell-fsmnlp-2012 hfst-ospell-cicling\
 				 hfst-ospell-survey hfst-ospell-lrec2013 hfst-ispell
-endif
+endif # EXTRA_DEMOS
+
 bin_PROGRAMS=hfst-ospell $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
 
 PKG_LIBS=
 PKG_CXXFLAGS=
+
 if WANT_ARCHIVE
 PKG_LIBS+=$(LIBARCHIVE_LIBS)
 PKG_CXXFLAGS+=$(LIBARCHIVE_CFLAGS)
 endif
+
 if WANT_LIBXMLPP
 PKG_LIBS+=$(LIBXMLPP_LIBS)
 PKG_CXXFLAGS+=$(LIBXMLPP_CFLAGS)
 endif
+
 if WANT_TINYXML2
 PKG_LIBS+=$(TINYXML2_LIBS)
 PKG_CXXFLAGS+=$(TINYXML2_CFLAGS)
@@ -79,7 +83,7 @@ hfst_ospell_fsmnlp_2012_SOURCES=main-fsmnlp-2012.cc
 hfst_ospell_fsmnlp_2012_LDADD=libhfstospell.la
 hfst_ospell_fsmnlp_2012_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 								 $(PKG_CXXFLAGS)
-endif
+endif # EXTRA_DEMOS
 
 hfst_ispell_SOURCES=main-ispell.cc
 hfst_ispell_LDADD=libhfstospell.la
@@ -98,20 +102,30 @@ pkgconfig_DATA=hfstospell.pc
 if CAN_TEST
 TXTS=acceptor.default.txt errmodel.default.txt
 check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
+		   empty_titles.zhfst empty_locale.zhfst \
 		   spl.hfstol sug.hfstol err.hfstol \
 		   acceptor.default.hfst errmodel.default.hfst
+# Actual test scripts:
 TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh \
-	  empty-descriptions.sh
-XFAIL_TESTS=empty-descriptions.sh
+	  empty-descriptions.sh empty-titles.sh empty-locale.sh
+XFAIL_TESTS=empty-descriptions.sh empty-titles.sh empty-locale.sh
 EXTRA_DIST=$(TXTS) basic_test.xml empty_descriptions.xml test.strings $(TESTS)
 
 clean-local:
 	-rm -rf $(check_DATA) index.xml
-endif
+endif # CAN_TEST
 
 # N.B. Do not parallel test, race condition exists
 empty_descriptions.zhfst: acceptor.default.hfst errmodel.default.hfst empty_descriptions.xml
-	cp $(srcdir)/empty_descriptions.xml index.xml
+	cp -f $(srcdir)/empty_descriptions.xml index.xml
+	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+
+empty_titles.zhfst: acceptor.default.hfst errmodel.default.hfst empty_titles.xml
+	cp -f $(srcdir)/empty_titles.xml index.xml
+	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+
+empty_locale.zhfst: acceptor.default.hfst errmodel.default.hfst empty_locale.xml
+	cp -f $(srcdir)/empty_locale.xml index.xml
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
 
 # N.B. Do not parallel test, race condition exists
