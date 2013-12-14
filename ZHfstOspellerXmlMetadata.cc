@@ -636,6 +636,10 @@ void
 ZHfstOspellerXmlMetadata::parse_locale(const tinyxml2::XMLElement& localeNode)
   {
     const char* localeContent = localeNode.GetText();
+    if (NULL == localeNode.GetText())
+      {
+        throw ZHfstXmlParsingError("<locale> must be non-empty");
+      }
     if ((info_.locale_ != "und") && (info_.locale_ != localeContent))
       {
         // locale in XML mismatches previous definition
