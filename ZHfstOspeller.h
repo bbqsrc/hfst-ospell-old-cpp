@@ -64,7 +64,6 @@ namespace hfst_ol
             //! @brief create string representation of the speller for
             //!        programmer to debug
             std::string metadata_dump() const;
-            std::string remove_junk_at_end(std::string data);
         private:
             //! @brief file or path where the speller came from
             std::string filename_;

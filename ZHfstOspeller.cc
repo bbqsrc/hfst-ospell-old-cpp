@@ -268,8 +268,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
 #elif ZHFST_EXTRACT_TO_MEM
             size_t xml_len = 0;
             void* full_data = extract_to_mem(ar, entry, &xml_len);
-            std::string data = remove_junk_at_end(string(reinterpret_cast<char*>(full_data)));
-            metadata_.read_xml(data.c_str(), data.length());
+            metadata_.read_xml(reinterpret_cast<char*>(full_data), xml_len);
             free(full_data);
 #endif
 
@@ -324,14 +323,6 @@ ZHfstOspeller::read_zhfst(const string& filename)
 #else
     throw ZHfstZipReadingError("Zip support was disabled");
 #endif // HAVE_LIBARCHIVE
-  }
-
-std::string
-ZHfstOspeller::remove_junk_at_end(std::string data)
-  {
-    std::string::size_type last_lt = data.find_last_of('>');
-
-    return data.substr(0, last_lt + 1);
   }
 
 void
