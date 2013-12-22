@@ -659,7 +659,7 @@ void Speller::build_alphabet_translator(void)
 } // namespace hfst_ol
   
 char*
-hfst_strndup(const char* s, unsigned long n)
+hfst_strndup(const char* s, size_t n)
   {
     char* rv = static_cast<char*>(malloc(sizeof(char)*n+1));
     if (rv == NULL)

@@ -43,32 +43,35 @@ namespace hfst_ol
 #if HAVE_LIBARCHIVE
 #if ZHFST_EXTRACT_TO_MEM
 static
-void*
+char*
 extract_to_mem(archive* ar, archive_entry* entry, size_t* n)
   {
     size_t full_length = 0;
     const struct stat* st = archive_entry_stat(entry);
     size_t buffsize = st->st_size;
-    void* buff = malloc(sizeof(char) * buffsize);
+    char * buff = new char[buffsize];
     for (;;)
       {
-        size_t curr = archive_read_data(ar, buff, buffsize);
+        ssize_t curr = archive_read_data(ar, buff + full_length, buffsize - full_length);
         if (0 == curr)
           {
             break;
           }
-        else if (buffsize <= curr)
+        else if (ARCHIVE_RETRY == curr)
           {
-            full_length += curr;
-          } 
-        else if (curr < buffsize)
-          {
-            fprintf(stderr, "zhfst fail: curr: %zu, buffsize: %zu\n",
-                    curr, buffsize);
+            continue;
           }
-        else
+        else if (ARCHIVE_FAILED == curr)
+          {
+            throw ZHfstZipReadingError("Archive broken (ARCHIVE_FAILED)");
+          }
+        else if (curr < 0)
           {
             throw ZHfstZipReadingError("Archive broken...");
+          } 
+        else
+          {
+            full_length += curr;
           }
       }
     *n = full_length;
@@ -190,7 +193,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             char* temporary = extract_to_tmp_dir(ar);
 #elif ZHFST_EXTRACT_TO_MEM
             size_t total_length = 0;
-            void* full_data = extract_to_mem(ar, entry, &total_length);
+            char* full_data = extract_to_mem(ar, entry, &total_length);
 #endif
             char* p = filename;
             p += strlen("acceptor.");
@@ -216,8 +219,8 @@ ZHfstOspeller::read_zhfst(const string& filename)
               }
             Transducer* trans = new Transducer(f);
 #elif ZHFST_EXTRACT_TO_MEM
-            Transducer* trans = new Transducer(reinterpret_cast<char*>(full_data));
-            free(full_data);
+            Transducer* trans = new Transducer(full_data);
+            delete[] full_data;
 #endif
             acceptors_[descr] = trans;
             free(descr);
@@ -228,7 +231,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             char* temporary = extract_to_tmp_dir(ar);
 #elif ZHFST_EXTRACT_TO_MEM
             size_t total_length = 0;
-            void* full_data = extract_to_mem(ar, entry, &total_length);
+            char* full_data = extract_to_mem(ar, entry, &total_length);
 #endif
             const char* p = filename;
             p += strlen("errmodel.");
@@ -254,8 +257,8 @@ ZHfstOspeller::read_zhfst(const string& filename)
               }
             Transducer* trans = new Transducer(f);
 #elif ZHFST_EXTRACT_TO_MEM
-            Transducer* trans = new Transducer(reinterpret_cast<char*>(full_data));
-            free(full_data);
+            Transducer* trans = new Transducer(full_data);
+            delete[] full_data;
 #endif
             errmodels_[descr] = trans;
             free(descr);
@@ -267,9 +270,9 @@ ZHfstOspeller::read_zhfst(const string& filename)
             metadata_.read_xml(temporary);
 #elif ZHFST_EXTRACT_TO_MEM
             size_t xml_len = 0;
-            void* full_data = extract_to_mem(ar, entry, &xml_len);
-            metadata_.read_xml(reinterpret_cast<char*>(full_data), xml_len);
-            free(full_data);
+            char* full_data = extract_to_mem(ar, entry, &xml_len);
+            metadata_.read_xml(full_data, xml_len);
+            delete[] full_data;
 #endif
 
           }

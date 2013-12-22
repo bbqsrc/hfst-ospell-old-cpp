@@ -900,7 +900,7 @@ void
 ZHfstOspellerXmlMetadata::read_xml(const char* xml_data, size_t xml_len)
   {
     tinyxml2::XMLDocument doc;
-    if (doc.Parse(xml_data) != tinyxml2::XML_NO_ERROR)
+    if (doc.Parse(xml_data, xml_len) != tinyxml2::XML_NO_ERROR)
       {
         throw ZHfstMetaDataParsingError("Reading XML from memory");
       }
