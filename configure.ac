@@ -98,7 +98,7 @@ AS_IF([test x$enable_xml = xlibxmlpp],
                           enable_xml=no])])
 AM_CONDITIONAL([WANT_LIBXMLPP], [test x$enable_xml = xlibxmlpp])
 AS_IF([test x$enable_xml = xtinyxml2],
-      [PKG_CHECK_MODULES([TINYXML2], [tinyxml2],
+      [PKG_CHECK_MODULES([TINYXML2], [tinyxml2 >= 1.0.8],
                          [AC_DEFINE([HAVE_TINYXML2], [1], [Use tinyxml])],
                          [AC_MSG_WARN([tinyxml missing, xml disabled])
                           enable_xml=no])])
