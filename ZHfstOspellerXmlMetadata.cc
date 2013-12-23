@@ -166,6 +166,10 @@ void
 ZHfstOspellerXmlMetadata::parse_locale(xmlpp::Node* localeNode)
   {
     xmlpp::Element* localeElement = dynamic_cast<xmlpp::Element*>(localeNode);
+    if (NULL == localeElement->get_child_text())
+      {
+        throw ZHfstXmlParsingError("<locale> must be non-empty");
+      }
     const Glib::ustring localeContent = localeElement->get_child_text()->get_content();
     if ((info_.locale_ != "und") && (info_.locale_ != localeContent))
       {
@@ -183,6 +187,10 @@ ZHfstOspellerXmlMetadata::parse_title(xmlpp::Node* titleNode)
   {
     xmlpp::Element* titleElement = dynamic_cast<xmlpp::Element*>(titleNode);
     const xmlpp::Attribute* lang = titleElement->get_attribute("lang");
+    if (NULL == titleElement->get_child_text())
+      {
+        throw ZHfstXmlParsingError("<title> must be non-empty");
+      }
     if (lang != NULL)
       {
         info_.title_[lang->get_value()] = titleElement->get_child_text()->get_content();
