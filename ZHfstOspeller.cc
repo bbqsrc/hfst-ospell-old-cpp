@@ -283,7 +283,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
         free(filename);
       } // while r != ARCHIVE_EOF
     archive_read_close(ar);
-    archive_read_finish(ar);
+    archive_read_free(ar);
     if ((errmodels_.find("default") != errmodels_.end()) &&
         (acceptors_.find("default") != acceptors_.end()))
       {
