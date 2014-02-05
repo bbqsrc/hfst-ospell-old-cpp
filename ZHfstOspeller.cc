@@ -171,7 +171,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
 #if HAVE_LIBARCHIVE
     struct archive* ar = archive_read_new();
     struct archive_entry* entry = 0;
-    archive_read_support_compression_all(ar);
+    archive_read_support_filter_all(ar);
     archive_read_support_format_all(ar);
     int rr = archive_read_open_filename(ar, filename.c_str(), 10240);
     if (rr != ARCHIVE_OK)
