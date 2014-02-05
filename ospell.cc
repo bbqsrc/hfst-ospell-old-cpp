@@ -77,6 +77,13 @@ bool InputString::initialize(Encoder * encoder,
     return true;
 }
 
+unsigned int
+InputString::len()
+{
+    return s.size();
+}
+
+
 TreeNode TreeNode::update_lexicon(SymbolNumber next_symbol,
                                   TransitionTableIndex next_lexicon,
                                   Weight weight)
@@ -180,6 +187,13 @@ bool TreeNode::try_compatible_with(FlagDiacriticOperation op)
     
     return false; // to make the compiler happy
 }
+
+SymbolNumber
+Speller::get_state_size()
+{
+    return lexicon->get_state_size();
+}
+
 
 void Speller::lexicon_epsilons(void)
 {
@@ -343,6 +357,66 @@ void Speller::consume_input(void)
     }
 }
 
+bool
+Transducer::final_transition(TransitionTableIndex i)
+{
+    return transitions.final(i);
+}
+
+bool
+Transducer::final_index(TransitionTableIndex i)
+{
+    return indices.final(i);
+}
+
+KeyTable*
+Transducer::get_key_table()
+{
+    return keys;
+}
+
+SymbolNumber
+Transducer::find_next_key(char** p)
+{
+    return encoder.find_key(p);
+}
+
+Encoder*
+Transducer::get_encoder()
+{
+    return &encoder;
+}
+
+unsigned int
+Transducer::get_state_size()
+{
+    return alphabet.get_state_size();
+}
+
+std::vector<const char*>*
+Transducer::get_symbol_table()
+{
+    return &symbol_table;
+}
+
+SymbolNumber
+Transducer::get_other()
+{
+    return alphabet.get_other();
+}
+
+TransducerAlphabet*
+Transducer::get_alphabet()
+{
+    return &alphabet;
+}
+
+OperationMap*
+Transducer::get_operations()
+{
+    return alphabet.get_operation_map();
+}
+
 TransitionTableIndex Transducer::next(const TransitionTableIndex i,
                                       const SymbolNumber symbol) const
 {
@@ -433,6 +507,19 @@ void Transducer::set_symbol_table(void)
         symbol_table.push_back(key_name);
     }
 }
+
+bool
+Transducer::is_flag(const SymbolNumber symbol)
+{
+    return alphabet.is_flag(symbol); 
+}
+
+bool
+Transducer::is_weighted(void)
+{
+    return header.probe_flag(Weighted);
+}
+
 
 CorrectionQueue Speller::correct(char * line, int nbest)
 {

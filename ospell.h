@@ -118,63 +118,19 @@ public:
         {
             set_symbol_table();
         }
-
     AnalysisQueue lookup(char * line);
-
     IndexTable indices;
     TransitionTable transitions;
-
-    bool final_transition(TransitionTableIndex i)
-        {
-            return transitions.final(i);
-        }
-    
-    bool final_index(TransitionTableIndex i)
-        {
-            return indices.final(i);
-        }
-
-    KeyTable * get_key_table(void)
-        {
-            return keys;
-        }
-
-    SymbolNumber find_next_key(char ** p)
-        {
-            return encoder.find_key(p);
-        }
-
-    Encoder * get_encoder(void)
-        {
-            return &encoder;
-        }
-
-    unsigned int get_state_size(void)
-        {
-            return alphabet.get_state_size();
-        }
-
-    std::vector<const char*> * get_symbol_table(void)
-        {
-            return &symbol_table;
-        }
-
-    SymbolNumber get_other(void)
-        {
-            return alphabet.get_other();
-        }
-
-    TransducerAlphabet * get_alphabet(void)
-        {
-            return &alphabet;
-        }
-
-    OperationMap * get_operations(void)
-        {
-            return alphabet.get_operation_map();
-        }
-
-
+    bool final_transition(TransitionTableIndex i);
+    bool final_index(TransitionTableIndex i);
+    KeyTable * get_key_table(void);
+    SymbolNumber find_next_key(char ** p);
+    Encoder * get_encoder(void);
+    unsigned int get_state_size(void);
+    std::vector<const char*> * get_symbol_table(void);
+    SymbolNumber get_other(void);
+    TransducerAlphabet * get_alphabet(void);
+    OperationMap * get_operations(void);
     STransition take_epsilons(const TransitionTableIndex i) const;
     STransition take_epsilons_and_flags(const TransitionTableIndex i);
     STransition take_non_epsilons(const TransitionTableIndex i,
@@ -187,10 +143,8 @@ public:
     bool has_epsilons_or_flags(const TransitionTableIndex i);
     bool is_final(const TransitionTableIndex i);
     Weight final_weight(const TransitionTableIndex i) const;
-    bool is_flag(const SymbolNumber symbol)
-        { return alphabet.is_flag(symbol); }
-    bool is_weighted(void)
-        { return header.probe_flag(Weighted);}
+    bool is_flag(const SymbolNumber symbol);
+    bool is_weighted(void);
 
 };
 
@@ -270,10 +224,7 @@ public:
 
     bool initialize(Encoder * encoder, char * input, SymbolNumber other);
     
-    unsigned int len(void)
-        {
-            return s.size();
-        }
+    unsigned int len(void);
 
     SymbolNumber operator[](unsigned int i)
         {
@@ -318,10 +269,7 @@ public:
     
     bool init_input(char * str, Encoder * encoder, SymbolNumber other);
 
-    SymbolNumber get_state_size(void)
-        {
-            return lexicon->get_state_size();
-        }
+    SymbolNumber get_state_size(void);
 
     void build_alphabet_translator(void);
     void lexicon_epsilons(void);
