@@ -37,6 +37,39 @@ int nByte_utf8(unsigned char c)
     }
 }
 
+bool
+StringWeightComparison::operator()(StringWeightPair lhs, StringWeightPair rhs)
+{ // return true when we want rhs to appear before lhs
+    if (reverse) {
+        return (lhs.second < rhs.second);
+    } else {
+        return (lhs.second > rhs.second);
+    }
+}
+
+Transducer::Transducer(FILE* f):
+    header(TransducerHeader(f)),
+    alphabet(TransducerAlphabet(f, header.symbol_count())),
+    keys(alphabet.get_key_table()),
+    encoder(keys,header.input_symbol_count()),
+    indices(f,header.index_table_size()),
+    transitions(f,header.target_table_size())
+        {
+            set_symbol_table();
+        }
+
+Transducer::Transducer(char* raw):
+    header(TransducerHeader(&raw)),
+    alphabet(TransducerAlphabet(&raw, header.symbol_count())),
+    keys(alphabet.get_key_table()),
+    encoder(keys,header.input_symbol_count()),
+    indices(&raw,header.index_table_size()),
+    transitions(&raw,header.target_table_size())
+        {
+            set_symbol_table();
+        }
+
+
 bool InputString::initialize(Encoder * encoder,
                              char * input,
                              SymbolNumber other)
@@ -187,6 +220,20 @@ bool TreeNode::try_compatible_with(FlagDiacriticOperation op)
     
     return false; // to make the compiler happy
 }
+
+Speller::Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr):
+        mutator(mutator_ptr),
+        lexicon(lexicon_ptr),
+        input(InputString()),
+        queue(TreeNodeQueue()),
+        next_node(FlagDiacriticState(get_state_size(), 0)),
+        alphabet_translator(SymbolVector()),
+        operations(lexicon->get_operations()),
+        symbol_table(lexicon->get_symbol_table())
+        {
+            build_alphabet_translator();
+        }
+
 
 SymbolNumber
 Speller::get_state_size()

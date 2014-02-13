@@ -94,145 +94,21 @@ private:
     bool has_input_epsilon_transitions;
     bool has_input_epsilon_cycles;
     bool has_unweighted_input_epsilon_cycles;
-
-    void read_property(bool &property, FILE * f)
-        {
-            unsigned int prop;
-            if (fread(&prop,sizeof(unsigned int),1,f) != 1) {
-                HFST_THROW_MESSAGE(HeaderParsingException,
-                                   "Header ended unexpectedly\n");
-            }
-            if (prop == 0)
-            {
-                property = false;
-                return;
-            }
-            else
-            {
-                property = true;
-                return;
-            }
-        }
-
-    void read_property(bool &property, char ** raw)
-        {
-            unsigned int prop = *((unsigned int *) *raw);
-            (*raw) += sizeof(unsigned int);
-            if (prop == 0)
-            {
-                property = false;
-                return;
-            }
-            else
-            {
-                property = true;
-                return;
-            }
-        }
-
+    void read_property(bool &property, FILE * f);
+    void read_property(bool &property, char ** raw);
     void skip_hfst3_header(FILE * f);
     void skip_hfst3_header(char ** f);
 
 public:
-    TransducerHeader(FILE * f)
-        {
-            skip_hfst3_header(f); // skip header iff it is present
-            /* The following conditional clause does all the numerical reads
-               and throws an exception if any fails to return 1 */
-            if (fread(&number_of_input_symbols,
-                      sizeof(SymbolNumber),1,f) != 1||
-                fread(&number_of_symbols,
-                      sizeof(SymbolNumber),1,f) != 1||
-                fread(&size_of_transition_index_table,
-                      sizeof(TransitionTableIndex),1,f) != 1||
-                fread(&size_of_transition_target_table,
-                      sizeof(TransitionTableIndex),1,f) != 1||
-                fread(&number_of_states,
-                      sizeof(TransitionTableIndex),1,f) != 1||
-                fread(&number_of_transitions,
-                      sizeof(TransitionTableIndex),1,f) != 1) {
-                HFST_THROW_MESSAGE(HeaderParsingException,
-                                   "Header ended unexpectedly\n");
-            }
-
-            read_property(weighted,f);
-
-            read_property(deterministic,f);
-            read_property(input_deterministic,f);
-            read_property(minimized,f);
-            read_property(cyclic,f);
-            read_property(has_epsilon_epsilon_transitions,f);
-            read_property(has_input_epsilon_transitions,f);
-            read_property(has_input_epsilon_cycles,f);
-            read_property(has_unweighted_input_epsilon_cycles,f);
-
-        }
+    TransducerHeader(FILE * f);
 
     // read header from raw memory
-    TransducerHeader(char ** raw)
-        {
-            skip_hfst3_header(raw); // skip header iff it is present
-            number_of_input_symbols = *(SymbolNumber*) *raw;
-            (*raw) += sizeof(SymbolNumber);
-            number_of_symbols = *(SymbolNumber*) *raw;
-            (*raw) += sizeof(SymbolNumber);
-            size_of_transition_index_table = *(TransitionTableIndex*) *raw;
-            (*raw) += sizeof(TransitionTableIndex);
-            size_of_transition_target_table = *(TransitionTableIndex*) *raw;
-            (*raw) += sizeof(TransitionTableIndex);
-            number_of_states = *(TransitionTableIndex*) *raw;
-            (*raw) += sizeof(TransitionTableIndex);
-            number_of_transitions = *(TransitionTableIndex*) *raw;
-            (*raw) += sizeof(TransitionTableIndex);
-
-            read_property(weighted,raw);
-            read_property(deterministic,raw);
-            read_property(input_deterministic,raw);
-            read_property(minimized,raw);
-            read_property(cyclic,raw);
-            read_property(has_epsilon_epsilon_transitions,raw);
-            read_property(has_input_epsilon_transitions,raw);
-            read_property(has_input_epsilon_cycles,raw);
-            read_property(has_unweighted_input_epsilon_cycles,raw);
-
-        }
-
-    SymbolNumber symbol_count(void)
-        { return number_of_symbols; }
-
-    SymbolNumber input_symbol_count(void)
-        { return number_of_input_symbols; }
-  
-    TransitionTableIndex index_table_size(void)
-        { return size_of_transition_index_table; }
-
-    TransitionTableIndex target_table_size(void)
-        { return size_of_transition_target_table; }
-
-    bool probe_flag(HeaderFlag flag)
-        {
-            switch (flag) {
-            case Weighted:
-                return weighted;
-            case Deterministic:
-                return deterministic;
-            case Input_deterministic:
-                return input_deterministic;
-            case Minimized:
-                return minimized;
-            case Cyclic:
-                return cyclic;
-            case Has_epsilon_epsilon_transitions:
-                return has_epsilon_epsilon_transitions;
-            case Has_input_epsilon_transitions:
-                return has_input_epsilon_transitions;
-            case Has_input_epsilon_cycles:
-                return has_input_epsilon_cycles;
-            case Has_unweighted_input_epsilon_cycles:
-                return has_unweighted_input_epsilon_cycles;
-            }
-            return false;
-        }
+    TransducerHeader(char ** raw);
+    SymbolNumber symbol_count(void);
+    SymbolNumber input_symbol_count(void);
+    TransitionTableIndex index_table_size(void);
+    TransitionTableIndex target_table_size(void);
+    bool probe_flag(HeaderFlag flag);
 };
 
 class FlagDiacriticOperation
@@ -251,10 +127,10 @@ public:
     FlagDiacriticOperation():
         operation(P), feature(NO_SYMBOL), value(0) {}
   
-    bool isFlag(void) const { return feature != NO_SYMBOL; }
-    FlagDiacriticOperator Operation(void) const { return operation; }
-    SymbolNumber Feature(void) const { return feature; }
-    ValueNumber Value(void) const { return value; }
+    bool isFlag(void) const;
+    FlagDiacriticOperator Operation(void) const;
+    SymbolNumber Feature(void) const;
+    ValueNumber Value(void) const;
 
 };
 
@@ -272,41 +148,14 @@ private:
     void read(char ** raw, SymbolNumber number_of_symbols);
     
 public:
-    TransducerAlphabet(FILE * f, SymbolNumber number_of_symbols):
-        other_symbol(NO_SYMBOL)
-        {
-            read(f, number_of_symbols);
-        }
-
-    TransducerAlphabet(char ** raw, SymbolNumber number_of_symbols):
-        other_symbol(NO_SYMBOL)
-        {
-            read(raw, number_of_symbols);
-        }
-
-    KeyTable * get_key_table(void)
-        { return &kt; }
-    
-    OperationMap * get_operation_map(void)
-        { return &operations; }
-    
-    SymbolNumber get_state_size(void)
-        { return flag_state_size; }
-    
-    SymbolNumber get_other(void)
-        {
-            return other_symbol;
-        }
-
-    StringSymbolMap * get_string_to_symbol(void)
-        {
-            return &string_to_symbol;
-        }
-
-    bool is_flag(SymbolNumber symbol)
-        {
-            return operations.count(symbol) == 1;
-        }
+    TransducerAlphabet(FILE *f, SymbolNumber number_of_symbols);
+    TransducerAlphabet(char ** raw, SymbolNumber number_of_symbols);
+    KeyTable * get_key_table(void);
+    OperationMap * get_operation_map(void);
+    SymbolNumber get_state_size(void);
+    SymbolNumber get_other(void);
+    StringSymbolMap * get_string_to_symbol(void);
+    bool is_flag(SymbolNumber symbol);
 };
 
 class LetterTrie;
@@ -323,21 +172,9 @@ public:
     letters(UCHAR_MAX, static_cast<LetterTrie*>(NULL)),
     symbols(UCHAR_MAX,NO_SYMBOL)
         {}
-
     void add_string(const char * p,SymbolNumber symbol_key);
-
     SymbolNumber find_key(char ** p);
-
-    ~LetterTrie()
-        {
-            for (LetterTrieVector::iterator i = letters.begin(); i != letters.end(); ++i)
-            {
-                if (*i)
-                { 
-                    delete *i;
-                }
-            }
-        }
+    ~LetterTrie();
 };
 
 class Encoder {
@@ -349,12 +186,7 @@ private:
     void read_input_symbols(KeyTable * kt, SymbolNumber number_of_input_symbols);
 
 public:
-    Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols):
-        ascii_symbols(UCHAR_MAX,NO_SYMBOL)
-        {
-            read_input_symbols(kt, number_of_input_symbols);
-        }
-  
+    Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols);
     SymbolNumber find_key(char ** p);
 };
 
@@ -377,33 +209,10 @@ public:
         input_symbol(input),
         first_transition_index(first_transition)
         {}
-
-    TransitionTableIndex target(void) const
-        {
-            return first_transition_index;
-        }
-  
-    bool final(void) const
-        {
-            return input_symbol == NO_SYMBOL &&
-                first_transition_index != NO_TABLE_INDEX;
-        }
-
-    Weight final_weight(void) const
-        {
-            union to_weight
-            {
-                TransitionTableIndex i;
-                Weight w;
-            } weight;
-            weight.i = first_transition_index;
-            return weight.w;
-        }
-  
-    SymbolNumber get_input(void) const
-        {
-            return input_symbol;
-        }
+    TransitionTableIndex target(void) const;
+    bool final(void) const;
+    Weight final_weight(void) const;
+    SymbolNumber get_input(void) const;
 };
 
 class Transition
@@ -438,32 +247,11 @@ public:
         transition_weight(INFINITE_WEIGHT)
         {}
 
-    TransitionTableIndex target(void) const
-        {
-            return target_index;
-        }
-
-    SymbolNumber get_output(void) const
-        {
-            return output_symbol;
-        }
-
-    SymbolNumber get_input(void) const
-        {
-            return input_symbol;
-        }
-
-    Weight get_weight(void) const
-        {
-            return transition_weight;
-        }
-
-    bool final(void) const
-        {
-            return input_symbol == NO_SYMBOL &&
-                output_symbol == NO_SYMBOL &&
-                target_index == 1;
-        }
+    TransitionTableIndex target(void) const;
+    SymbolNumber get_output(void) const;
+    SymbolNumber get_input(void) const;
+    Weight get_weight(void) const;
+    bool final(void) const;
 };
 
 class IndexTable
@@ -479,44 +267,14 @@ private:
 
 public:
     IndexTable(FILE * f,
-               TransitionTableIndex number_of_table_entries):
-        indices(NULL)
-        {
-            read(f, number_of_table_entries);
-        }
-    
+               TransitionTableIndex number_of_table_entries);
     IndexTable(char ** raw,
-               TransitionTableIndex number_of_table_entries):
-        indices(NULL)
-        {
-            read(raw, number_of_table_entries);
-        }
-
-    ~IndexTable(void)
-        {
-            if (indices) {
-                free(indices);
-            }
-        }
-    
-    SymbolNumber input_symbol(TransitionTableIndex i) const
-        { return *((SymbolNumber *)
-                   (indices + TransitionIndex::SIZE * i)); }
-    
-    TransitionTableIndex target(TransitionTableIndex i) const
-        { return *((TransitionTableIndex *)
-                   (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber))); }
-    
-    bool final(TransitionTableIndex i) const
-        {
-            return input_symbol(i) == NO_SYMBOL && target(i) != NO_TABLE_INDEX;
-        }
-
-    Weight final_weight(TransitionTableIndex i) const
-        {
-            return *((Weight *)
-                     (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
-        }
+               TransitionTableIndex number_of_table_entries);
+    ~IndexTable(void);
+    SymbolNumber input_symbol(TransitionTableIndex i) const;
+    TransitionTableIndex target(TransitionTableIndex i) const;
+    bool final(TransitionTableIndex i) const;
+    Weight final_weight(TransitionTableIndex i) const;
 };
 
 class TransitionTable
@@ -531,63 +289,18 @@ protected:
 
 public:
     TransitionTable(FILE * f,
-                    TransitionTableIndex transition_count):
-        transitions(NULL)
-        {
-            read(f, transition_count);
-        }
-  
+                    TransitionTableIndex transition_count);
     TransitionTable(char ** raw,
-                    TransitionTableIndex transition_count):
-        transitions(NULL)
-        {
-            read(raw, transition_count);
-        }
+                    TransitionTableIndex transition_count);
 
-    ~TransitionTable(void)
-        {
-            if (transitions) {
-                free(transitions);
-            }
-        }
+    ~TransitionTable(void);
+    SymbolNumber input_symbol(TransitionTableIndex i) const;
+    SymbolNumber output_symbol(TransitionTableIndex i) const;
+    TransitionTableIndex target(TransitionTableIndex i) const;
+    Weight weight(TransitionTableIndex i) const;
+    bool final(TransitionTableIndex i) const;
 
-    SymbolNumber input_symbol(TransitionTableIndex i) const
-        {
-            return *((SymbolNumber *)
-                     (transitions + Transition::SIZE * i));
-        }
 
-    SymbolNumber output_symbol(TransitionTableIndex i) const
-        {
-            return *((SymbolNumber *)
-                     (transitions + Transition::SIZE * i +
-                      sizeof(SymbolNumber)));
-        }
-    
-    
-    TransitionTableIndex target(TransitionTableIndex i) const
-        {
-            return *((TransitionTableIndex *)
-                     (transitions + Transition::SIZE * i +
-                      2*sizeof(SymbolNumber)));
-        }
-    
-    
-    Weight weight(TransitionTableIndex i) const
-        {
-            return *((Weight *)
-                     (transitions + Transition::SIZE * i +
-                      2*sizeof(SymbolNumber) + sizeof(TransitionTableIndex)));
-        }
-
-    bool final(TransitionTableIndex i) const
-        {
-            return input_symbol(i) == NO_SYMBOL &&
-                output_symbol(i) == NO_SYMBOL &&
-                target(i) == 1;
-        }
-
-  
 };
 
 template <class printable>

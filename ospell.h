@@ -60,14 +60,7 @@ public:
         reverse(reverse_result)
         {}
     
-    bool operator() (StringWeightPair lhs, StringWeightPair rhs)
-        { // return true when we want rhs to appear before lhs
-            if (reverse) {
-                return (lhs.second < rhs.second);
-            } else {
-                return (lhs.second > rhs.second);
-            }
-        }
+    bool operator() (StringWeightPair lhs, StringWeightPair rhs);
 };
 
 typedef std::priority_queue<StringWeightPair,
@@ -97,27 +90,8 @@ protected:
 
  
 public:
-    Transducer(FILE * f):
-    header(TransducerHeader(f)),
-    alphabet(TransducerAlphabet(f, header.symbol_count())),
-    keys(alphabet.get_key_table()),
-    encoder(keys,header.input_symbol_count()),
-    indices(f,header.index_table_size()),
-    transitions(f,header.target_table_size())
-        {
-            set_symbol_table();
-        }
-
-    Transducer(char * raw):
-    header(TransducerHeader(&raw)),
-    alphabet(TransducerAlphabet(&raw, header.symbol_count())),
-    keys(alphabet.get_key_table()),
-    encoder(keys,header.input_symbol_count()),
-    indices(&raw,header.index_table_size()),
-    transitions(&raw,header.target_table_size())
-        {
-            set_symbol_table();
-        }
+    Transducer(FILE * f);
+    Transducer(char * raw);
     AnalysisQueue lookup(char * line);
     IndexTable indices;
     TransitionTable transitions;
@@ -254,23 +228,9 @@ public:
     OperationMap * operations;
     std::vector<const char*> * symbol_table;
     
-    Speller(Transducer * mutator_ptr, Transducer * lexicon_ptr):
-        mutator(mutator_ptr),
-        lexicon(lexicon_ptr),
-        input(InputString()),
-        queue(TreeNodeQueue()),
-        next_node(FlagDiacriticState(get_state_size(), 0)),
-        alphabet_translator(SymbolVector()),
-        operations(lexicon->get_operations()),
-        symbol_table(lexicon->get_symbol_table())
-        {
-            build_alphabet_translator();
-        }
-    
+    Speller(Transducer * mutator_ptr, Transducer * lexicon_ptr);
     bool init_input(char * str, Encoder * encoder, SymbolNumber other);
-
     SymbolNumber get_state_size(void);
-
     void build_alphabet_translator(void);
     void lexicon_epsilons(void);
     void mutator_epsilons(void);
