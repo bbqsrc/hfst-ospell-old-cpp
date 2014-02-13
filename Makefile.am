@@ -26,6 +26,7 @@ endif # EXTRA_DEMOS
 
 bin_PROGRAMS=hfst-ospell $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
+man1_MANS=hfst-ospell.1
 
 PKG_LIBS=
 PKG_CXXFLAGS=
