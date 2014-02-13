@@ -60,7 +60,7 @@ public:
         reverse(reverse_result)
         {}
     
-    bool operator() (const StringWeightPair& lhs, const StringWeightPair& rhs) const;
+    bool operator() (StringWeightPair lhs, StringWeightPair rhs);
 };
 
 typedef std::priority_queue<StringWeightPair,

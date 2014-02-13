@@ -38,8 +38,7 @@ int nByte_utf8(unsigned char c)
 }
 
 bool
-StringWeightComparison::operator()(const StringWeightPair& lhs, 
-                                   const StringWeightPair& rhs) const
+StringWeightComparison::operator()(StringWeightPair lhs, StringWeightPair rhs)
 { // return true when we want rhs to appear before lhs
     if (reverse) {
         return (lhs.second < rhs.second);
