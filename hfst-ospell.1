@@ -1,0 +1,41 @@
+.TH HFST-OSPELL "1" "February 2014" "hfst-ospell " "User Commands"
+.SH NAME
+hfst-ospell \- spell check using hfst finite-state automata
+.SH SYNOPSIS
+.B hfst-ospell
+[\fIOPTIONS\fR] \fIERRORSOURCE LEXICON\fR
+.br
+.B hfst-ospell
+[\fIOPTIONS\fR] \fIZHFST\-ARCHIVE\fR
+.SH DESCRIPTION
+.IP
+Run a composition of \fIERRORSOURCE\fR and \fILEXICON\fR on standard input and
+print corrected output
+Second form seeks error sources and lexicons from the \fIZHFST\-ARCHIVE\fR
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print this help message
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version information
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Be verbose
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Don't be verbose (default)
+.TP
+\fB\-s\fR, \fB\-\-silent\fR
+Same as quiet
+.PP
+This is a modest test tool. For full fledged spelling checkers, look into
+voikko and enchant.
+.SH EXAMPLES
+.B hfst-ospell fin.zhfst
+load Finnish zhfst speller from current directory
+.SH "REPORTING BUGS"
+Report bugs to hfst\-bugs@helsinki.fi or directly to our bug tracker at:
+<https://sourceforge.net/p/hfst/>
+.SH COPYRIGHT
+Copyright \(c 2014 University of Helsinki; Licence Apache v2.
+
