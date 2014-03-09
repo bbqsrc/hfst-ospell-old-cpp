@@ -777,10 +777,20 @@ void Speller::build_alphabet_translator(void)
             continue; // no translation
         }
         if (to_symbols->count(from_keys->operator[](i)) != 1) {
+            // A symbol in the error source isn't present in the
+            // lexicon. We can either error out or silently translate it to
+            // NO_SYMBOL which will never be accepted by the lexicon.
+            alphabet_translator.push_back(NO_SYMBOL);
             std::string name(from_keys->operator[](i));
-            if (name != "")
-                throw AlphabetTranslationException(
-                    std::string(from_keys->operator[](i)));
+            if (name != "") {
+                std::cerr << "ospell: warning: symbol " <<
+                    std::string(from_keys->operator[](i))
+                          << " not present in lexicon\n";
+            }
+            continue;
+            // If we want to die instead
+                // throw AlphabetTranslationException(
+                //     std::string(from_keys->operator[](i)));
         }
         // translator at i points to lexicon's symbol for mutator's string for
         // mutator's symbol number i
