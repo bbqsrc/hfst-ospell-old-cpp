@@ -101,7 +101,7 @@ pkgconfig_DATA=hfstospell.pc
 
 # tests
 if CAN_TEST
-TXTS=acceptor.default.txt errmodel.default.txt
+TXTS=acceptor.default.txt errmodel.default.txt errmodel.extrachars.txt
 check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
 		   empty_titles.zhfst empty_locale.zhfst \
 		   trailing_spaces.zhfst \
@@ -113,7 +113,10 @@ TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh \
 	  empty-descriptions.sh empty-titles.sh empty-locale.sh \
 	  trailing-spaces.sh bad-errormodel.sh
 XFAIL_TESTS=empty-descriptions.sh empty-titles.sh empty-locale.sh
-EXTRA_DIST=$(TXTS) basic_test.xml empty_descriptions.xml test.strings $(TESTS)
+EXTRA_DIST=$(TXTS) $(TESTS) \
+			basic_test.xml empty_descriptions.xml empty_titles.xml \
+			empty_locale.xml trailing_spaces.xml \
+			test.strings
 
 clean-local:
 	-rm -rf $(check_DATA) index.xml
