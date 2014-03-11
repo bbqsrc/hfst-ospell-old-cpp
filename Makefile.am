@@ -106,11 +106,12 @@ check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
 		   empty_titles.zhfst empty_locale.zhfst \
 		   trailing_spaces.zhfst \
 		   spl.hfstol sug.hfstol err.hfstol \
-		   acceptor.default.hfst errmodel.default.hfst
+		   acceptor.default.hfst errmodel.default.hfst \
+		   errmodel.extrachars.hfst bad_errormodel.zhfst
 # Actual test scripts:
 TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh \
 	  empty-descriptions.sh empty-titles.sh empty-locale.sh \
-	  trailing-spaces.sh
+	  trailing-spaces.sh bad-errormodel.sh
 XFAIL_TESTS=empty-descriptions.sh empty-titles.sh empty-locale.sh
 EXTRA_DIST=$(TXTS) basic_test.xml empty_descriptions.xml test.strings $(TESTS)
 
@@ -138,6 +139,10 @@ trailing_spaces.zhfst: acceptor.default.hfst errmodel.default.hfst trailing_spac
 # N.B. Do not parallel test, race condition exists
 speller_basic.zhfst: acceptor.default.hfst errmodel.default.hfst basic_test.xml
 	cp $(srcdir)/basic_test.xml index.xml
+	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+
+bad_errormodel.zhfst: acceptor.default.hfst errmodel.extrachars.hfst index.xml
+	cp -f $(srcdir)/errmodel.extrachars.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
 
 sug.hfstol: acceptor.default.hfst
