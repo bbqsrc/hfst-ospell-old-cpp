@@ -5,6 +5,7 @@ if test -x ./hfst-ospell ; then
         exit 1
     fi
 else
-    exit 73
+    echo ./hfst-ospell not built
+    exit 77
 fi
 
