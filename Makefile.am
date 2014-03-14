@@ -111,8 +111,8 @@ check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
 # Actual test scripts:
 TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh \
 	  empty-descriptions.sh empty-titles.sh empty-locale.sh \
-	  trailing-spaces.sh bad-errormodel.sh
-XFAIL_TESTS=empty-descriptions.sh empty-titles.sh empty-locale.sh
+	  trailing-spaces.sh bad-errormodel.sh empty-zhfst.sh
+XFAIL_TESTS=empty-descriptions.sh empty-titles.sh empty-locale.sh empty-zhfst.sh
 EXTRA_DIST=$(TXTS) $(TESTS) \
 			basic_test.xml empty_descriptions.xml empty_titles.xml \
 			empty_locale.xml trailing_spaces.xml \
