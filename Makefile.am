@@ -162,3 +162,6 @@ err.hfstol: errmodel.default.hfst
 
 .txt.hfstol:
 	hfst-txt2fst $(HFST_FLAGS) $< | hfst-fst2fst $(HFST_FLAGS) -f olw -o $@
+
+hfst-ospell.1: hfst-ospell
+	help2man --no-discard-stderr $< > $@
