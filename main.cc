@@ -41,6 +41,7 @@ using hfst_ol::Transducer;
 
 static bool quiet = false;
 static bool verbose = false;
+static bool analyse = false;
 #ifdef WINDOWS
   static bool output_to_console = false;
 #endif
@@ -48,7 +49,7 @@ static bool verbose = false;
 #ifdef WINDOWS
 static std::string wide_string_to_string(const std::wstring & wstr)
 {
-  int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+  int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)§wstr.size(), NULL, 0, NULL, NULL);
   std::string str( size_needed, 0 );
   WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &str[0], size_needed, NULL, NULL);
   return str;
@@ -112,6 +113,7 @@ bool print_usage(void)
     "  -v, --verbose               Be verbose\n" <<
     "  -q, --quiet                 Don't be verbose (default)\n" <<
     "  -s, --silent                Same as quiet\n" <<
+    "  -a, --analyse               Analyse strings and corrections\n" <<
 #ifdef WINDOWS
     "  -k, --output-to-console     Print output to console (Windows-specific)" <<
 #endif
@@ -128,7 +130,7 @@ bool print_version(void)
     "\n" <<
     PACKAGE_STRING << std::endl <<
     __DATE__ << " " __TIME__ << std::endl <<
-    "copyright (C) 2009 - 2011 University of Helsinki\n";
+    "copyright (C) 2009 - 2014 University of Helsinki\n";
     return true;
 }
 
@@ -138,6 +140,62 @@ bool print_short_help(void)
     return true;
 }
 
+void
+do_spell(ZHfstOspeller& speller, const std::string& str)
+  {
+    if (speller.spell(str)) 
+      {
+        (void)hfst_fprintf(stdout, "\"%s\" is in the lexicon "
+                           "(but correcting anyways)\n\n", str.c_str());
+      }
+    if (analyse)
+      {
+        hfst_ol::AnalysisQueue anals = speller.analyse(str, false);
+        (void)hfst_fprintf(stdout, "Analyses for \"%s\":\n", str.c_str());
+        while (anals.size() > 0)
+          {
+            (void)hfst_fprintf(stdout, "%s   %f\n",
+                               anals.top().first.c_str(),
+                               anals.top().second);
+            anals.pop();
+          }
+      }
+    hfst_ol::CorrectionQueue corrections = speller.suggest(str);
+    if (corrections.size() > 0) 
+      {
+        (void)hfst_fprintf(stdout, "Corrections for \"%s\":\n", str.c_str());
+        while (corrections.size() > 0)
+          {
+            const std::string& corr = corrections.top().first;
+            (void)hfst_fprintf(stdout, "%s    %f\n", 
+                           corr.c_str(), 
+                           corrections.top().second);
+            if (analyse)
+              {
+                hfst_ol::AnalysisQueue anals = speller.analyse(corr, true);
+                (void)hfst_fprintf(stdout, "Analyses for \"%s\":\n", 
+                                   corr.c_str());
+                while (anals.size() > 0)
+                  {
+                    (void)hfst_fprintf(stdout, "%s\n",
+                                       anals.top().first.c_str());
+                  }
+
+                anals.pop();
+              }
+            corrections.pop();
+            (void)hfst_fprintf(stdout, "\n");
+          }
+        (void)hfst_fprintf(stdout, "\n");
+      }
+    else
+      {
+        (void)hfst_fprintf(stdout,
+                           "Unable to correct \"%s\"!\n\n", str.c_str());
+      }
+  }
+
+// kill legacy spell next
 int
 legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
 {
@@ -225,6 +283,10 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
         if (speller->check(str)) {
           //std::cout << "\"" << str << "\" is in the lexicon\n\n";
           (void)hfst_fprintf(stdout, "\"%s\" is in the lexicon\n\n", str);
+          if (analyse)
+          {
+            hfst_fprintf(stdout, "analyse TODO\n");
+          }
         } else {
         hfst_ol::CorrectionQueue corrections = speller->correct(str, 5);
         if (corrections.size() > 0) {
@@ -233,10 +295,9 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
             while (corrections.size() > 0)
             {
               //std::cout << corrections.top().first << "    " << corrections.top().second << std::endl;
-              (void)hfst_fprintf(stdout, "%s    %f\n", 
+              (void)hfst_fprintf(stdout, "%s    %f", 
                                  corrections.top().first.c_str(), 
                                  corrections.top().second);
-              corrections.pop();
             }
             //std::cout << std::endl;
             (void)hfst_fprintf(stdout, "\n");
@@ -247,7 +308,6 @@ legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
         }
     }
     return EXIT_SUCCESS;
-
 }
 
 int
@@ -330,48 +390,22 @@ zhfst_spell(char* zhfst_filename)
         std::cin.getline(str, 2000);
 #endif
         if (str[0] == '\0') {
-        break;
+            continue;
         }
         if (str[strlen(str) - 1] == '\r')
           {
 #ifdef WINDOWS
             str[strlen(str) - 1] = '\0';
 #else
-            //std::cerr << "There is a WINDOWS linebreak in this file" <<
-            //    std::endl <<
-            //    "Please convert with dos2unix or fromdos" << std::endl;
             (void)hfst_fprintf(stderr, "There is a WINDOWS linebreak in this file\n"
                                "Please convert with dos2unix or fromdos\n");
             exit(1);
 #endif
           }
-        if (speller.spell(str)) {
-          //std::cout << "\"" << str << "\" is in the lexicon\n\n";
-        (void)hfst_fprintf(stdout, "\"%s\" is in the lexicon\n\n", str);
-        } else {
-          hfst_ol::CorrectionQueue corrections = speller.suggest(str);
-          if (corrections.size() > 0) {
-          //std::cout << "Corrections for \"" << str << "\":\n";
-            (void)hfst_fprintf(stdout, "Corrections for \"%s\":\n", str);
-            while (corrections.size() > 0)
-              {
-                //std::cout << corrections.top().first << "    " << corrections.top().second << std::endl;
-                (void)hfst_fprintf(stdout, "%s    %f\n", 
-                                   corrections.top().first.c_str(), 
-                                   corrections.top().second);
-                corrections.pop();
-              }
-            //std::cout << std::endl;
-            (void)hfst_fprintf(stdout, "\n");
-          } else {
-            //  std::cout << "Unable to correct \"" << str << "\"!\n\n";
-            (void)hfst_fprintf(stdout, "Unable to correct \"%s\"!\n\n", str);
-          }
-        }
-    }
+        do_spell(speller, str);
+      }
     free(str);
     return EXIT_SUCCESS;
-  return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv)
@@ -390,6 +424,7 @@ int main(int argc, char **argv)
             {"verbose",      no_argument,       0, 'v'},
             {"quiet",        no_argument,       0, 'q'},
             {"silent",       no_argument,       0, 's'},
+            {"analyse",      no_argument,       0, 'a'},
 #ifdef WINDOWS
             {"output-to-console",       no_argument,       0, 'k'},
 #endif
@@ -397,7 +432,7 @@ int main(int argc, char **argv)
             };
           
         int option_index = 0;
-        c = getopt_long(argc, argv, "hVvqsk", long_options, &option_index);
+        c = getopt_long(argc, argv, "hVvqska", long_options, &option_index);
 
         if (c == -1) // no more options to look at
             break;
@@ -422,6 +457,9 @@ int main(int argc, char **argv)
         case 's':
             quiet = true;
             verbose = false;
+            break;
+        case 'a':
+            analyse = true;
             break;
 #ifdef WINDOWS
         case 'k':

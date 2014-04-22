@@ -101,6 +101,7 @@ extract_to_tmp_dir(archive* ar)
 ZHfstOspeller::ZHfstOspeller() :
     can_spell_(false),
     can_correct_(false),
+    can_analyse_(false),
     current_speller_(0),
     current_sugger_(0)
     {
@@ -162,6 +163,23 @@ ZHfstOspeller::suggest(const string& wordform)
         free(wf);
         return rv;
       }
+    return rv;
+  }
+
+AnalysisQueue
+ZHfstOspeller::analyse(const string& wordform, bool ask_sugger)
+  {
+    AnalysisQueue rv;
+    char* wf = strdup(wordform.c_str());
+    if ((can_analyse_) && (!ask_sugger) && (current_speller_ != 0))
+      {
+          rv = current_speller_->analyse(wf);
+      }
+    else if ((can_analyse_) && (ask_sugger) && (current_sugger_ != 0))
+      {
+          rv = current_sugger_->analyse(wf);
+      }
+    free(wf);
     return rv;
   }
 
@@ -322,6 +340,10 @@ ZHfstOspeller::read_zhfst(const string& filename)
         current_sugger_ = current_speller_;
         can_spell_ = true;
         can_correct_ = false;
+      }
+    else
+      {
+        throw ZHfstZipReadingError("No automata found in zip");
       }
 #else
     throw ZHfstZipReadingError("Zip support was disabled");

@@ -55,7 +55,13 @@ namespace hfst_ol
             //!        word form.
             CorrectionQueue suggest(const std::string& wordform);
             //! @brief analyse word form morphologically
-            AnalysisQueue analyse(const std::string& wordform);
+            //! @param ask_sugger whether to use the spelling correction model
+            //                    instead of the detection model
+            AnalysisQueue analyse(const std::string& wordform, 
+                                  bool ask_sugger = false);
+            //! @brief construct an ordered set of corrections with analyses
+            //CorrectionAnalysisQueue suggest_analyses(const std::string&
+             //                                        wordform);
             //! @brief hyphenate word form
             HyphenationQueue hyphenate(const std::string& wordform);
 

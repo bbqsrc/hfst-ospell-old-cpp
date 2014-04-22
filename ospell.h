@@ -238,6 +238,7 @@ public:
     void lexicon_consume(void);
     bool check(char * line);
     CorrectionQueue correct(char * line, int nbest = 0);
+    AnalysisQueue analyse(char * line, int nbest = 0);
 };
 
 std::string stringify(std::vector<const char *> * symbol_table,

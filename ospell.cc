@@ -231,6 +231,7 @@ Speller::Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr):
         operations(lexicon->get_operations()),
         symbol_table(lexicon->get_symbol_table())
         {
+          if (mutator != 0)
             build_alphabet_translator();
         }
 
@@ -567,6 +568,11 @@ Transducer::is_weighted(void)
     return header.probe_flag(Weighted);
 }
 
+
+AnalysisQueue Speller::analyse(char * line, int /* nbest */)
+  {
+    return lexicon->lookup(line);
+  }
 
 CorrectionQueue Speller::correct(char * line, int nbest)
 {
