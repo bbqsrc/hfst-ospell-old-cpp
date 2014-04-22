@@ -41,7 +41,7 @@
 using hfst_ol::ZHfstOspeller;
 using hfst_ol::Transducer;
 
-static bool quiet = false;
+//static bool quiet = false;
 static bool verbose = false;
 
 char*
@@ -154,7 +154,7 @@ bool print_short_help(void)
 
 static
 void
-print_correct(const char* s)
+print_correct(const char* /*s*/)
   {
     fprintf(stdout, "*\n");
   }

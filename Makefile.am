@@ -107,11 +107,13 @@ check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
 		   trailing_spaces.zhfst \
 		   spl.hfstol sug.hfstol err.hfstol \
 		   acceptor.default.hfst errmodel.default.hfst \
-		   errmodel.extrachars.hfst bad_errormodel.zhfst
+		   errmodel.extrachars.hfst bad_errormodel.zhfst \
+		   speller_analyser.zhfst no_errormodel.zhfst
 # Actual test scripts:
-TESTS=basic-zhfst.sh basic-legacy.sh basic-zhfst-fallback.sh \
+TESTS=basic-zhfst.sh \
 	  empty-descriptions.sh empty-titles.sh empty-locale.sh \
-	  trailing-spaces.sh bad-errormodel.sh empty-zhfst.sh
+	  trailing-spaces.sh bad-errormodel.sh empty-zhfst.sh \
+	  analyse-spell.sh no-errormodel.sh
 XFAIL_TESTS=empty-descriptions.sh empty-titles.sh empty-locale.sh empty-zhfst.sh
 EXTRA_DIST=$(TXTS) $(TESTS) \
 			basic_test.xml empty_descriptions.xml empty_titles.xml \
@@ -126,27 +128,45 @@ endif # CAN_TEST
 empty_descriptions.zhfst: acceptor.default.hfst errmodel.default.hfst empty_descriptions.xml
 	cp -f $(srcdir)/empty_descriptions.xml index.xml
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+	-rm index.xml
 
 empty_titles.zhfst: acceptor.default.hfst errmodel.default.hfst empty_titles.xml
 	cp -f $(srcdir)/empty_titles.xml index.xml
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+	-rm index.xml
 
 empty_locale.zhfst: acceptor.default.hfst errmodel.default.hfst empty_locale.xml
 	cp -f $(srcdir)/empty_locale.xml index.xml
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+	-rm index.xml
 
 trailing_spaces.zhfst: acceptor.default.hfst errmodel.default.hfst trailing_spaces.xml
 	cp -f $(srcdir)/trailing_spaces.xml index.xml
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+	-rm index.xml
 
 # N.B. Do not parallel test, race condition exists
 speller_basic.zhfst: acceptor.default.hfst errmodel.default.hfst basic_test.xml
 	cp $(srcdir)/basic_test.xml index.xml
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+	-rm index.xml
 
-bad_errormodel.zhfst: acceptor.default.hfst errmodel.extrachars.hfst index.xml
+speller_analyser.zhfst: analyser.default.hfst errmodel.default.hfst basic_test.xml
+	cp $(srcdir)/basic_test.xml index.xml
+	cp analyser.default.hfst acceptor.default.hfst
+	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+	-rm index.xml acceptor.default.hfst
+
+bad_errormodel.zhfst: acceptor.default.hfst errmodel.extrachars.hfst basic_test.xml
+	cp $(srcdir)/basic_test.xml index.xml
 	cp -f $(srcdir)/errmodel.extrachars.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+	-rm acceptor.default.hfst index.xml errmodel.default.hfst
+
+no_errormodel.zhfst: acceptor.default.hfst no_errmodel.xml
+	cp $(srcdir)/no_errmodel.xml index.xml
+	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst index.xml
+	-rm index.xml
 
 sug.hfstol: acceptor.default.hfst
 	-ln -sf $< $@
