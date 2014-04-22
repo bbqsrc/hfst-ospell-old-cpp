@@ -20,7 +20,7 @@ AC_PREREQ([2.62])
 LT_PREREQ([2.2.6])
 
 # init
-AC_INIT([hfstospell], [0.2.6], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
+AC_INIT([hfstospell], [0.3.0_beta], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules])
 AM_SILENT_RULES([yes])
@@ -32,8 +32,8 @@ AC_CONFIG_HEADERS([config.h])
 # Information on package
 HFSTOSPELL_NAME=hfstospell
 HFSTOSPELL_MAJOR=0
-HFSTOSPELL_MINOR=2
-HFSTOSPELL_EXTENSION=.6_alpha
+HFSTOSPELL_MINOR=3
+HFSTOSPELL_EXTENSION=.0_beta
 HFSTOSPELL_VERSION=$HFSTOSPELL_MAJOR.$HFSTOSPELL_MINOR$HFSTOSPELL_EXTENSION
 AC_SUBST(HFSTOSPELL_MAJOR)
 AC_SUBST(HFSTOSPELL_MINOR)
