@@ -183,6 +183,27 @@ ZHfstOspeller::analyse(const string& wordform, bool ask_sugger)
     return rv;
   }
 
+AnalysisCorrectionQueue
+ZHfstOspeller::suggest_analyses(const string& wordform)
+  {
+    AnalysisCorrectionQueue rv;
+    // FIXME: should be atomic
+    CorrectionQueue cq = suggest(wordform);
+    while (cq.size() > 0)
+      {
+        AnalysisQueue aq = analyse(cq.top().first, true);
+        while (aq.size() > 0)
+          {
+            StringPair sp(cq.top().first, aq.top().first);
+            StringPairWeightPair spwp(sp, aq.top().second);
+            rv.push(spwp);
+            aq.pop();
+          }
+        cq.pop();
+      }
+    return rv;
+  }
+
 void
 ZHfstOspeller::read_zhfst(const string& filename)
   {

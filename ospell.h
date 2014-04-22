@@ -46,9 +46,10 @@ public:
         {}
 
 };
-
+typedef std::pair<std::string, std::string> StringPair;
 typedef std::pair<std::string, Weight> StringWeightPair;
-
+typedef std::pair<std::pair<std::string, std::string>, Weight>
+                                                        StringPairWeightPair;
 class StringWeightComparison
 /* results are reversed by default because greater weights represent
    worse results - to reverse the reversal, give a true argument*/
@@ -63,6 +64,17 @@ public:
     bool operator() (StringWeightPair lhs, StringWeightPair rhs);
 };
 
+class StringPairWeightComparison
+{
+    bool reverse;
+public:
+    StringPairWeightComparison(bool reverse_result=false):
+        reverse(reverse_result)
+        {}
+    
+    bool operator() (StringPairWeightPair lhs, StringPairWeightPair rhs);
+};
+
 typedef std::priority_queue<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> CorrectionQueue;
@@ -72,7 +84,11 @@ typedef std::priority_queue<StringWeightPair,
 typedef std::priority_queue<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> HyphenationQueue;
+typedef std::priority_queue<StringPairWeightPair,
+                            std::vector<StringPairWeightPair>,
+                            StringPairWeightComparison> AnalysisCorrectionQueue;
 typedef std::priority_queue<Weight> WeightQueue;
+
 
 class Transducer
 {

@@ -47,6 +47,16 @@ StringWeightComparison::operator()(StringWeightPair lhs, StringWeightPair rhs)
     }
 }
 
+bool
+StringPairWeightComparison::operator()(StringPairWeightPair lhs,
+                                       StringPairWeightPair rhs)
+{ // return true when we want rhs to appear before lhs
+    if (reverse) {
+        return (lhs.second < rhs.second);
+    } else {
+        return (lhs.second > rhs.second);
+    }
+}
 Transducer::Transducer(FILE* f):
     header(TransducerHeader(f)),
     alphabet(TransducerAlphabet(f, header.symbol_count())),

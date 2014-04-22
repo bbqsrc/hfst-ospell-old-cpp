@@ -60,8 +60,8 @@ namespace hfst_ol
             AnalysisQueue analyse(const std::string& wordform, 
                                   bool ask_sugger = false);
             //! @brief construct an ordered set of corrections with analyses
-            //CorrectionAnalysisQueue suggest_analyses(const std::string&
-             //                                        wordform);
+            AnalysisCorrectionQueue suggest_analyses(const std::string&
+                                                     wordform);
             //! @brief hyphenate word form
             HyphenationQueue hyphenate(const std::string& wordform);
 
