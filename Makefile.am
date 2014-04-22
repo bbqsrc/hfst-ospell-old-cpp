@@ -108,9 +108,10 @@ check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
 		   trailing_spaces.zhfst \
 		   acceptor.basic.hfst errmodel.basic.hfst \
 		   errmodel.extrachars.hfst bad_errormodel.zhfst \
-		   speller_analyser.zhfst no_errormodel.zhfst
+		   speller_analyser.zhfst no_errormodel.zhfst \
+		   speller_edit1.zhfst
 # Actual test scripts:
-TESTS=basic-zhfst.sh \
+TESTS=basic-zhfst.sh basic-edit1.sh \
 	  empty-descriptions.sh empty-titles.sh empty-locale.sh \
 	  trailing-spaces.sh bad-errormodel.sh empty-zhfst.sh \
 	  analyse-spell.sh no-errormodel.sh
@@ -151,6 +152,13 @@ trailing_spaces.zhfst: acceptor.basic.hfst errmodel.basic.hfst trailing_spaces.x
 	cp -f $(srcdir)/trailing_spaces.xml index.xml
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	cp -f errmodel.basic.hfst errmodel.default.hfst
+	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
+	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+
+speller_edit1.zhfst: acceptor.basic.hfst errmodel.edit1.hfst basic_test.xml
+	cp $(srcdir)/basic_test.xml index.xml
+	cp -f acceptor.basic.hfst acceptor.default.hfst
+	cp -f errmodel.edit1.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
 	-rm index.xml acceptor.default.hfst errmodel.default.hfst
 

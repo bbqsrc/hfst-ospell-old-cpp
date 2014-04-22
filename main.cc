@@ -179,9 +179,9 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
                   {
                     (void)hfst_fprintf(stdout, "%s\n",
                                        anals.top().first.c_str());
+                    anals.pop();
                   }
 
-                anals.pop();
               }
             corrections.pop();
             (void)hfst_fprintf(stdout, "\n");
