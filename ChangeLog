@@ -1,672 +1,905 @@
+2014-04-10 08:18  eaxelson
+
+	* main.cc: Now printing and reading to/from console works in
+	  hfst-ospell is it is compiled with -DWINDOWS.
+
+2014-03-28 08:15  eaxelson
+
+	* Makefile.am, hfst-ospell.1: Added a rule for man page creation in
+	  Makefile.am.
+
+2014-03-14 07:28  moshagen
+
+	* Makefile.am, empty-zhfst.sh: Added a test for an empty zhfst
+	  file. It should fail, but presently hfst-ospell behaves as if all
+	  is ok, just that it isn't able to correct anything.
+
+2014-03-14 07:24  moshagen
+
+	* bad-errormodel.sh, basic-legacy.sh, basic-zhfst-fallback.sh,
+	  basic-zhfst.sh, empty-descriptions.sh, empty-locale.sh,
+	  empty-titles.sh, trailing-spaces.sh: Corrected return value to
+	  what it should be for a SKIP result, which I assume was intended.
+
+2014-03-11 17:15  moshagen
+
+	* Makefile.am: Added files to the distro.
+
+2014-03-11 06:14  moshagen
+
+	* Makefile.am, bad-errormodel.sh, errmodel.extrachars.txt: Added
+	  test to check whether error models with extra chars are correctly
+	  handled. The test passes with revision 3793 of ospell.cc, and
+	  fails with revision 3729.
+
+2014-03-09 14:24  hardwick
+
+	* ospell.cc: Silently ignore non-lexicon symbols in the error
+	  source, translating them
+	  to NO_SYMBOL on the output side.
+
+2014-02-13 21:50  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ospell.cc, ospell.h: revert
+
+2014-02-13 19:46  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ospell.cc, ospell.h: What happens if I do this?
+
+2014-02-13 19:17  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Makefile.am, hfst-ol.cc, hfst-ol.h, ospell.cc, ospell.h: Moving
+	  implementations?
+
+2014-02-13 17:59  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Makefile.am: Install men
+
+2014-02-13 17:37  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* hfst-ospell.1: A man page for debian's lint
+
+2014-02-05 05:55  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ZHfstOspeller.cc: Probably libarchive deprecation will go away
+	  with different function name
+	  here too
+
+2014-02-05 05:33  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ospell.cc, ospell.h: Move some of the code away from headers
+
+2014-01-27 12:26  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ZHfstOspeller.cc: some old changes on work desktop?
+
+2013-12-23 05:52  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ZHfstOspellerXmlMetadata.cc: Ensure other potentially empty tags
+	  for libxmlpp
+
+2013-12-23 05:22  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* configure.ac: Bumped version for tinyxml2 check to get lengthful
+	  Parse by Børre Gaup
+
+2013-12-22 07:01  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ZHfstOspeller.cc, ZHfstOspellerXmlMetadata.cc, ospell.cc:
+	  unarchive to mem and tinyxml2 xml length fixes from Harri
+	  Pitkänen
+
+2013-12-20 08:57  moshagen
+
+	* ZHfstOspeller.cc, ZHfstOspeller.h: Reverted the patch by Børre to
+	  clean the xml off of random byte noise after the end of the xml
+	  document. The issue was caused by zip compression
+	  incompatibilities between different plattforms, and the solution
+	  (for now) is to just skip compression altogether, using 'zip -Z
+	  store' instead when building the zhfst files. This creates a zip
+	  file readable everywhere (but without compression).
+
+2013-12-18 13:03  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Makefile.am, trailing-spaces.sh, trailing_spaces.xml: Test for
+	  trailing spaces in xml structure
+
+2013-12-16 15:20  moshagen
+
+	* ZHfstOspeller.cc, ZHfstOspeller.h: Patch by Børre Gaup to clean
+	  corrupted xml data returned from Libarchive when reading xml data
+	  from a zhfst file stored in RAM:
+	  
+	  libarchive seems to add one char from the following file in the
+	  stream pr whitespace char it (erroneously) removes from the xml
+	  data around newlines, since the returned xml file is truncated
+	  compared to the original file length reported when stored in the
+	  archive. Although the xml info set is exactly the same, the extra
+	  chars after the final closing element causes TinyXML2 to crash.
+	  
+	  This change removes everything after the final '>', which should
+	  clean the string representation of the xml document properly in
+	  all cases but one: when the semi random noise contains an '>'.
+	  This situation is presently not handled.
+
+2013-12-14 13:11  moshagen
+
+	* Makefile.am: Whitespace changes to make the file easier to my
+	  eyes, comments. Added tests for empty locale and empty title
+	  elements.
+
+2013-12-14 13:10  moshagen
+
+	* empty-locale.sh, empty-titles.sh, empty_locale.xml,
+	  empty_titles.xml: Data and shell scripts to test empty titles and
+	  empty locale.
+
+2013-12-14 13:09  moshagen
+
+	* ZHfstOspellerXmlMetadata.cc: Check for empty locale node.
+
+2013-12-13 23:50  moshagen
+
+	* ., Makefile.am: Clean and ignore index.xml.
+
+2013-12-13 09:37  moshagen
+
+	* ZHfstOspellerXmlMetadata.cc: One more test for empty data.
+
+2013-12-13 09:37  moshagen
+
+	* main.cc: Added newline before error cause.
+
+2013-12-13 01:10  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Makefile.am, ZHfstOspellerXmlMetadata.cc, configure.ac, main.cc:
+	  Empty descriptions will throw (there might be others left)
+
+2013-12-13 00:48  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Makefile.am, basic-zhfst.sh, basic_test.xml,
+	  empty-descriptions.sh, empty_descriptions.xml, index.xml:
+	  index.xml with empty descriptions
+
+2013-12-13 00:36  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Makefile.am: Test.strings shall not be deleted when cleaning
+
+2013-12-11 14:12  moshagen
+
+	* configure.ac: Added check for the availability of pkg-config -
+	  without it configuration will fail in subtle but bad ways.
+
+2013-11-20 01:36  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ChangeLog, NEWS: Document for next release candidate
+
+2013-11-19 22:58  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ZHfstOspellerXmlMetadata.cc: Missing model attribute parsing for
+	  errm
+
+2013-11-19 22:27  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* ZHfstOspellerXmlMetadata.cc, ZHfstOspellerXmlMetadata.h: Use
+	  Elements instead of Nodes and other such fixes
+
+2013-11-19 22:26  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
+
+	* Makefile.am, configure.ac: Use automake conditionals to avoid
+	  pkg-config linking to libraries that
+	  are not in configure's code paths
+
 2013-11-19 21:07  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* update configuration for that
+	* configure.ac: update configuration for that
 
 2013-11-19 20:52  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Add tinyxml2 versions of XML parsing
+	* ZHfstOspellerXmlMetadata.cc: Add tinyxml2 versions of XML parsing
 
 2013-11-14 02:06  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* conference demos as configure option
+	* Makefile.am, configure.ac: conference demos as configure option
 
 2013-10-08 11:21  moshagen
 
-	* Ignore generated files.
+	* .: Ignore generated files.
 
 2013-10-08 07:55  spectre360
 
-	* stats -> status
+	* main-lrec2013.cc: stats -> status
 
 2013-10-02 16:03  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Allow to end correct correction
+	* main-lrec2013.cc: Allow to end correct correction
 
 2013-09-27 16:25  hardwick
 
-	* Merge lookup() from devbranch
+	* ospell.cc, ospell.h: Merge lookup() from devbranch
 
 2013-09-24 14:52  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* This should be useful
+	* Makefile.am, main-ispell.cc: This should be useful
 
 2013-09-24 11:25  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Fix the output tsv a bit more
+	* main-lrec2013.cc: Fix the output tsv a bit more
 
 2013-09-23 15:56  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Slight udpate for new measure ments
+	* Makefile.am, configure.ac, main-lrec2013.cc: Slight udpate for
+	  new measure ments
 
 2013-07-04 05:02  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Few starts
+	* ZHfstOspellerXmlMetadata.cc, ZHfstOspellerXmlMetadata.h: Few
+	  starts
 
 2013-07-04 02:29  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Allow selection of xml backend
+	* configure.ac: Allow selection of xml backend
 
 2013-05-28 14:34  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Switch <3 into >3 because it looks nicer.
+	* configure.ac: Switch <3 into >3 because it looks nicer.
 
 2013-05-24 15:32  moshagen
 
-	* strndup() fixed by Tommi.
+	* ospell.cc, ospell.h: strndup() fixed by Tommi.
 
 2013-05-24 11:44  hardwick
 
-	* Pending proper understanding of why strndup is getting defined
-	  several
+	* ZHfstOspeller.cc, ZHfstOspellerXmlMetadata.cc, ospell.h: Pending
+	  proper understanding of why strndup is getting defined several
 	  times over, let's always use hfst_strndup() instead.
 
 2013-05-24 11:29  hardwick
 
-	* Add include guard to custom strndup so it doesn't get compiled
-	  more than once
+	* ospell.h: Add include guard to custom strndup so it doesn't get
+	  compiled more than once
 
 2013-05-24 08:58  hardwick
 
-	* Move our custom strndup to ospell.h so it will be seen by
+	* ZHfstOspeller.cc, ospell.h: Move our custom strndup to ospell.h
+	  so it will be seen by
 	  all compilation units that need it
 
 2013-05-21 12:33  moshagen
 
-	* Renamed the hfstospell package and variables to what they used to
-	  be, in case that can help solve a build issue with
-	  libvoikko+hfst.
+	* Makefile.am, NEWS, configure.ac, hfstospell.pc.in: Renamed the
+	  hfstospell package and variables to what they used to be, in case
+	  that can help solve a build issue with libvoikko+hfst.
 
 2013-04-27 11:36  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Wrap and load
+	* ChangeLog: Wrap and load
 
 2013-04-27 11:32  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* versioninfo 3:1:1
+	* Makefile.am: versioninfo 3:1:1
 
 2013-04-26 17:58  moshagen
 
-	* Preparing for 0.2.3 release.
+	* NEWS: Preparing for 0.2.3 release.
 
 2013-04-26 14:34  moshagen
 
-	* Changed version number to 0.2.3, and renamed the package and tool
-	  name to 'hfst-ospell', since that is what the command-line tool
-	  is actually called, and it is consistent with the rest of the
-	  hfst tool names.
+	* configure.ac, hfstospell.pc.in: Changed version number to 0.2.3,
+	  and renamed the package and tool name to 'hfst-ospell', since
+	  that is what the command-line tool is actually called, and it is
+	  consistent with the rest of the hfst tool names.
 
 2013-04-26 12:44  hardwick
 
-	* Should fix #176
+	* ospell.cc: Should fix #176
 	  Flag state from the stack back was getting clobbered in some
 	  situations.
 	  Now we restore flag state after modifying it for new nodes.
 
 2013-03-22 07:49  moshagen
 
-	* More ignore patterns to ignore files generated during 'make
+	* .: More ignore patterns to ignore files generated during 'make
 	  check'.
 
 2013-03-22 06:21  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Fix dist stuff, wrap.
+	* Makefile.am: Fix dist stuff, wrap.
 
 2013-03-20 10:13  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Use pkg-config instead of autoconf to check libarchive
+	* Makefile.am, ZHfstOspeller.cc, configure.ac: Use pkg-config
+	  instead of autoconf to check libarchive
 
 2013-03-18 12:43  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Prepare files for 0.2.2
+	* ChangeLog, Makefile.am, NEWS, configure.ac: Prepare files for
+	  0.2.2
 
 2013-03-18 12:37  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Fix few leaks
+	* ZHfstOspellerXmlMetadata.cc, main.cc: Fix few leaks
 
 2013-03-18 10:26  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Fixes to [#165] by Harri Pitkänen
+	* ZHfstOspeller.cc, hfst-ol.cc, hfst-ol.h, ospell.h: Fixes to
+	  [#165] by Harri Pitkänen
 
 2013-02-04 13:54  hardwick
 
-	* Made some changes to depth-first searching to prevent just-added
+	* ospell.cc, ospell.h: Made some changes to depth-first searching
+	  to prevent just-added
 	  nodes getting removed. This appears fo fix a very long-standing
 	  and serious bug dating from r2763.
 
 2013-01-16 12:46  hardwick
 
-	* When data is in memory, allocate & copy it in ospell rather than
+	* hfst-ol.cc, hfst-ol.h: When data is in memory, allocate & copy it
+	  in ospell rather than
 	  expect caller to keep track of it (which it usually doesn't)
 
 2013-01-08 06:21  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Add access to metadata
+	* ZHfstOspeller.cc, ZHfstOspeller.h: Add access to metadata
 
 2012-12-08 10:32  hardwick
 
-	* When initialised from memory, don't assume responsibility for
+	* hfst-ol.h: When initialised from memory, don't assume
+	  responsibility for
 	  freeing it
 
 2012-12-04 08:48  hardwick
 
-	* Somewhat experimental (no checking) way of saving memory by
-	  ignoring alignment
+	* hfst-ol.cc, hfst-ol.h, ospell.cc, ospell.h: Somewhat experimental
+	  (no checking) way of saving memory by ignoring alignment
 	  issues (4-5 x memory savings)
 
 2012-10-05 07:48  hardwick
 
-	* Remove leftover agenda variable
+	* ospell.h: Remove leftover agenda variable
 
 2012-10-05 05:18  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Add stuff for survey article
+	* Makefile.am, main-survey.cc: Add stuff for survey article
 
 2012-10-03 12:19  hardwick
 
-	* Revert to breadth-first searching pending bugfix
+	* main.cc, ospell.h: Revert to breadth-first searching pending
+	  bugfix
 
 2012-09-25 09:20  hardwick
 
-	* Search depth-first by preference for hope
+	* ospell.cc: Search depth-first by preference for hope
 
 2012-09-20 16:30  hardwick
 
-	* Forgot some important checks that we actually want to limit the
-	  results
+	* ospell.cc: Forgot some important checks that we actually want to
+	  limit the results
 
 2012-09-20 16:27  hardwick
 
-	* Enforce an n-best limit for continuing the search, just for
-	  breadth-first for
+	* ospell.cc, ospell.h: Enforce an n-best limit for continuing the
+	  search, just for breadth-first for
 	  now
 
 2012-09-04 19:11  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Don’t just break on empty lines
+	* main.cc: Don’t just break on empty lines
 
 2012-08-21 17:59  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Switch order of errmodels and acceptors in legacy read
+	* ZHfstOspeller.cc: Switch order of errmodels and acceptors in
+	  legacy read
 
 2012-08-21 17:50  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* set spelling caps on legacy read
+	* ZHfstOspeller.cc: set spelling caps on legacy read
 
 2012-08-21 17:50  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Test fallback
+	* Makefile.am, basic-zhfst-fallback.sh: Test fallback
 
 2012-08-15 08:48  moshagen
 
-	* The VPATH approach to the test shell scripts was wrong. Now
-	  everything is working as it should.
+	* basic-legacy.sh, basic-legacy.sh.in, basic-zhfst.sh,
+	  basic-zhfst.sh.in, configure.ac: The VPATH approach to the test
+	  shell scripts was wrong. Now everything is working as it should.
 
 2012-08-15 04:57  moshagen
 
-	* Proper linebreaks.
+	* basic-legacy.sh.in, basic-zhfst.sh.in: Proper linebreaks.
 
 2012-08-15 04:56  moshagen
 
-	* Enabling VPATH building for 'make check'.
+	* ., basic-legacy.sh, basic-legacy.sh.in, basic-zhfst.sh,
+	  basic-zhfst.sh.in, configure.ac: Enabling VPATH building for
+	  'make check'.
 
 2012-08-15 04:15  moshagen
 
-	* Whitespace change only in configure.ac. More generated files to
-	  ignore.
+	* ., configure.ac: Whitespace change only in configure.ac. More
+	  generated files to ignore.
 
 2012-08-15 03:57  moshagen
 
-	* Added some whitespace to ease readability. Replaced pattern rules
-	  with suffix rules to make automake happy.
+	* Makefile.am: Added some whitespace to ease readability. Replaced
+	  pattern rules with suffix rules to make automake happy.
 
 2012-08-14 20:19  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Fix compilation without xml,
+	* ZHfstOspellerXmlMetadata.cc: Fix compilation without xml,
 	  as suggested by Harri Pitkänen on libvoikko-devel
 
 2012-08-14 18:06  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* do not close unopened files, handle legacy fallback reading
-	  errors
+	* ZHfstOspeller.cc, main.cc: do not close unopened files, handle
+	  legacy fallback reading errors
 
 2012-08-14 17:25  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* print details of xml parsing errors
+	* main.cc: print details of xml parsing errors
 
 2012-08-14 16:13  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Add the very basic test suite
+	* Makefile.am, acceptor.default.txt, basic-legacy.sh,
+	  basic-zhfst.sh, configure.ac, errmodel.default.txt, index.xml,
+	  test.strings: Add the very basic test suite
 
 2012-08-13 20:23  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Throw exception if reading a zip without existing zip file.
+	* ZHfstOspeller.cc, configure.ac: Throw exception if reading a zip
+	  without existing zip file.
 
 2012-08-13 20:02  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Optionalise the libraries
+	* configure.ac: Optionalise the libraries
 
 2012-07-22 01:52  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Update for automake-1.12 and AM_PROG_AR
+	* configure.ac: Update for automake-1.12 and AM_PROG_AR
 
 2012-07-06 19:03  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* kill everyone if windows linebreaks
+	* main.cc: kill everyone if windows linebreaks
 
 2012-07-05 18:13  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Fix documentation and set for 0.2.1 release
+	* AUTHORS, ChangeLog, NEWS, README, authors.xml, configure.ac,
+	  main.cc: Fix documentation and set for 0.2.1 release
 
 2012-07-04 15:38  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* free more things and stuff
+	* ZHfstOspeller.cc, ZHfstOspeller.h: free more things and stuff
 
 2012-07-04 15:37  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Move Xml metadata parsing and storing into own file and class
+	* Makefile.am, ZHfstOspellerXmlMetadata.cc,
+	  ZHfstOspellerXmlMetadata.h: Move Xml metadata parsing and storing
+	  into own file and class
 
 2012-07-04 10:28  hardwick
 
-	* Increment *raw when reading bools
+	* hfst-ol.h: Increment *raw when reading bools
 
 2012-07-04 10:23  hardwick
 
-	* Added utility function for iterating c strings in raw memory,
+	* hfst-ol.cc, hfst-ol.h: Added utility function for iterating c
+	  strings in raw memory,
 	  use it in every branch of symbol reading
 
 2012-07-04 07:21  hardwick
 
-	* Fixed problems having to do with reading strings from a
-	  transducer in raw
+	* hfst-ol.cc: Fixed problems having to do with reading strings from
+	  a transducer in raw
 	  memory.
 
 2012-07-03 21:04  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* fix the tmpdir'd version again
+	* ZHfstOspeller.cc, configure.ac: fix the tmpdir'd version again
 
 2012-07-03 19:42  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Version that extracts zhfst to memory iff it fits on one throw
+	* Makefile.am, ZHfstOspeller.cc, ZHfstOspeller.h, configure.ac,
+	  hfst-ol.cc: Version that extracts zhfst to memory iff it fits on
+	  one throw
 
 2012-07-02 22:19  hardwick
 
-	* Added raw memory constructors and table readers for slurping in
-	  transducers
+	* hfst-ol.cc, hfst-ol.h, ospell.h: Added raw memory constructors
+	  and table readers for slurping in transducers
 	  from char *
 
 2012-07-02 19:49  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Missing files lol
+	* main-cicling.cc, main-fsmnlp-2012.cc: Missing files lol
 
 2012-04-25 16:36  hardwick
 
-	* ...and in that case the final identity states also are greater by
-	  one.
+	* test/editdist.py: ...and in that case the final identity states
+	  also are greater by one.
 
 2012-04-25 16:33  hardwick
 
-	* When avoiding initial edits, there needs to be an extra inital
-	  state before
+	* test/editdist.py: When avoiding initial edits, there needs to be
+	  an extra inital state before
 	  we do any edits. So add the value of options.no_initial to the
 	  state range
 	  loop.
 
 2012-04-18 14:53  eaxelson
 
-	* Commented out hfst-ospell-cicling from Makefile.
+	* Makefile.am: Commented out hfst-ospell-cicling from Makefile.
 
 2012-04-18 14:48  hardwick
 
-	* Comment out missing cicling target
+	* Makefile.am: Comment out missing cicling target
 
 2012-04-18 11:24  hardwick
 
-	* "else if" instead of incorrect "if" in option handling
+	* main-fsmnlp-2012.cc: "else if" instead of incorrect "if" in
+	  option handling
 
 2012-04-17 13:23  hardwick
 
-	* --no-string-initial should have transitions to state 1, not 0
+	* test/editdist.py: --no-string-initial should have transitions to
+	  state 1, not 0
 
 2012-03-31 14:06  hardwick
 
-	* Don't exit on empty lines
+	* main-fsmnlp-2012.cc: Don't exit on empty lines
 
 2012-03-31 13:12  hardwick
 
-	* Don't print unhelpful warnings
+	* main-fsmnlp-2012.cc: Don't print unhelpful warnings
 
 2012-03-31 08:55  hardwick
 
-	* Silly default for minimum edit
+	* test/editdist.py: Silly default for minimum edit
 
 2012-03-19 08:26  hardwick
 
-	* fallback_spell()
+	* main-fsmnlp-2012.cc: fallback_spell()
 
 2012-03-19 07:40  hardwick
 
-	* --no-string-initial-correction
+	* test/editdist.py: --no-string-initial-correction
 
 2012-03-05 08:58  hardwick
 
-	* Corrected eliminations (hopefully), added --minimum-edit option
+	* test/editdist.py: Corrected eliminations (hopefully), added
+	  --minimum-edit option
 
 2012-02-24 05:02  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Profiled version for fsmnlp-2012 measurements§
+	* Makefile.am, NEWS, main-fsmnlp-2012.cc: Profiled version for
+	  fsmnlp-2012 measurements§
 
 2011-11-08 11:18  hardwick
 
-	* Don't skip state numbers when certain options are turned off
+	* test/editdist.py: Don't skip state numbers when certain options
+	  are turned off
 	  (and don't print debugging lines)
 
 2011-11-08 11:16  hardwick
 
-	* Corrections to redundancy elimination
+	* test/editdist.py: Corrections to redundancy elimination
 
 2011-11-01 13:55  hardwick
 
-	* redundancy elimination was being performed one state too late
-	  (too little)
+	* test/editdist.py: redundancy elimination was being performed one
+	  state too late (too little)
 
 2011-10-25 10:40  hardwick
 
-	* Add option to disable redundancy elimination
+	* test/editdist.py: Add option to disable redundancy elimination
 
 2011-10-25 10:35  hardwick
 
-	* Initial support for redundancy elimination
+	* test/editdist.py: Initial support for redundancy elimination
 	  (refuse to do insertion after deletion or deletion after
 	  insertion)
 
 2011-10-11 19:30  hardwick
 
-	* Bugfix: identity transitions were being forgotten in the last
-	  edit state
+	* test/editdist.py: Bugfix: identity transitions were being
+	  forgotten in the last edit state
 
 2011-10-07 10:28  hardwick
 
-	* Enforce @_UNKNOWN_SYMBOL_@ instead of @?@, which users didn't
-	  know about
+	* hfst-ol.cc, test/editdist.py: Enforce @_UNKNOWN_SYMBOL_@ instead
+	  of @?@, which users didn't know about
 
 2011-10-03 14:23  moshagen
 
-	* Fixed one remaining UTF-8 stderr printing bug.
+	* test/editdist.py: Fixed one remaining UTF-8 stderr printing bug.
 
 2011-09-28 08:52  hardwick
 
-	* Fixed bug with the newline character not being stripped from
-	  excluded symbols
+	* test/editdist.py: Fixed bug with the newline character not being
+	  stripped from excluded symbols
 
 2011-09-28 08:42  hardwick
 
-	* Lines that start with ## are comments
+	* test/editdist.py: Lines that start with ## are comments
 
 2011-09-28 08:24  hardwick
 
-	* Updated help message & added exclusion of symbols by prepending a
-	  ~
+	* test/editdist.py: Updated help message & added exclusion of
+	  symbols by prepending a ~
 
 2011-09-28 07:44  hardwick
 
-	* Wrap stderr with a utf-8 codec so we can print non-ascii symbols
-	  when verbose
+	* test/editdist.py: Wrap stderr with a utf-8 codec so we can print
+	  non-ascii symbols when verbose
 
 2011-09-28 07:32  hardwick
 
-	* Write alphabet with weights when verbose
+	* test/editdist.py: Write alphabet with weights when verbose
 
 2011-09-28 07:24  hardwick
 
-	* Order of preference of alphabet definition is now
+	* test/editdist.py: Order of preference of alphabet definition is
+	  now
 	  configfile - commandline - transducer.
 	  If configfile gives a weight after a tab for symbols,
 	  they are used additively for all edits involving those symbols.
 
 2011-09-28 06:42  hardwick
 
-	* Some clarifying comments
+	* test/editdist.py: Some clarifying comments
 
 2011-09-28 06:36  hardwick
 
-	* Rescue identities from being considered substitutions
+	* test/editdist.py: Rescue identities from being considered
+	  substitutions
 
 2011-09-28 05:50  hardwick
 
-	* utf-8 -decode the user-specified transitions from a conf file
+	* test/editdist.py: utf-8 -decode the user-specified transitions
+	  from a conf file
 	  (so easy to forget one of these...)
 
 2011-09-13 22:03  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* use same includedir in pc as makefile
+	* hfstospell.pc.in: use same includedir in pc as makefile
 
 2011-09-13 20:54  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* don't declare strndup in public headers
+	* ZHfstOspeller.h: don't declare strndup in public headers
 
 2011-09-06 07:46  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* make ol exceptions in hfst_ol namespace, provide stdexception
-	  style what()
+	* ol-exceptions.h: make ol exceptions in hfst_ol namespace, provide
+	  stdexception style what()
 
 2011-09-02 06:12  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Add verbose, quiet
+	* main.cc: Add verbose, quiet
 
 2011-09-01 21:41  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* * parse all of the metadata if possible
+	* ZHfstOspeller.cc, ZHfstOspeller.h, ospell.h: * parse all of the
+	  metadata if possible
 	  * use c++ ``struct''s for metadata
 
 2011-09-01 21:36  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* * Use temporary filenames by tmpsnam
+	* ZHfstOspeller.cc: * Use temporary filenames by tmpsnam
 	  * Do not delete Transducers in data structures since it will
 	  segfault all
 	  enchant-based applications in dtor
 
 2011-08-31 08:56  hardwick
 
-	* libhfst-style exception macros and some more informative messages
+	* Makefile.am, hfst-ol.cc, hfst-ol.h, main.cc, ol-exceptions.h:
+	  libhfst-style exception macros and some more informative messages
 
 2011-08-31 08:26  hardwick
 
-	* Document dependencies
+	* README: Document dependencies
 
 2011-08-17 11:14  moshagen
 
-	* Ignore generated files.
+	* .: Ignore generated files.
 
 2011-08-17 08:20  moshagen
 
-	* Ignore generated files.
+	* m4: Ignore generated files.
 
 2011-08-17 02:50  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* mac os x fixes:
+	* ZHfstOspeller.cc, ZHfstOspeller.h, configure.ac: mac os x fixes:
 	  * strndup
 	  * libarchive installed without headers
 
 2011-08-08 02:49  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Preliminary zhfst support
+	* Makefile.am, ZHfstOspeller.cc, ZHfstOspeller.h, configure.ac, m4,
+	  main.cc: Preliminary zhfst support
 
 2011-07-21 01:05  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Example from: http://norvig.com/spell-correct.html and similar
-	  tests
+	* main-norvig.cc: Example from:
+	  http://norvig.com/spell-correct.html and similar tests
 
 2011-07-20 11:22  hardwick
 
-	* The test for final weighted transitions involves
+	* hfst-ol.h: The test for final weighted transitions involves
 	  target_index == 1 instead of weight == INFINITE_WEIGHT
 	  
 	  (I wish I remembered why this was changed)
 
 2011-07-20 07:44  hardwick
 
-	* Fixed bug involving bytewise casting of longs to floats (I
-	  misunderstood
+	* hfst-ol.h: Fixed bug involving bytewise casting of longs to
+	  floats (I misunderstood
 	  what static_cast really does I guess).
 
 2011-05-24 10:19  hardwick
 
-	* fread returns element count, not byte count
+	* hfst-ol.cc: fread returns element count, not byte count
 
 2011-05-09 19:22  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* duplicate definitions
+	* configure.ac, main.cc: duplicate definitions
 
 2011-05-09 19:04  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* fix msvc problems
+	* hfst-ol.cc, main.cc: fix msvc problems
 
 2011-04-25 14:04  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* check fread return value as advised by gcc
+	* hfst-ol.cc: check fread return value as advised by gcc
 
 2011-04-20 13:29  hardwick
 
-	* Removed unnecessary test
+	* ospell.cc: Removed unnecessary test
 
 2011-04-20 13:12  hardwick
 
-	* Understand hfst3 headers, don't demand weightedness at
-	  header-reading stage
+	* hfst-ol.cc, hfst-ol.h, main.cc, ospell.cc, ospell.h: Understand
+	  hfst3 headers, don't demand weightedness at header-reading stage
 
 2011-03-03 10:45  moshagen
 
-	* Ignore (autotools-)generated files.
+	* .: Ignore (autotools-)generated files.
 
 2011-02-22 01:20  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* use hfstospell library name for compatibility or whatever
+	* configure.ac: use hfstospell library name for compatibility or
+	  whatever
 
 2011-02-19 14:19  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* MSVC fixes:
+	* Makefile, configure.ac, hfst-ol.cc, hfst-ol.h, ospell.cc: MSVC
+	  fixes:
 	  * include <string> when using strinG
 	  * use boolean operators instead of aliases?
 
 2011-02-03 01:07  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* add pkgconfig stuff
+	* Makefile, Makefile.am, configure.ac, hfstospell.pc.in: add
+	  pkgconfig stuff
 
 2011-02-03 00:36  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* autoconfiscate :-)
+	* AUTHORS, ChangeLog, INSTALL, Makefile, Makefile.am, NEWS,
+	  autogen.sh, configure.ac: autoconfiscate :-)
 
 2010-11-29 00:18  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Add licences everywhere for release
+	* Makefile, README, hfst-ol.cc, hfst-ol.h, ospell.cc, ospell.h: Add
+	  licences everywhere for release
 
 2010-11-07 00:29  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* make directories that do not exist
+	* Makefile: make directories that do not exist
 
 2010-11-07 00:24  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Install to destdir
+	* Makefile: Install to destdir
 
 2010-11-02 19:35  moshagen
 
-	* Ignore compiled libraries.
+	* ., test/editdist.py: Ignore compiled libraries.
 
 2010-11-02 18:55  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* fix missing dash in mac dylib magic
+	* Makefile: fix missing dash in mac dylib magic
 
 2010-11-02 18:44  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Silently ignore if empty labels are missing
+	* ospell.cc: Silently ignore if empty labels are missing
 
 2010-11-02 15:45  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Make dynamic or share libraries
+	* Makefile: Make dynamic or share libraries
 
 2010-10-12 14:59  hardwick
 
-	* Added some fancy rule autodetection
+	* test/editdist.py: Added some fancy rule autodetection
 
 2010-10-12 14:02  hardwick
 
-	* Fixes to input format handling
+	* test/editdist.py: Fixes to input format handling
 
 2010-10-12 10:22  hardwick
 
-	* New input file syntax
+	* test/editdist.py: New input file syntax
 
 2010-09-07 14:22  hardwick
 
-	* More speed improvements
+	* Makefile, hfst-ol.h, ospell.cc: More speed improvements
 
 2010-09-07 12:55  hardwick
 
-	* Various optimizations
+	* Makefile, ospell.cc: Various optimizations
 
 2010-09-07 09:06  hardwick
 
-	* Critical bugfix, output now believed to be correct
+	* hfst-ol.cc, hfst-ol.h, ospell.cc, ospell.h: Critical bugfix,
+	  output now believed to be correct
 
 2010-08-30 19:34  hardwick
 
-	* Diagnostics and info about expected transducer model in test
-	  script
+	* test/editdist.py: Diagnostics and info about expected transducer
+	  model in test script
 
 2010-08-12 20:26  hardwick
 
-	* More helpful help message for test script
+	* test/editdist.py: More helpful help message for test script
 
 2010-08-12 10:52  moshagen
 
-	* Should be executable.
+	* test/editdist.py: Should be executable.
 
 2010-08-12 01:15  hardwick
 
-	* Support for OTHER symbol in test script
+	* test/editdist.py: Support for OTHER symbol in test script
 
 2010-08-11 22:31  hardwick
 
-	* Added profiler flag to debug compilation target and made demo
-	  utility exit
+	* Makefile, main.cc: Added profiler flag to debug compilation
+	  target and made demo utility exit
 	  on empty lines
 
 2010-08-11 22:03  hardwick
 
-	* Trivial cosmetic changes
+	* ospell.h: Trivial cosmetic changes
 
 2010-08-11 21:57  hardwick
 
-	* More header cleanup
+	* hfst-ol.cc, hfst-ol.h: More header cleanup
 
 2010-08-11 21:49  hardwick
 
-	* Renamed variable
+	* hfst-ol.cc, hfst-ol.h: Renamed variable
 
 2010-08-11 21:47  hardwick
 
-	* Misc. code cleanup and memory savings
+	* hfst-ol.cc, hfst-ol.h, ospell.h: Misc. code cleanup and memory
+	  savings
 
 2010-08-11 20:43  hardwick
 
-	* Free memory holding transducer data after parsing
+	* hfst-ol.h: Free memory holding transducer data after parsing
 
 2010-08-11 19:11  hardwick
 
-	* Some more const sprinkling
+	* ospell.cc, ospell.h: Some more const sprinkling
 
 2010-08-11 19:04  hardwick
 
-	* Misc. nonfunctional cleanup
+	* hfst-ol.h, main.cc, ospell.h: Misc. nonfunctional cleanup
 
 2010-08-11 18:15  hardwick
 
-	* Hack to make the test script handle unicode
+	* test/editdist.py: Hack to make the test script handle unicode
 
 2010-08-11 18:10  hardwick
 
-	* Added character swaps to edit distance script. You have to enable
-	  them with
+	* test/editdist.py: Added character swaps to edit distance script.
+	  You have to enable them with
 	  the -s flag - they generate A(A-1)*D new states and twice that
 	  many
 	  transitions, where A is the size of the alphabet and D is the
@@ -675,157 +908,171 @@
 
 2010-08-11 17:37  hardwick
 
-	* Improvements to editdist.py - see test/editdist.py --help
+	* test/editdist.py: Improvements to editdist.py - see
+	  test/editdist.py --help
 
 2010-08-11 16:52  hardwick
 
-	* Put 1.0 weights on the test generator script
+	* test/editdist.py: Put 1.0 weights on the test generator script
 
 2010-08-11 16:44  hardwick
 
-	* Minor enhancement to test script
+	* test/editdist.py: Minor enhancement to test script
 
 2010-08-10 12:27  hardwick
 
-	* Added helpful runtime error for alphabet translation problems,
-	  updated
+	* main.cc, ospell.cc, ospell.h: Added helpful runtime error for
+	  alphabet translation problems, updated
 	  demo utility to make use of it
 
 2010-08-10 09:54  hardwick
 
-	* Better checking of read operations, added relevant exceptions
+	* hfst-ol.cc, hfst-ol.h: Better checking of read operations, added
+	  relevant exceptions
 
 2010-08-09 22:25  hardwick
 
-	* Made example formatting in README more consistent - I may have
-	  broken
+	* README: Made example formatting in README more consistent - I may
+	  have broken
 	  Tommi's commit a bit, but I think it's ok now...
 
 2010-08-09 22:21  hardwick
 
-	* Minor improvement to demo
+	* README, main.cc: Minor improvement to demo
 
 2010-08-09 22:02  Tommi A Pirinen <tommi.pirinen@helsinki.fi>
 
-	* Static lib and fixes to xamples in readme
+	* Makefile, README: Static lib and fixes to xamples in readme
 
 2010-08-09 22:00  hardwick
 
-	* Added comment
+	* ospell.h: Added comment
 
 2010-08-09 20:44  hardwick
 
-	* Reversed previous commit, which did the opposite of what the
-	  commit message
+	* ospell.h: Reversed previous commit, which did the opposite of
+	  what the commit message
 	  said it would. Committer will go to bed now...
 
 2010-08-09 20:41  hardwick
 
-	* Return results in reverse order by weight, ie. in order of
-	  quality
+	* ospell.h: Return results in reverse order by weight, ie. in order
+	  of quality
 	  (instead of the opposite)
 
 2010-08-09 20:04  hardwick
 
-	* Removed obsolete dependency on cassert
+	* ospell.h: Removed obsolete dependency on cassert
 
 2010-08-09 20:03  hardwick
 
-	* Fixed some comments
+	* hfst-ol.h: Fixed some comments
 
 2010-08-09 20:01  hardwick
 
-	* One more formatting fix
+	* ospell.cc: One more formatting fix
 
 2010-08-09 20:00  hardwick
 
-	* Fixed typo in comment
+	* ospell.cc: Fixed typo in comment
 
 2010-08-09 19:58  hardwick
 
-	* Moved getopt dependency from ospell.h to the demo utility proper
+	* main.cc, ospell.h: Moved getopt dependency from ospell.h to the
+	  demo utility proper
 
 2010-08-09 19:56  hardwick
 
-	* Formatting improvements
+	* hfst-ol.cc, hfst-ol.h, ospell.cc, ospell.h: Formatting
+	  improvements
 
 2010-08-09 15:43  hardwick
 
-	* Introduced an exception for handling alphabet translation
-	  failure,
+	* README, main.cc, ospell.cc, ospell.h: Introduced an exception for
+	  handling alphabet translation failure,
 	  fixed typo in help string, updated README
 
 2010-08-09 14:26  hardwick
 
-	* Made some changes to correction-storing data structures to make
-	  sure each
+	* main.cc, ospell.cc: Made some changes to correction-storing data
+	  structures to make sure each
 	  correction string only appears once
 
 2010-08-09 13:37  hardwick
 
-	* Fatal bug(s) fixed, (more) correct flag diacritic functionality
+	* hfst-ol.cc, hfst-ol.h, ospell.h, test/editdist.py, test/test.txt:
+	  Fatal bug(s) fixed, (more) correct flag diacritic functionality
 
 2010-08-06 12:10  hardwick
 
-	* New test script
+	* test/editdist.py, test/french.hfst, test/test2.txt: New test
+	  script
 
 2010-08-06 12:05  hardwick
 
-	* Fixed typo
+	* ospell.cc: Fixed typo
 
 2010-08-06 11:59  hardwick
 
-	* Fixed a braindead bug that subtly broke everything, this should
-	  make
+	* main.cc, ospell.cc, test/test.txt: Fixed a braindead bug that
+	  subtly broke everything, this should make
 	  some code redundant
 
 2010-08-02 13:46  hardwick
 
-	* A way to handle flag diacritics
+	* ospell.cc, ospell.h: A way to handle flag diacritics
 
 2010-07-08 15:33  hardwick
 
-	* Trivial Makefile fix for commandline tester
+	* Makefile: Trivial Makefile fix for commandline tester
 
 2010-07-08 15:26  hardwick
 
-	* Replaced some ungracious exits with exceptions and made small
-	  change to README
+	* README, hfst-ol.cc, hfst-ol.h: Replaced some ungracious exits
+	  with exceptions and made small change to README
 
 2010-07-08 15:15  hardwick
 
-	* Added README and some fixes
+	* README, hfst-ol.cc, hfst-ol.h, main.cc, ospell.cc, ospell.h:
+	  Added README and some fixes
 
 2010-07-08 14:46  hardwick
 
-	* Implemented spellchecking and correction library functions;
-	  documentation,
+	* hfst-ol.cc, hfst-ol.h, main.cc, ospell.cc, ospell.h: Implemented
+	  spellchecking and correction library functions; documentation,
 	  proper packaging and esp. functioning flag diacritics still to be
 	  done.
 
 2010-07-05 11:05  hardwick
 
-	* Temporarily de-autotooled ospell
+	* ospell.h: Temporarily de-autotooled ospell
 
 2010-06-30 09:39  hardwick
 
-	* Incorporated queue in speller proper
+	* ospell.cc, ospell.h: Incorporated queue in speller proper
 
 2010-06-29 06:31  hardwick
 
-	* Fixed behaviour, added weightedness scaffolding
+	* Makefile, hfst-ol.cc, hfst-ol.h, ospell.cc, ospell.h,
+	  test/french-symbols.txt, test/french.hfst.ol, test/test.hfst.ol,
+	  test/test2.hfst.ol: Fixed behaviour, added weightedness
+	  scaffolding
 
 2010-06-22 14:38  moshagen
 
-	* Corrected typo.
+	* main.cc: Corrected typo.
 
 2010-06-21 20:26  moshagen
 
-	* Ignore generated binary.
+	* .: Ignore generated binary.
 
 2010-06-21 17:29  hardwick
 
-	* Initial commit of hfst-ospell.
+	* ., Makefile, hfst-ol.cc, hfst-ol.h, main.cc, ospell.cc, ospell.h,
+	  test, test/french-symbols.txt, test/french.hfst,
+	  test/french.hfst.ol, test/test.hfst.ol, test/test.txt,
+	  test/test2.hfst.ol, test/test2.txt: Initial commit of
+	  hfst-ospell.
 	  Basic functionality including OTHER symbol (@?@) and runtime
 	  alphabet
 	  translation is present; weighted transducers (probably to be the

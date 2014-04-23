@@ -116,9 +116,9 @@ TESTS=basic-zhfst.sh basic-edit1.sh \
 	  trailing-spaces.sh bad-errormodel.sh empty-zhfst.sh \
 	  analyse-spell.sh no-errormodel.sh
 XFAIL_TESTS=empty-descriptions.sh empty-titles.sh empty-locale.sh empty-zhfst.sh
-EXTRA_DIST=$(TXTS) $(TESTS) \
+EXTRA_DIST=$(TXTS) $(TESTS) $(man1_MANS)\
 			basic_test.xml empty_descriptions.xml empty_titles.xml \
-			empty_locale.xml trailing_spaces.xml \
+			empty_locale.xml trailing_spaces.xml no_errmodel.xml \
 			test.strings
 
 clean-local:
@@ -132,62 +132,62 @@ empty_descriptions.zhfst: acceptor.basic.hfst errmodel.basic.hfst empty_descript
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	cp -f errmodel.basic.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+	-rm -f index.xml acceptor.default.hfst errmodel.default.hfst
 
 empty_titles.zhfst: acceptor.basic.hfst errmodel.basic.hfst empty_titles.xml
 	cp -f $(srcdir)/empty_titles.xml index.xml
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	cp -f errmodel.basic.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+	-rm -f index.xml acceptor.default.hfst errmodel.default.hfst
 
 empty_locale.zhfst: acceptor.basic.hfst errmodel.basic.hfst empty_locale.xml
 	cp -f $(srcdir)/empty_locale.xml index.xml
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	cp -f errmodel.basic.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+	-rm -f index.xml acceptor.default.hfst errmodel.default.hfst
 
 trailing_spaces.zhfst: acceptor.basic.hfst errmodel.basic.hfst trailing_spaces.xml
 	cp -f $(srcdir)/trailing_spaces.xml index.xml
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	cp -f errmodel.basic.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+	-rm -f index.xml acceptor.default.hfst errmodel.default.hfst
 
 speller_edit1.zhfst: acceptor.basic.hfst errmodel.edit1.hfst basic_test.xml
 	cp $(srcdir)/basic_test.xml index.xml
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	cp -f errmodel.edit1.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+	-rm -f index.xml acceptor.default.hfst errmodel.default.hfst
 
 speller_basic.zhfst: acceptor.basic.hfst errmodel.basic.hfst basic_test.xml
 	cp $(srcdir)/basic_test.xml index.xml
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	cp -f errmodel.basic.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+	-rm -f index.xml acceptor.default.hfst errmodel.default.hfst
 
 speller_analyser.zhfst: analyser.default.hfst errmodel.edit1.hfst basic_test.xml
 	cp -f $(srcdir)/basic_test.xml index.xml
 	cp -f analyser.default.hfst acceptor.default.hfst
 	cp -f errmodel.edit1.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+	-rm -f index.xml acceptor.default.hfst errmodel.default.hfst
 
 bad_errormodel.zhfst: acceptor.basic.hfst errmodel.extrachars.hfst basic_test.xml
 	cp -f $(srcdir)/basic_test.xml index.xml
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	cp -f errmodel.extrachars.hfst errmodel.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst errmodel.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst errmodel.default.hfst
+	-rm -f index.xml acceptor.default.hfst errmodel.default.hfst
 
 no_errormodel.zhfst: acceptor.basic.hfst no_errmodel.xml
 	cp -f $(srcdir)/no_errmodel.xml index.xml
 	cp -f acceptor.basic.hfst acceptor.default.hfst
 	$(ZIP) $(ZIPFLAGS) $@ acceptor.default.hfst index.xml
-	-rm index.xml acceptor.default.hfst
+	-rm -f index.xml acceptor.default.hfst
 
 .txt.hfst:
 	hfst-txt2fst -e "@0@" $(HFST_FLAGS) $< | hfst-fst2fst $(HFST_FLAGS) -f olw -o $@

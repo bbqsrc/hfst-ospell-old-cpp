@@ -4,6 +4,15 @@ NEWS for hfst-ospell
 This file contains all noteworthy changes in HFST-ospell development between
 releases.  For full listing of changes see ChangeLog.
 
+Noteworthy changes in 0.3.0
+---------------------------
+
+* New API for analysing and suggesting
+* Moved code from headers to implementation files (API change)
+* Added Doxygen to mark stable API
+* Fixes for bad and malformed metadara handling
+* Limiting number of suggestions now works
+
 Noteworthy changes in 0.2.5
 ---------------------------
 
