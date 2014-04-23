@@ -42,6 +42,7 @@ using hfst_ol::Transducer;
 static bool quiet = false;
 static bool verbose = false;
 static bool analyse = false;
+static unsigned long suggs = 0;
 #ifdef WINDOWS
   static bool output_to_console = false;
 #endif
@@ -242,6 +243,11 @@ zhfst_spell(char* zhfst_filename)
                          "%s\n", 
                          speller.metadata_dump().c_str());
     }
+  speller.set_queue_limit(suggs);
+  if (verbose)
+    {
+      hfst_fprintf(stdout, "Printing only %lu top suggestions per line", suggs);
+    }
   char * str = (char*) malloc(2000);
 
 #ifdef WINDOWS
@@ -295,6 +301,7 @@ int main(int argc, char **argv)
             {"quiet",        no_argument,       0, 'q'},
             {"silent",       no_argument,       0, 's'},
             {"analyse",      no_argument,       0, 'a'},
+            {"limit",  required_argument,       0, 'n'},
 #ifdef WINDOWS
             {"output-to-console",       no_argument,       0, 'k'},
 #endif
@@ -302,7 +309,8 @@ int main(int argc, char **argv)
             };
           
         int option_index = 0;
-        c = getopt_long(argc, argv, "hVvqska", long_options, &option_index);
+        c = getopt_long(argc, argv, "hVvqskan:", long_options, &option_index);
+        char* endptr = 0;
 
         if (c == -1) // no more options to look at
             break;
@@ -330,6 +338,18 @@ int main(int argc, char **argv)
             break;
         case 'a':
             analyse = true;
+            break;
+        case 'n':
+            suggs = strtoul(optarg, &endptr, 10);
+            if (endptr == optarg)
+              {
+                fprintf(stderr, "%s not a strtoul number\n", optarg);
+                exit(1);
+              }
+            else if (*endptr != '\0')
+              {
+                fprintf(stderr, "%s truncated from limit parameter\n", endptr);
+              }
             break;
 #ifdef WINDOWS
         case 'k':
