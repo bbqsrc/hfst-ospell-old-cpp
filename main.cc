@@ -195,121 +195,6 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
       }
   }
 
-// kill legacy spell next
-int
-legacy_spell(const char* errmodel_filename, const char* acceptor_filename)
-{
-    FILE* mutator_file = fopen(errmodel_filename, "r");
-    if (mutator_file == NULL) {
-      //std::cerr << "Could not open file " << errmodel_filename
-      //        << std::endl;
-      (void)hfst_fprintf(stderr, "Could not open file %s\n", errmodel_filename);
-        return EXIT_FAILURE;
-    }
-    FILE* lexicon_file = fopen(acceptor_filename, "r");
-    if (lexicon_file == NULL) {
-      //std::cerr << "Could not open file " << acceptor_filename
-      //      << std::endl;
-      (void)hfst_fprintf(stderr, "Could not open file %s\n", acceptor_filename);
-        return EXIT_FAILURE;
-    }
-    hfst_ol::Transducer * mutator;
-    hfst_ol::Transducer * lexicon;
-    mutator = new hfst_ol::Transducer(mutator_file);
-    if (!mutator->is_weighted()) {
-      //std::cerr << "Error source was unweighted, exiting\n\n";
-      (void)hfst_fprintf(stderr, "Error source was unweighted, exiting\n\n");
-        return EXIT_FAILURE;
-    }
-    lexicon = new hfst_ol::Transducer(lexicon_file);
-    if (!lexicon->is_weighted()) {
-      //std::cerr << "Lexicon was unweighted, exiting\n\n";
-      (void)hfst_fprintf(stderr, "Lexicon was unweighted, exiting\n\n");
-        return EXIT_FAILURE;
-    }
-    
-    hfst_ol::Speller * speller;
-
-    try {
-        speller = new hfst_ol::Speller(mutator, lexicon);
-    } catch (hfst_ol::AlphabetTranslationException& e) {
-      //std::cerr <<
-      // "Unable to build speller - symbol " << e.what() << " not "
-      //  "present in lexicon's alphabet\n";
-      (void)hfst_fprintf(stderr, "Unable to build speller - symbol "
-                         "%s not present in lexicon's alphabet\n", e.what());
-        return EXIT_FAILURE;
-    }
-    //std::cout << "This is basic HFST spellchecker read in legacy " 
-    //    "mode; use zhfst version to test new format" << std::endl;
-    (void)hfst_fprintf(stdout, "This is basic HFST spellchecker read in legacy " 
-                       "mode; use zhfst version to test new format\n");
-    char * str = (char*) malloc(2000);
-    
-#ifdef WINDOWS
-    SetConsoleCP(65001);
-    const HANDLE stdIn = GetStdHandle(STD_INPUT_HANDLE);
-    WCHAR buffer[0x1000];
-    DWORD numRead = 0;
-    while (ReadConsoleW(stdIn, buffer, sizeof buffer, &numRead, NULL))
-      {
-        std::wstring wstr(buffer, numRead-1); // skip the newline
-        std::string linestr = wide_string_to_string(wstr);
-        free(str);
-        str = strdup(linestr.c_str());
-#else
-    while (!std::cin.eof()) {
-        std::cin.getline(str, 2000);
-#endif
-        if (str[0] == '\0')
-          {
-            //std::cerr << "Skipping empty lines" << std::endl;
-            (void)hfst_fprintf(stderr, "Skipping empty lines\n");
-            continue;
-          }
-        if (str[strlen(str) - 1] == '\r')
-          {
-#ifdef WINDOWS
-            str[strlen(str) - 1] = '\0';
-#else
-            //std::cerr << "There is a WINDOWS linebreak in this file" <<
-            //    std::endl <<
-            //    "Please convert with dos2unix or fromdos" << std::endl;
-            (void)hfst_fprintf(stderr, "There is a WINDOWS linebreak in this file\n"
-                               "Please convert with dos2unix or fromdos\n");
-            exit(1);
-#endif
-          }
-        if (speller->check(str)) {
-          //std::cout << "\"" << str << "\" is in the lexicon\n\n";
-          (void)hfst_fprintf(stdout, "\"%s\" is in the lexicon\n\n", str);
-          if (analyse)
-          {
-            hfst_fprintf(stdout, "analyse TODO\n");
-          }
-        } else {
-        hfst_ol::CorrectionQueue corrections = speller->correct(str, 5);
-        if (corrections.size() > 0) {
-          //std::cout << "Corrections for \"" << str << "\":\n";
-          (void)hfst_fprintf(stdout, "Corrections for \"%s\":\n", str);
-            while (corrections.size() > 0)
-            {
-              //std::cout << corrections.top().first << "    " << corrections.top().second << std::endl;
-              (void)hfst_fprintf(stdout, "%s    %f", 
-                                 corrections.top().first.c_str(), 
-                                 corrections.top().second);
-            }
-            //std::cout << std::endl;
-            (void)hfst_fprintf(stdout, "\n");
-        } else {
-          //std::cout << "Unable to correct \"" << str << "\"!\n\n";
-          (void)hfst_fprintf(stdout, "Unable to correct \"%s\"!\n\n", str);
-        }
-        }
-    }
-    return EXIT_SUCCESS;
-}
-
 int
 zhfst_spell(char* zhfst_filename)
 {
@@ -333,24 +218,9 @@ zhfst_spell(char* zhfst_filename)
       //    << "trying to read as legacy automata directory" << std::endl;
       (void)hfst_fprintf(stderr, 
                          "cannot read zhfst archive %s:\n"
-                         "%s.\n"
-                         "trying to read as legacy automata directory\n", 
+                         "%s.\n",
                          zhfst_filename, zhzre.what());
-      try 
-        {
-          speller.read_legacy(zhfst_filename);
-        }
-      catch (hfst_ol::ZHfstLegacyReadingError zhlre)
-        {
-          //std::cerr << "cannot fallback to read legacy hfst speller dir " 
-          //    << zhfst_filename 
-          //    << ":\n" << std::endl
-          //    << zhlre.what() << "." << std::endl;
-          (void)hfst_fprintf(stderr,
-                             "cannot fallback to read legacy hfst speller dir %s:\n\n"
-                             "%s\n" , zhfst_filename, zhlre.what());
-          return EXIT_FAILURE;
-        }
+      return EXIT_FAILURE;
     }
   catch (hfst_ol::ZHfstXmlParsingError zhxpe)
     {
@@ -477,23 +347,19 @@ int main(int argc, char **argv)
     int optind = 1;
 #endif
     // no more options, we should now be at the input filenames
-    if (optind == (argc - 2))
-      {
-        return legacy_spell(argv[optind], argv[optind+1]);
-      }
-    else if (optind == (argc - 1))
+    if (optind == (argc - 1))
       {
         return zhfst_spell(argv[optind]);
       }
-    else if (optind < (argc - 2))
+    else if (optind < (argc - 1))
       {
-        std::cerr << "No more than two free parameters allowed" << std::endl;
+        std::cerr << "Too many file parameters" << std::endl;
         print_short_help();
         return EXIT_FAILURE;
       }
     else if (optind >= argc)
       {
-        std::cerr << "Give full path to zhfst spellers or two automata"
+        std::cerr << "Give full path to a zhfst speller"
             << std::endl;
         print_short_help();
         return EXIT_FAILURE;

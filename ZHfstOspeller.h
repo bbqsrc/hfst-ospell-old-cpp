@@ -41,13 +41,12 @@ namespace hfst_ol
             //! @brief destroy all automata used by the speller.
             ~ZHfstOspeller();
             
+            //! @brief set upper limit to priority queue when performing
+            //         suggestions or analyses.
+            void set_queue_limit(unsigned long limit);
             //! @brief construct speller from named file containing valid
             //!        zhfst archive.
             void read_zhfst(const std::string& filename);
-            //! @breif construct speller from quad of old speller files in a
-            //!        directory.
-            //! @deprecated just to support old installations
-            void read_legacy(const std::string& path);
 
             //! @brief  check if the given word is spelled correctly
             bool spell(const std::string& wordform);
@@ -99,7 +98,7 @@ namespace hfst_ol
             Speller* current_analyser_;
             //! @brief pointer to current hyphenator
             Transducer* current_hyphenator_;
-            //! @brief the metadata of loeaded speller
+            //! @brief the metadata of loaded speller
             ZHfstOspellerXmlMetadata metadata_;
       };
 
@@ -145,13 +144,6 @@ namespace hfst_ol
           std::string what_;
     };
 
-    class ZHfstLegacyReadingError : public ZHfstException
-    {
-      public:
-          explicit ZHfstLegacyReadingError(const std::string& message);
-      private:
-          std::string what_;
-    };
   } // namespace hfst_ol
 
 

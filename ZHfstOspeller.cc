@@ -103,7 +103,8 @@ ZHfstOspeller::ZHfstOspeller() :
     can_correct_(false),
     can_analyse_(false),
     current_speller_(0),
-    current_sugger_(0)
+    current_sugger_(0),
+    suggestions_maximum_(0)
     {
     }
 
@@ -139,6 +140,12 @@ ZHfstOspeller::~ZHfstOspeller()
     can_correct_ = false;
   }
 
+void
+ZHfstOspeller::set_queue_limit(unsigned long limit)
+  {
+    suggestions_maximum_ = limit;
+  }
+
 bool
 ZHfstOspeller::spell(const string& wordform)
   {
@@ -159,7 +166,7 @@ ZHfstOspeller::suggest(const string& wordform)
     if ((can_correct_) && (current_sugger_ != 0))
       {
         char* wf = strdup(wordform.c_str());
-        rv = current_sugger_->correct(wf);
+        rv = current_sugger_->correct(wf, suggestions_maximum_);
         free(wf);
         return rv;
       }
@@ -371,60 +378,6 @@ ZHfstOspeller::read_zhfst(const string& filename)
 #endif // HAVE_LIBARCHIVE
   }
 
-void
-ZHfstOspeller::read_legacy(const std::string& path)
-  {
-    string spellerfile = path + "/spl.hfstol";
-    string suggerfile = path + "/sug.hfstol";
-    string errorfile = path + "/err.hfstol"; 
-    bool speller = false;
-    bool sugger = false;
-    bool error = false;
-    FILE* f = fopen(spellerfile.c_str(), "r");
-    if (f != NULL)
-      {
-        Transducer* trans = new Transducer(f);
-        acceptors_["default"] = trans;
-        speller = true;
-        fclose(f);
-      }
-    f = fopen(suggerfile.c_str(), "r");
-    if (f != NULL)
-      {
-        Transducer* trans = new Transducer(f);
-        acceptors_["suggestion"] = trans;
-        sugger = true;
-        fclose(f);
-      }
-    f = fopen(errorfile.c_str(), "r");
-    if (f != NULL)
-      {
-        Transducer* trans = new Transducer(f);
-        errmodels_["default"] = trans;
-        error = true;
-      }
-    if (speller && sugger && error)
-      {
-        can_spell_ = true;
-        can_correct_ = true;
-        current_speller_ = new Speller(errmodels_["default"],
-                                       acceptors_["default"]);
-        current_sugger_ = new Speller(errmodels_["default"],
-                                      acceptors_["suggestion"]);
-      }
-    else if (speller && error)
-      {
-        can_spell_ = true;
-        can_correct_ = true;
-        current_speller_ = new Speller(errmodels_["default"],
-                                       acceptors_["default"]);
-        current_sugger_ = current_speller_;
-      }
-    else
-      {
-        throw ZHfstLegacyReadingError("no readable legacy automata found");
-      }
-  }
 
 const ZHfstOspellerXmlMetadata&
 ZHfstOspeller::get_metadata() const
@@ -464,9 +417,6 @@ ZHfstZipReadingError::ZHfstZipReadingError(const std::string& message):
     ZHfstException(message)
   {}
 ZHfstTemporaryWritingError::ZHfstTemporaryWritingError(const std::string& message):
-    ZHfstException(message)
-    {}
-ZHfstLegacyReadingError::ZHfstLegacyReadingError(const std::string& message):
     ZHfstException(message)
     {}
  
