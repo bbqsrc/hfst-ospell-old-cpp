@@ -931,7 +931,7 @@ void
     ZHfstOspellerXmlMetadata::read_xml(const char*, size_t)
       {}
 void
-    ZHfstOspellerXmlMetadata::read_xml(const string&)
+    ZHfstOspellerXmlMetadata::read_xml(const std::string&)
       {}
 #endif // HAVE_LIBXML
 

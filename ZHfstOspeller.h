@@ -13,6 +13,18 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+//! @mainpage API to HFST ospell WFST spell-checking
+//!
+//! The hfst-ospell API has several layers for different end-users. A suggested
+//! starting point for new user is the @c ZHfstOspeller object, which reads an
+//! automaton set from zipped hfst file with metadata and provides high level
+//! access to it with generic spell-checking, correction and analysis functions.
+//! Second level of access is the Speller object, which can be used to
+//! construct spell-checker with two automata and traverse it and query
+//! low-level properties. The Speller is constructed with two Transducer objects
+//! which are the low-level access point to the automata with all the gory
+//! details of transition tables and symbol translations, headers and such.
+
 #ifndef HFST_OSPELL_ZHFSTOSPELLER_H_
 #define HFST_OSPELL_ZHFSTOSPELLER_H_
 
@@ -54,6 +66,7 @@ namespace hfst_ol
             //!        word form.
             CorrectionQueue suggest(const std::string& wordform);
             //! @brief analyse word form morphologically
+            //! @param wordform   the string to analyse
             //! @param ask_sugger whether to use the spelling correction model
             //                    instead of the detection model
             AnalysisQueue analyse(const std::string& wordform, 
@@ -102,16 +115,29 @@ namespace hfst_ol
             ZHfstOspellerXmlMetadata metadata_;
       };
 
+    //! @brief Top-level exception for zhfst handling.
+
+    //! Contains a human-readable error message that can be displayed to
+    //! end-user as additional info when either solving exception or exiting.
     class ZHfstException
       {
         public:
             ZHfstException();
+            //! @brief construct error with human readable message.
+            //!
+            //! the message will be displayed when recovering or dying from
+            //! exception
             explicit ZHfstException(const std::string& message);
+            //!
+            //! format error as user-readable message
             const char* what();
         private:
             std::string what_;
       };
 
+    //! @brief Generic error in metadata parsing.
+    //
+    //! Gets raised if metadata is erroneous or missing.
     class ZHfstMetaDataParsingError : public ZHfstException
     {
         public:
@@ -120,6 +146,11 @@ namespace hfst_ol
             std::string what_;
     };
 
+    //! @brief Exception for XML parser errors.
+    //
+    //! Gets raised if underlying XML parser finds an error in XML data.
+    //! Errors include non-valid XML, missing or erroneous attributes or
+    //! elements, etc.
     class ZHfstXmlParsingError : public ZHfstException
     {
       public:
@@ -128,6 +159,10 @@ namespace hfst_ol
           std::string what_;
     };
 
+    //! @brief Generic error while reading zip file.
+    //!
+    //! Happens when libarchive is unable to proceed reading zip file or
+    //! zip file is missing required files.
     class ZHfstZipReadingError : public ZHfstException
     {
       public:
@@ -136,6 +171,10 @@ namespace hfst_ol
           std::string what_;
     };
 
+    //! @brief Error when writing to temporary location.
+    //
+    //! This exception gets thrown, when e.g., zip extraction is unable to
+    //! find or open temporary file for writing.
     class ZHfstTemporaryWritingError : public ZHfstException
     {
       public:

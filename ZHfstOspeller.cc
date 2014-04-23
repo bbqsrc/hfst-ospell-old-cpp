@@ -99,12 +99,12 @@ extract_to_tmp_dir(archive* ar)
 #endif // HAVE_LIBARCHIVE
 
 ZHfstOspeller::ZHfstOspeller() :
+    suggestions_maximum_(0),
     can_spell_(false),
     can_correct_(false),
     can_analyse_(false),
     current_speller_(0),
-    current_sugger_(0),
-    suggestions_maximum_(0)
+    current_sugger_(0)
     {
     }
 

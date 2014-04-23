@@ -191,3 +191,8 @@ no_errormodel.zhfst: acceptor.basic.hfst no_errmodel.xml
 
 .txt.hfst:
 	hfst-txt2fst -e "@0@" $(HFST_FLAGS) $< | hfst-fst2fst $(HFST_FLAGS) -f olw -o $@
+
+if CAN_DOXYGEN
+doxygen:
+	$(DOXYGEN)
+endif

@@ -43,6 +43,8 @@ AC_SUBST(HFSTOSPELL_NAME)
 # Check for pkg-config first - the configuration won't work if it isn't available:
 AC_PATH_PROG([PKGCONFIG], [pkg-config], [no])
 AS_IF([test "x$PKGCONFIG" = xno], [AC_MSG_ERROR([pkg-config is required - please install])])
+AC_PATH_PROG([DOXYGEN], [doxygen], [false])
+AM_CONDITIONAL([CAN_DOXYGEN], [test "x$DOXYGEN" != xfalse])
 
 # Settings
 AC_ARG_ENABLE([extra_demos],

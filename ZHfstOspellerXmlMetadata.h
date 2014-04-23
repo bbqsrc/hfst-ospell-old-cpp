@@ -40,7 +40,7 @@ namespace hfst_ol
 
 
     //! @brief ZHfstOspellerInfo represents one info block of an zhfst file.
-    //! @seealso https://victorio.uit.no/langtech/trunk/plan/proof/doc/lexfile-spec.xml
+    //! @see https://victorio.uit.no/langtech/trunk/plan/proof/doc/lexfile-spec.xml
     struct ZHfstOspellerInfoMetadata
       {
         //! @brief active locale of speller in BCP format
@@ -89,7 +89,9 @@ namespace hfst_ol
         LanguageVersions title_;
         //! @brief description of error models in languages
         LanguageVersions description_;
-        std::vector<std::string> type_;
+        //! @brief types of error models
+        std::vector<std::string> type_; 
+        //! @brief models
         std::vector<std::string> model_;
       };
     //! @brief holds one index.xml metadata for whole ospeller
@@ -99,13 +101,23 @@ namespace hfst_ol
         //! @brief construct metadata for undefined language and other default
         //!        values
         ZHfstOspellerXmlMetadata();
+        //! @brief read metadata from XML file by @a filename.
         void read_xml(const std::string& filename);
+        //! @brief read XML from in memory @a data pointer with given @a length
+        //!
+        //! Depending on the XML library compiled in, the data length may
+        //! be omitted and the buffer may be overflown.
         void read_xml(const char* data, size_t data_length);
+        //! @brief create a programmer readable dump of XML metadata.
+        //!
+        //! shows linear serialisation of all header data in random order.
         std::string debug_dump() const;
 
         public:
-        ZHfstOspellerInfoMetadata info_;
-        std::map<std::string,ZHfstOspellerAcceptorMetadata> acceptor_;
+        ZHfstOspellerInfoMetadata info_; //!< The info node data
+        //! @brief data for acceptor nodes
+        std::map<std::string,ZHfstOspellerAcceptorMetadata> acceptor_; 
+        //! @brief data for errmodel nodes
         std::vector<ZHfstOspellerErrModelMetadata> errmodel_;
 #if HAVE_LIBXML
         private:
