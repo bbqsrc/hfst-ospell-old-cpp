@@ -488,6 +488,9 @@ TransitionTableIndex Transducer::next(const TransitionTableIndex i,
 bool Transducer::has_transitions(const TransitionTableIndex i,
                                  const SymbolNumber symbol) const
 {
+    if (symbol == NO_SYMBOL) {
+        return false;
+    }
     if (i >= TARGET_TABLE) {
         return (transitions.input_symbol(i - TARGET_TABLE) == symbol);
     } else {
