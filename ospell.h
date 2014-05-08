@@ -220,7 +220,8 @@ public:
 class TreeNode
 {
 public:
-    SymbolVector string; //!< node is a string
+//    SymbolVector input_string; //<! the current input vector
+    SymbolVector string; //!< the current output vector
     unsigned int input_state; //!< its input state
     TransitionTableIndex mutator_state; //!< state in error model
     TransitionTableIndex lexicon_state; //!< state in language model
@@ -244,7 +245,7 @@ public:
         { }
 
     //! 
-    //! construct trei node from flag =?
+    //! construct empty node with a starting state for flags
     TreeNode(FlagDiacriticState start_state): // starting state node
     string(SymbolVector()),
     input_state(0),
@@ -275,16 +276,14 @@ public:
     void increment_mutator(void);
 
     //!
-    //! maybe do stuff everyweher
-    TreeNode update(SymbolNumber next_symbol,
+    //! The update functions return updated copies of this state
+    TreeNode update(SymbolNumber output_symbol,
                     unsigned int next_input,
                     TransitionTableIndex next_mutator,
                     TransitionTableIndex next_lexicon,
                     Weight weight);
 
-    //!
-    //! do stuff everywhere without next input
-    TreeNode update(SymbolNumber next_symbol,
+    TreeNode update(SymbolNumber output_symbol,
                     TransitionTableIndex next_mutator,
                     TransitionTableIndex next_lexicon,
                     Weight weight);

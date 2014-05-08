@@ -127,12 +127,12 @@ InputString::len()
 }
 
 
-TreeNode TreeNode::update_lexicon(SymbolNumber next_symbol,
+TreeNode TreeNode::update_lexicon(SymbolNumber output_symbol,
                                   TransitionTableIndex next_lexicon,
                                   Weight weight)
 {
     SymbolVector str(this->string);
-    str.push_back(next_symbol);
+    str.push_back(output_symbol);
     return TreeNode(str,
                     this->input_state,
                     this->mutator_state,
@@ -141,12 +141,12 @@ TreeNode TreeNode::update_lexicon(SymbolNumber next_symbol,
                     this->weight + weight);
 }
 
-TreeNode TreeNode::update_mutator(SymbolNumber next_symbol,
+TreeNode TreeNode::update_mutator(SymbolNumber output_symbol,
                                   TransitionTableIndex next_mutator,
                                   Weight weight)
 {
     SymbolVector str(this->string);
-    str.push_back(next_symbol);
+    str.push_back(output_symbol);
     return TreeNode(str,
                     this->input_state,
                     next_mutator,
@@ -155,14 +155,15 @@ TreeNode TreeNode::update_mutator(SymbolNumber next_symbol,
                     this->weight + weight);
 }
 
-TreeNode TreeNode::update(SymbolNumber next_symbol,
+
+TreeNode TreeNode::update(SymbolNumber symbol,
                           unsigned int next_input,
                           TransitionTableIndex next_mutator,
                           TransitionTableIndex next_lexicon,
                           Weight weight)
 {
     SymbolVector str(this->string);
-    str.push_back(next_symbol);
+    str.push_back(symbol);
     return TreeNode(str,
                     next_input,
                     next_mutator,
@@ -171,13 +172,13 @@ TreeNode TreeNode::update(SymbolNumber next_symbol,
                     this->weight + weight);
 }
 
-TreeNode TreeNode::update(SymbolNumber next_symbol,
+TreeNode TreeNode::update(SymbolNumber symbol,
                           TransitionTableIndex next_mutator,
                           TransitionTableIndex next_lexicon,
                           Weight weight)
 {
     SymbolVector str(this->string);
-    str.push_back(next_symbol);
+    str.push_back(symbol);
     return TreeNode(str,
                     this->input_state,
                     next_mutator,
@@ -263,15 +264,16 @@ void Speller::lexicon_epsilons(void)
     
     while (i_s.symbol != NO_SYMBOL) {
         if (lexicon->transitions.input_symbol(next) == 0) {
-            queue.push_back(next_node.update_lexicon(i_s.symbol,
-                                                         i_s.index,
-                                                         i_s.weight));
+            queue.push_back(next_node.update_lexicon(0, // Update with epsilon because we want
+                                                        // the surface tape for correcting
+                                                     i_s.index,
+                                                     i_s.weight));
         } else {
             FlagDiacriticState old_flags = next_node.flag_state;
             if (next_node.try_compatible_with( // this is terrible
                     operations->operator[](
                         lexicon->transitions.input_symbol(next)))) {
-                queue.push_back(next_node.update_lexicon(i_s.symbol,
+                queue.push_back(next_node.update_lexicon(0,
                                                          i_s.index,
                                                          i_s.weight));
                 next_node.flag_state = old_flags;
@@ -340,7 +342,7 @@ void Speller::mutator_epsilons(void)
         
             while (lexicon_i_s.symbol != NO_SYMBOL) {
                 queue.push_back(next_node.update(
-                                    lexicon_i_s.symbol,
+                                    alphabet_translator[mutator_i_s.symbol],
                                     mutator_i_s.index,
                                     lexicon_i_s.index,
                                     lexicon_i_s.weight + mutator_i_s.weight));
@@ -361,7 +363,7 @@ void Speller::consume_input(void)
     if (input_state >= input.len()||
         !mutator->has_transitions(next_node.mutator_state + 1,
                                   input[input_state])) {
-        return; // not enough input to consume of no suitable transitions
+        return; // not enough input to consume or no suitable transitions
     }
     
     TransitionTableIndex next_m = mutator->next(next_node.mutator_state,
@@ -398,7 +400,7 @@ void Speller::consume_input(void)
         
             while (lexicon_i_s.symbol != NO_SYMBOL) {
                 queue.push_back(
-                    next_node.update(lexicon_i_s.symbol,
+                    next_node.update(alphabet_translator[mutator_i_s.symbol],
                                      input_state + 1,
                                      mutator_i_s.index,
                                      lexicon_i_s.index,
