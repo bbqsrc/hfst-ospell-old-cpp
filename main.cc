@@ -286,7 +286,7 @@ zhfst_spell(char* zhfst_filename)
   speller.set_queue_limit(suggs);
   if (verbose)
     {
-      hfst_fprintf(stdout, "Printing only %lu top suggestions per line", suggs);
+      hfst_fprintf(stdout, "Printing only %lu top suggestions per line\n", suggs);
     }
   char * str = (char*) malloc(2000);
 
