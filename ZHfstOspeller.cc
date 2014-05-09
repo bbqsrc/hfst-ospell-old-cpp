@@ -102,7 +102,7 @@ ZHfstOspeller::ZHfstOspeller() :
     suggestions_maximum_(0),
     can_spell_(false),
     can_correct_(false),
-    can_analyse_(false),
+    can_analyse_(true),
     current_speller_(0),
     current_sugger_(0)
     {
