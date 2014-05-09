@@ -127,12 +127,14 @@ InputString::len()
 }
 
 
-TreeNode TreeNode::update_lexicon(SymbolNumber output_symbol,
+TreeNode TreeNode::update_lexicon(SymbolNumber symbol,
                                   TransitionTableIndex next_lexicon,
                                   Weight weight)
 {
     SymbolVector str(this->string);
-    str.push_back(output_symbol);
+    if (symbol != 0) {
+        str.push_back(symbol);
+    }
     return TreeNode(str,
                     this->input_state,
                     this->mutator_state,
@@ -141,12 +143,14 @@ TreeNode TreeNode::update_lexicon(SymbolNumber output_symbol,
                     this->weight + weight);
 }
 
-TreeNode TreeNode::update_mutator(SymbolNumber output_symbol,
+TreeNode TreeNode::update_mutator(SymbolNumber symbol,
                                   TransitionTableIndex next_mutator,
                                   Weight weight)
 {
     SymbolVector str(this->string);
-    str.push_back(output_symbol);
+        if (symbol != 0) {
+        str.push_back(symbol);
+    }
     return TreeNode(str,
                     this->input_state,
                     next_mutator,
@@ -163,7 +167,9 @@ TreeNode TreeNode::update(SymbolNumber symbol,
                           Weight weight)
 {
     SymbolVector str(this->string);
-    str.push_back(symbol);
+    if (symbol != 0) {
+        str.push_back(symbol);
+    }
     return TreeNode(str,
                     next_input,
                     next_mutator,
@@ -178,7 +184,9 @@ TreeNode TreeNode::update(SymbolNumber symbol,
                           Weight weight)
 {
     SymbolVector str(this->string);
-    str.push_back(symbol);
+    if (symbol != 0) {
+        str.push_back(symbol);
+    }
     return TreeNode(str,
                     this->input_state,
                     next_mutator,
