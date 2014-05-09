@@ -103,11 +103,8 @@ bool print_usage(void)
 {
     std::cout <<
     "\n" <<
-    "Usage: " << PACKAGE_NAME << " [OPTIONS] ERRORSOURCE LEXICON\n" <<
-    "       " << PACKAGE_NAME << " [OPTIONS] ZHFST-ARCHIVE\n" <<
-    "Run a composition of ERRORSOURCE and LEXICON on standard input and\n" <<
-    "print corrected output\n" <<
-    "Second form seeks error sources and lexicons from the ZHFST-ARCHIVE\n"
+    "Usage: " << PACKAGE_NAME << " [OPTIONS] ZHFST-ARCHIVE\n" <<
+    "Use automata in ZHFST-ARCHIVE to check and correct\n"
     "\n" <<
     "  -h, --help                  Print this help message\n" <<
     "  -V, --version               Print version information\n" <<
@@ -146,20 +143,44 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
   {
     if (speller.spell(str)) 
       {
-        (void)hfst_fprintf(stdout, "\"%s\" is in the lexicon "
-                           "(but correcting anyways)\n\n", str.c_str());
-      }
-    if (analyse)
-      {
-        hfst_ol::AnalysisQueue anals = speller.analyse(str, false);
-        (void)hfst_fprintf(stdout, "Analyses for \"%s\":\n", str.c_str());
-        while (anals.size() > 0)
+        (void)hfst_fprintf(stdout, "\"%s\" is in the lexicon... ",
+                           str.c_str());
+        if (analyse)
           {
-            (void)hfst_fprintf(stdout, "%s   %f\n",
-                               anals.top().first.c_str(),
-                               anals.top().second);
-            anals.pop();
+            (void)hfst_fprintf(stdout, "analysing:\n");
+            hfst_ol::AnalysisQueue anals = speller.analyse(str, false);
+            bool all_no_spell = true;
+            while (anals.size() > 0)
+              {
+                if (anals.top().first.find("Use/-Spell") != std::string::npos)
+                  {
+                    (void)hfst_fprintf(stdout,
+                                       "%s   %f [DISCARDED AS -Spell]\n",
+                                       anals.top().first.c_str(),
+                                       anals.top().second);
+                  }
+                else
+                  {
+                    all_no_spell = false;
+                    (void)hfst_fprintf(stdout, "%s   %f\n",
+                                   anals.top().first.c_str(),
+                                   anals.top().second);
+                  }
+                anals.pop();
+              }
+            if (all_no_spell)
+              {
+                hfst_fprintf(stdout, 
+                             "All spellings were invalidated by analysis! "
+                             ".:. Not in lexicon!\n");
+              }
           }
+        (void)hfst_fprintf(stdout, "(but correcting anyways)\n", str.c_str());
+      }
+    else
+      {
+        (void)hfst_fprintf(stdout, "\"%s\" is NOT in the lexicon:\n",
+                           str.c_str());
       }
     hfst_ol::CorrectionQueue corrections = speller.suggest(str);
     if (corrections.size() > 0) 
@@ -168,24 +189,43 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
         while (corrections.size() > 0)
           {
             const std::string& corr = corrections.top().first;
-            (void)hfst_fprintf(stdout, "%s    %f\n", 
-                           corr.c_str(), 
-                           corrections.top().second);
             if (analyse)
               {
                 hfst_ol::AnalysisQueue anals = speller.analyse(corr, true);
-                (void)hfst_fprintf(stdout, "Analyses for \"%s\":\n", 
-                                   corr.c_str());
+                bool all_discarded = true;
                 while (anals.size() > 0)
                   {
-                    (void)hfst_fprintf(stdout, "%s\n",
+                    if (anals.top().first.find("Use/SpellNoSugg") !=
+                        std::string::npos)
+                      {
+                        (void)hfst_fprintf(stdout, "%s    %f    %s    "
+                                       "[DISCARDED BY ANALYSES]\n", 
+                                       corr.c_str(), corrections.top().second,
                                        anals.top().first.c_str());
+                      }
+                    else
+                      {
+                        all_discarded = false;
+                        (void)hfst_fprintf(stdout, "%s    %f    %s\n",
+                                       corr.c_str(), corrections.top().second,
+                                       anals.top().first.c_str());
+                      }
                     anals.pop();
                   }
-
+                if (all_discarded)
+                  {
+                    (void)hfst_fprintf(stdout, "All corrections were "
+                                       "invalidated by analysis! "
+                                       "No score!\n");
+                  }
+              }
+            else
+              {
+                (void)hfst_fprintf(stdout, "%s    %f\n", 
+                                   corr.c_str(), 
+                                   corrections.top().second);
               }
             corrections.pop();
-            (void)hfst_fprintf(stdout, "\n");
           }
         (void)hfst_fprintf(stdout, "\n");
       }
