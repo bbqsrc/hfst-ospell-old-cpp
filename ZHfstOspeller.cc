@@ -373,6 +373,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
       {
         throw ZHfstZipReadingError("No automata found in zip");
       }
+    can_analyse_ = can_spell_ | can_correct_;
 #else
     throw ZHfstZipReadingError("Zip support was disabled");
 #endif // HAVE_LIBARCHIVE
