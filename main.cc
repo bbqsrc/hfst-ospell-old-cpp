@@ -32,6 +32,8 @@
 #  include <windows.h>
 #endif
 
+#include <stdarg.h>
+
 #include "ol-exceptions.h"
 #include "ospell.h"
 #include "ZHfstOspeller.h"
