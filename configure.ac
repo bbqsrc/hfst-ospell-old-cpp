@@ -96,13 +96,13 @@ AM_CONDITIONAL([WANT_ARCHIVE], [test x$enable_zhfst != xno])
 AS_IF([test x$enable_xml = xlibxmlpp],
       [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
                          [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])],
-                         [AC_MSG_WARN([libxml++ failed, disabling xml])
+                         [AC_MSG_ERROR([libxml++ failed])
                           enable_xml=no])])
 AM_CONDITIONAL([WANT_LIBXMLPP], [test x$enable_xml = xlibxmlpp])
 AS_IF([test x$enable_xml = xtinyxml2],
       [PKG_CHECK_MODULES([TINYXML2], [tinyxml2 >= 1.0.8],
                          [AC_DEFINE([HAVE_TINYXML2], [1], [Use tinyxml])],
-                         [AC_MSG_WARN([tinyxml missing, xml disabled])
+                         [AC_MSG_ERROR([tinyxml missing])
                           enable_xml=no])])
 AM_CONDITIONAL([WANT_TINYXML2], [test x$enable_xml = xtinyxml2])
 

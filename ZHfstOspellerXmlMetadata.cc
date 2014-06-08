@@ -926,7 +926,7 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
     this->parse_xml(doc);
   }
 #else
-#warning No XML
+#error configure found no usable XML library
 void
     ZHfstOspellerXmlMetadata::read_xml(const char*, size_t)
       {}
