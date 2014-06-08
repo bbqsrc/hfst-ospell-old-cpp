@@ -32,6 +32,8 @@
 #  include <windows.h>
 #endif
 
+#include <stdio.h>
+#include <errno.h>
 #include <stdarg.h>
 
 #include "ol-exceptions.h"
@@ -48,6 +50,8 @@ static unsigned long suggs = 0;
 #ifdef WINDOWS
   static bool output_to_console = false;
 #endif
+static bool suggest = false;
+static bool suggest_reals = false;
 
 #ifdef WINDOWS
 static std::string wide_string_to_string(const std::wstring & wstr)
@@ -94,7 +98,12 @@ static int hfst_fprintf(FILE * stream, const char * format, ...)
       return retval;
     }
 #else
+  errno = 0;
   int retval = vfprintf(stream, format, args);
+  if (retval < 0)
+    {
+      perror("hfst_fprintf");
+    }
   va_end(args);
   return retval;
 #endif
@@ -114,6 +123,9 @@ bool print_usage(void)
     "  -q, --quiet                 Don't be verbose (default)\n" <<
     "  -s, --silent                Same as quiet\n" <<
     "  -a, --analyse               Analyse strings and corrections\n" <<
+    "  -n, --limit=N               Show at most N suggestions\n" <<
+    "  -S, --suggest               Suggest corrections to mispellings\n" <<
+    "  -X, --real-word             Also suggest corrections to correct words\n" <<
 #ifdef WINDOWS
     "  -k, --output-to-console     Print output to console (Windows-specific)" <<
 #endif
@@ -141,53 +153,12 @@ bool print_short_help(void)
 }
 
 void
-do_spell(ZHfstOspeller& speller, const std::string& str)
+do_suggest(ZHfstOspeller& speller, const std::string& str)
   {
-    if (speller.spell(str)) 
-      {
-        (void)hfst_fprintf(stdout, "\"%s\" is in the lexicon... ",
-                           str.c_str());
-        if (analyse)
-          {
-            (void)hfst_fprintf(stdout, "analysing:\n");
-            hfst_ol::AnalysisQueue anals = speller.analyse(str, false);
-            bool all_no_spell = true;
-            while (anals.size() > 0)
-              {
-                if (anals.top().first.find("Use/-Spell") != std::string::npos)
-                  {
-                    (void)hfst_fprintf(stdout,
-                                       "%s   %f [DISCARDED AS -Spell]\n",
-                                       anals.top().first.c_str(),
-                                       anals.top().second);
-                  }
-                else
-                  {
-                    all_no_spell = false;
-                    (void)hfst_fprintf(stdout, "%s   %f\n",
-                                   anals.top().first.c_str(),
-                                   anals.top().second);
-                  }
-                anals.pop();
-              }
-            if (all_no_spell)
-              {
-                hfst_fprintf(stdout, 
-                             "All spellings were invalidated by analysis! "
-                             ".:. Not in lexicon!\n");
-              }
-          }
-        (void)hfst_fprintf(stdout, "(but correcting anyways)\n", str.c_str());
-      }
-    else
-      {
-        (void)hfst_fprintf(stdout, "\"%s\" is NOT in the lexicon:\n",
-                           str.c_str());
-      }
     hfst_ol::CorrectionQueue corrections = speller.suggest(str);
     if (corrections.size() > 0) 
       {
-        (void)hfst_fprintf(stdout, "Corrections for \"%s\":\n", str.c_str());
+        hfst_fprintf(stdout, "Corrections for \"%s\":\n", str.c_str());
         while (corrections.size() > 0)
           {
             const std::string& corr = corrections.top().first;
@@ -200,7 +171,7 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
                     if (anals.top().first.find("Use/SpellNoSugg") !=
                         std::string::npos)
                       {
-                        (void)hfst_fprintf(stdout, "%s    %f    %s    "
+                        hfst_fprintf(stdout, "%s    %f    %s    "
                                        "[DISCARDED BY ANALYSES]\n", 
                                        corr.c_str(), corrections.top().second,
                                        anals.top().first.c_str());
@@ -208,7 +179,7 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
                     else
                       {
                         all_discarded = false;
-                        (void)hfst_fprintf(stdout, "%s    %f    %s\n",
+                        hfst_fprintf(stdout, "%s    %f    %s\n",
                                        corr.c_str(), corrections.top().second,
                                        anals.top().first.c_str());
                       }
@@ -216,25 +187,80 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
                   }
                 if (all_discarded)
                   {
-                    (void)hfst_fprintf(stdout, "All corrections were "
+                    hfst_fprintf(stdout, "All corrections were "
                                        "invalidated by analysis! "
                                        "No score!\n");
                   }
               }
             else
               {
-                (void)hfst_fprintf(stdout, "%s    %f\n", 
+                hfst_fprintf(stdout, "%s    %f\n", 
                                    corr.c_str(), 
                                    corrections.top().second);
               }
             corrections.pop();
           }
-        (void)hfst_fprintf(stdout, "\n");
+        hfst_fprintf(stdout, "\n");
       }
     else
       {
-        (void)hfst_fprintf(stdout,
+        hfst_fprintf(stdout,
                            "Unable to correct \"%s\"!\n\n", str.c_str());
+      }
+
+  }
+
+void
+do_spell(ZHfstOspeller& speller, const std::string& str)
+  {
+    if (speller.spell(str)) 
+      {
+        hfst_fprintf(stdout, "\"%s\" is in the lexicon...\n",
+                           str.c_str());
+        if (analyse)
+          {
+            hfst_fprintf(stdout, "analysing:\n");
+            hfst_ol::AnalysisQueue anals = speller.analyse(str, false);
+            bool all_no_spell = true;
+            while (anals.size() > 0)
+              {
+                if (anals.top().first.find("Use/-Spell") != std::string::npos)
+                  {
+                    hfst_fprintf(stdout,
+                                       "%s   %f [DISCARDED AS -Spell]\n",
+                                       anals.top().first.c_str(),
+                                       anals.top().second);
+                  }
+                else
+                  {
+                    all_no_spell = false;
+                    hfst_fprintf(stdout, "%s   %f\n",
+                                   anals.top().first.c_str(),
+                                   anals.top().second);
+                  }
+                anals.pop();
+              }
+            if (all_no_spell)
+              {
+                hfst_fprintf(stdout, 
+                             "All spellings were invalidated by analysis! "
+                             ".:. Not in lexicon!\n");
+              }
+          }
+        if (suggest_reals)
+          {
+            hfst_fprintf(stdout, "(but correcting anyways)\n", str.c_str());
+            do_suggest(speller, str);
+          }
+      }
+    else
+      {
+        hfst_fprintf(stdout, "\"%s\" is NOT in the lexicon:\n",
+                           str.c_str());
+        if (suggest)
+          {
+            do_suggest(speller, str);
+          }
       }
   }
 
@@ -248,7 +274,7 @@ zhfst_spell(char* zhfst_filename)
     }
   catch (hfst_ol::ZHfstMetaDataParsingError zhmdpe)
     {
-      (void)hfst_fprintf(stderr, "cannot finish reading zhfst archive %s:\n%s.\n", 
+      hfst_fprintf(stderr, "cannot finish reading zhfst archive %s:\n%s.\n", 
                          zhfst_filename, zhmdpe.what());
       //std::cerr << "cannot finish reading zhfst archive " << zhfst_filename <<
       //             ":\n" << zhmdpe.what() << "." << std::endl;
@@ -259,7 +285,7 @@ zhfst_spell(char* zhfst_filename)
       //std::cerr << "cannot read zhfst archive " << zhfst_filename << ":\n" 
       //    << zhzre.what() << "." << std::endl
       //    << "trying to read as legacy automata directory" << std::endl;
-      (void)hfst_fprintf(stderr, 
+      hfst_fprintf(stderr, 
                          "cannot read zhfst archive %s:\n"
                          "%s.\n",
                          zhfst_filename, zhzre.what());
@@ -270,7 +296,7 @@ zhfst_spell(char* zhfst_filename)
       //std::cerr << "Cannot finish reading index.xml from " 
       //  << zhfst_filename << ":" << std::endl
       //  << zhxpe.what() << "." << std::endl;
-      (void)hfst_fprintf(stderr, 
+      hfst_fprintf(stderr, 
                          "Cannot finish reading index.xml from %s:\n"
                          "%s.\n", 
                          zhfst_filename, zhxpe.what());
@@ -280,7 +306,7 @@ zhfst_spell(char* zhfst_filename)
     {
       //std::cout << "Following metadata was read from ZHFST archive:" << std::endl
       //          << speller.metadata_dump() << std::endl;
-      (void)hfst_fprintf(stdout, 
+      hfst_fprintf(stdout, 
                          "Following metadata was read from ZHFST archive:\n"
                          "%s\n", 
                          speller.metadata_dump().c_str());
@@ -315,7 +341,7 @@ zhfst_spell(char* zhfst_filename)
 #ifdef WINDOWS
             str[strlen(str) - 1] = '\0';
 #else
-            (void)hfst_fprintf(stderr, "There is a WINDOWS linebreak in this file\n"
+            hfst_fprintf(stderr, "There is a WINDOWS linebreak in this file\n"
                                "Please convert with dos2unix or fromdos\n");
             exit(1);
 #endif
@@ -344,6 +370,8 @@ int main(int argc, char **argv)
             {"silent",       no_argument,       0, 's'},
             {"analyse",      no_argument,       0, 'a'},
             {"limit",  required_argument,       0, 'n'},
+            {"suggest",      no_argument,       0, 'S'},
+            {"real-word",    no_argument,       0, 'X'},
 #ifdef WINDOWS
             {"output-to-console",       no_argument,       0, 'k'},
 #endif
@@ -351,7 +379,7 @@ int main(int argc, char **argv)
             };
           
         int option_index = 0;
-        c = getopt_long(argc, argv, "hVvqskan:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hVvqskaSn:", long_options, &option_index);
         char* endptr = 0;
 
         if (c == -1) // no more options to look at
@@ -398,6 +426,12 @@ int main(int argc, char **argv)
             output_to_console = true;
             break;
 #endif 
+        case 'S':
+            suggest = true;
+            break;
+        case 'X':
+            suggest_reals = true;
+            break;
         default:
             std::cerr << "Invalid option\n\n";
             print_short_help();
