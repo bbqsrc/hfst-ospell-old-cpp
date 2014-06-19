@@ -32,9 +32,9 @@
 #  include <windows.h>
 #endif
 
+#include <cstdarg>
 #include <stdio.h>
 #include <errno.h>
-#include <stdarg.h>
 
 #include "ol-exceptions.h"
 #include "ospell.h"
