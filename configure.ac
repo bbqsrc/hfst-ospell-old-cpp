@@ -56,10 +56,15 @@ AC_ARG_ENABLE([zhfst],
               [AS_HELP_STRING([--enable-zhfst],
                               [support zipped complex automaton sets @<:@default=check@:>@])],
               [enable_zhfst=$enableval], [enable_zhfst=check])
-AC_ARG_ENABLE([xml],
-              [AS_HELP_STRING([--enable-xml=LIBXML],
-                              [support xml metadata for zipped automaton sets with library LIBXML @<:@default=libxmlpp@:>@])],
-              [enable_xml=$enableval], [enable_xml=libxmlpp])
+AC_ARG_WITH([libxmlpp],
+              [AS_HELP_STRING([--with-libxmlpp],
+                              [support xml metadata for zipped automaton sets with libxml++-2.6 @<:@default=yes@:>@])],
+              [with_libxmlpp=$withval], [with_libxmlpp=yes])
+AC_ARG_WITH([tinyxml2],
+              [AS_HELP_STRING([--with-tinyxml2],
+                              [support xml metadata for zipped automaton sets with tinyxml2 @<:@default=no@:>@])],
+              [with_tinyxml2=$withval], [with_tinyxml2=no])
+
 AC_ARG_WITH([extract],
             [AS_HELP_STRING([--with-extract=TARGET],
                            [extract zhfst archives to tmpdir or mem @<:@default=mem@:>@])],
@@ -93,15 +98,17 @@ AS_IF([test x$enable_zhfst != xno],
                    enable_zhfst=yes],
                   [enable_zhfst=no])])
 AM_CONDITIONAL([WANT_ARCHIVE], [test x$enable_zhfst != xno])
-AS_IF([test x$enable_xml = xlibxmlpp],
+AS_IF([test x$with_libxmlpp != xno],
       [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
-                         [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])],
+                         [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])
+                          enable_xml=libxmlpp],
                          [AC_MSG_ERROR([libxml++ failed])
                           enable_xml=no])])
 AM_CONDITIONAL([WANT_LIBXMLPP], [test x$enable_xml = xlibxmlpp])
-AS_IF([test x$enable_xml = xtinyxml2],
+AS_IF([test x$with_tinyxml2 != xno -a x$with_libxmlpp = xno],
       [PKG_CHECK_MODULES([TINYXML2], [tinyxml2 >= 1.0.8],
-                         [AC_DEFINE([HAVE_TINYXML2], [1], [Use tinyxml])],
+                         [AC_DEFINE([HAVE_TINYXML2], [1], [Use tinyxml])
+                          enable_xml=tinyxml2],
                          [AC_MSG_ERROR([tinyxml missing])
                           enable_xml=no])])
 AM_CONDITIONAL([WANT_TINYXML2], [test x$enable_xml = xtinyxml2])
@@ -134,3 +141,5 @@ cat <<EOF
     * xml support: $enable_xml
     * conference demos: $enable_extra_demos
 EOF
+AS_IF([test x$with_libxmlpp != xno -a x$with_tinyxml2 != xno],
+      [AC_MSG_WARN([You can only have one xml library (e.g., --with-tinyxml2 --without-libxmlpp)])])
