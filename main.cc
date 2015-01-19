@@ -125,7 +125,7 @@ bool print_usage(void)
     "  -s, --silent                Same as quiet\n" <<
     "  -a, --analyse               Analyse strings and corrections\n" <<
     "  -n, --limit=N               Show at most N suggestions\n" <<
-    "  -w, --max_weight=W          Suppress corrections with weights above W\n" <<
+    "  -w, --max-weight=W          Suppress corrections with weights above W\n" <<
     "  -S, --suggest               Suggest corrections to mispellings\n" <<
     "  -X, --real-word             Also suggest corrections to correct words\n" <<
 #ifdef WINDOWS
@@ -377,7 +377,7 @@ int main(int argc, char **argv)
             {"silent",       no_argument,       0, 's'},
             {"analyse",      no_argument,       0, 'a'},
             {"limit",  required_argument,       0, 'n'},
-            {"max_weight", required_argument,   0, 'w'},
+            {"max-weight", required_argument,   0, 'w'},
             {"suggest",      no_argument,       0, 'S'},
             {"real-word",    no_argument,       0, 'X'},
 #ifdef WINDOWS
