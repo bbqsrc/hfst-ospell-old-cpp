@@ -641,7 +641,7 @@ CorrectionQueue Speller::correct(char * line, int nbest)
                 std::string string = stringify(symbol_table, next_node.string);
                 /* if the correction is novel or better than before, insert it
                  */
-                if (corrections.count(string) == 0||
+                if (corrections.count(string) == 0 ||
                     corrections[string] > weight) {
                     corrections[string] = weight;
                     nbest_queue.push(weight);
@@ -657,7 +657,9 @@ CorrectionQueue Speller::correct(char * line, int nbest)
     CorrectionQueue correction_queue;
     std::map<std::string, Weight>::iterator it;
     for (it = corrections.begin(); it != corrections.end(); ++it) {
-        correction_queue.push(StringWeightPair(it->first, it->second));
+        if (nbest == 0 || it->second <= nbest_queue.top()) {
+            correction_queue.push(StringWeightPair(it->first, it->second));
+        }
     }
     return correction_queue;
 }
