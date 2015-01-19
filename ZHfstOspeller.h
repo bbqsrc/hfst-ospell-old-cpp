@@ -56,6 +56,8 @@ namespace hfst_ol
             //! @brief set upper limit to priority queue when performing
             //         suggestions or analyses.
             void set_queue_limit(unsigned long limit);
+            //! @brief set upper limit for weights
+            void set_weight_limit(Weight limit);
             //! @brief construct speller from named file containing valid
             //!        zhfst archive.
             void read_zhfst(const std::string& filename);
@@ -87,6 +89,8 @@ namespace hfst_ol
             std::string filename_;
             //! @brief upper bound for suggestions generated and given
             unsigned long suggestions_maximum_;
+            //! @brief upper bound for suggestion weight generated and given
+            Weight maximum_weight_;
             //! @brief whether automatons loaded yet can be used to check
             //!        spelling
             bool can_spell_;

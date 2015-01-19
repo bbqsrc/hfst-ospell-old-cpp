@@ -597,7 +597,7 @@ AnalysisQueue Speller::analyse(char * line, int /* nbest */)
     return lexicon->lookup(line);
   }
 
-CorrectionQueue Speller::correct(char * line, int nbest)
+CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
 {
     // if input initialization fails, return empty correction queue
     if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
@@ -619,8 +619,9 @@ CorrectionQueue Speller::correct(char * line, int nbest)
         queue.pop_back();
 
         // if we can't get an acceptable result, never mind
-        if (nbest > 0 && nbest_queue.size() > nbest &&
-            next_node.weight >= nbest_queue.top()) {
+        if (next_node.weight > maxweight ||
+            (nbest > 0 && nbest_queue.size() > nbest &&
+             next_node.weight >= nbest_queue.top())) {
             continue;
         }
         lexicon_epsilons();
@@ -634,8 +635,9 @@ CorrectionQueue Speller::correct(char * line, int nbest)
                 Weight weight = next_node.weight +
                     lexicon->final_weight(next_node.lexicon_state) +
                     mutator->final_weight(next_node.mutator_state);
-                if (nbest > 0 && nbest_queue.size() > nbest &&
-                    weight >= nbest_queue.top()) {
+                if (weight > maxweight ||(
+                        nbest > 0 && nbest_queue.size() > nbest &&
+                        weight >= nbest_queue.top())) {
                     continue;
                 }
                 std::string string = stringify(symbol_table, next_node.string);

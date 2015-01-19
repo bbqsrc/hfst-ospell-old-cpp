@@ -100,6 +100,7 @@ extract_to_tmp_dir(archive* ar)
 
 ZHfstOspeller::ZHfstOspeller() :
     suggestions_maximum_(0),
+    maximum_weight_(-1.0),
     can_spell_(false),
     can_correct_(false),
     can_analyse_(true),
@@ -146,6 +147,12 @@ ZHfstOspeller::set_queue_limit(unsigned long limit)
     suggestions_maximum_ = limit;
   }
 
+void
+ZHfstOspeller::set_weight_limit(Weight limit)
+  {
+    maximum_weight_ = limit;
+  }
+
 bool
 ZHfstOspeller::spell(const string& wordform)
   {
@@ -166,7 +173,9 @@ ZHfstOspeller::suggest(const string& wordform)
     if ((can_correct_) && (current_sugger_ != 0))
       {
         char* wf = strdup(wordform.c_str());
-        rv = current_sugger_->correct(wf, suggestions_maximum_);
+        rv = current_sugger_->correct(wf,
+                                      suggestions_maximum_,
+                                      maximum_weight_);
         free(wf);
         return rv;
       }

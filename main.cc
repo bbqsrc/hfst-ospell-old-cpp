@@ -47,6 +47,7 @@ static bool quiet = false;
 static bool verbose = false;
 static bool analyse = false;
 static unsigned long suggs = 0;
+static hfst_ol::Weight max_weight = -1.0;
 #ifdef WINDOWS
   static bool output_to_console = false;
 #endif
@@ -124,6 +125,7 @@ bool print_usage(void)
     "  -s, --silent                Same as quiet\n" <<
     "  -a, --analyse               Analyse strings and corrections\n" <<
     "  -n, --limit=N               Show at most N suggestions\n" <<
+    "  -w, --max_weight=W          Suppress corrections with weights above W\n" <<
     "  -S, --suggest               Suggest corrections to mispellings\n" <<
     "  -X, --real-word             Also suggest corrections to correct words\n" <<
 #ifdef WINDOWS
@@ -312,10 +314,15 @@ zhfst_spell(char* zhfst_filename)
                          speller.metadata_dump().c_str());
     }
   speller.set_queue_limit(suggs);
-  if (verbose)
+  if (suggs != 0 && verbose)
     {
       hfst_fprintf(stdout, "Printing only %lu top suggestions per line\n", suggs);
     }
+  speller.set_weight_limit(max_weight);
+  if (max_weight >= 0.0 && verbose)
+  {
+      hfst_fprintf(stdout, "Not printing suggestions worse than %f\n", suggs);
+  }
   char * str = (char*) malloc(2000);
 
 #ifdef WINDOWS
@@ -370,6 +377,7 @@ int main(int argc, char **argv)
             {"silent",       no_argument,       0, 's'},
             {"analyse",      no_argument,       0, 'a'},
             {"limit",  required_argument,       0, 'n'},
+            {"max_weight", required_argument,   0, 'w'},
             {"suggest",      no_argument,       0, 'S'},
             {"real-word",    no_argument,       0, 'X'},
 #ifdef WINDOWS
@@ -379,7 +387,7 @@ int main(int argc, char **argv)
             };
           
         int option_index = 0;
-        c = getopt_long(argc, argv, "hVvqskaSn:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hVvqskaSnw:", long_options, &option_index);
         char* endptr = 0;
 
         if (c == -1) // no more options to look at
@@ -420,6 +428,19 @@ int main(int argc, char **argv)
               {
                 fprintf(stderr, "%s truncated from limit parameter\n", endptr);
               }
+            break;
+        case 'w':
+            max_weight = strtof(optarg, &endptr);
+            if (endptr == optarg)
+            {
+                fprintf(stderr, "%s is not a float\n", optarg);
+                exit(1);
+              }
+            else if (*endptr != '\0')
+              {
+                fprintf(stderr, "%s truncated from limit parameter\n", endptr);
+              }
+
             break;
 #ifdef WINDOWS
         case 'k':
