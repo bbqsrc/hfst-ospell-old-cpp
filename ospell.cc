@@ -620,7 +620,7 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
 
         // if we can't get an acceptable result, never mind
         if ((maxweight >= 0.0 && next_node.weight > maxweight) ||
-            (nbest > 0 && nbest_queue.size() > nbest &&
+            (nbest > 0 && nbest_queue.size() >= nbest &&
              next_node.weight >= nbest_queue.top())) {
             continue;
         }
@@ -636,7 +636,7 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
                     lexicon->final_weight(next_node.lexicon_state) +
                     mutator->final_weight(next_node.mutator_state);
                 if ((maxweight >= 0.0 && weight > maxweight) || (
-                        nbest > 0 && nbest_queue.size() > nbest &&
+                        nbest > 0 && nbest_queue.size() >= nbest &&
                         weight >= nbest_queue.top())) {
                     continue;
                 }
