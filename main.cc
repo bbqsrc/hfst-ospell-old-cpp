@@ -387,7 +387,7 @@ int main(int argc, char **argv)
             };
           
         int option_index = 0;
-        c = getopt_long(argc, argv, "hVvqskaSnw:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hVvqskaSn:w:", long_options, &option_index);
         char* endptr = 0;
 
         if (c == -1) // no more options to look at
