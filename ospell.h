@@ -291,7 +291,7 @@ public:
 
 };
 
-typedef std::deque<TreeNode> TreeNodeQueue;
+typedef std::vector<TreeNode> TreeNodeQueue;
 
 int nByte_utf8(unsigned char c);
 
