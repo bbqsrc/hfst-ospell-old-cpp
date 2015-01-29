@@ -246,6 +246,7 @@ Speller::Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr):
         input(InputString()),
         queue(TreeNodeQueue()),
         next_node(FlagDiacriticState(get_state_size(), 0)),
+        limit(-1.0),
         alphabet_translator(SymbolVector()),
         operations(lexicon->get_operations()),
         symbol_table(lexicon->get_symbol_table())
@@ -271,20 +272,23 @@ void Speller::lexicon_epsilons(void)
     STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL) {
-        if (lexicon->transitions.input_symbol(next) == 0) {
-            queue.push_back(next_node.update_lexicon(0, // Update with epsilon because we want
-                                                        // the surface tape for correcting
-                                                     i_s.index,
-                                                     i_s.weight));
-        } else {
-            FlagDiacriticState old_flags = next_node.flag_state;
-            if (next_node.try_compatible_with( // this is terrible
-                    operations->operator[](
-                        lexicon->transitions.input_symbol(next)))) {
-                queue.push_back(next_node.update_lexicon(0,
+        if (!(limit >= 0.0 && i_s.weight > limit)) {
+            // If we're going over the weight limit, do nothing
+            if (lexicon->transitions.input_symbol(next) == 0) {
+                queue.push_back(next_node.update_lexicon(0, // Update with epsilon because we want
+                                                         // the surface tape for correcting
                                                          i_s.index,
                                                          i_s.weight));
-                next_node.flag_state = old_flags;
+            } else {
+                FlagDiacriticState old_flags = next_node.flag_state;
+                if (next_node.try_compatible_with( // this is terrible
+                        operations->operator[](
+                            lexicon->transitions.input_symbol(next)))) {
+                    queue.push_back(next_node.update_lexicon(0,
+                                                             i_s.index,
+                                                             i_s.weight));
+                    next_node.flag_state = old_flags;
+                }
             }
         }
         ++next;
@@ -307,13 +311,14 @@ void Speller::lexicon_consume(void)
                                                  input[input_state]);
 
     while (i_s.symbol != NO_SYMBOL) {
-        queue.push_back(next_node.update(
-                            i_s.symbol,
-                            input_state + 1,
-                            next_node.mutator_state,
-                            i_s.index,
-                            i_s.weight));
-    
+        if (!(limit >= 0.0 && i_s.weight > limit)) {
+            queue.push_back(next_node.update(
+                                i_s.symbol,
+                                input_state + 1,
+                                next_node.mutator_state,
+                                i_s.index,
+                                i_s.weight));
+        }
         ++next;
         i_s = lexicon->take_non_epsilons(next, input[input_state]);
     }
@@ -330,6 +335,11 @@ void Speller::mutator_epsilons(void)
    
     while (mutator_i_s.symbol != NO_SYMBOL) {
         if (mutator_i_s.symbol == 0) {
+            if (limit >= 0.0 && mutator_i_s.weight > limit) {
+                ++next_m;
+                mutator_i_s = mutator->take_epsilons(next_m);
+                continue;
+            }
             queue.push_back(next_node.update_mutator(mutator_i_s.symbol,
                                                      mutator_i_s.index,
                                                      mutator_i_s.weight));
@@ -349,11 +359,13 @@ void Speller::mutator_epsilons(void)
                 alphabet_translator[mutator_i_s.symbol]);
         
             while (lexicon_i_s.symbol != NO_SYMBOL) {
-                queue.push_back(next_node.update(
-                                    alphabet_translator[mutator_i_s.symbol],
-                                    mutator_i_s.index,
-                                    lexicon_i_s.index,
-                                    lexicon_i_s.weight + mutator_i_s.weight));
+                if (!(limit >= 0.0 && lexicon_i_s.weight + mutator_i_s.weight > limit)) {
+                    queue.push_back(next_node.update(
+                                        alphabet_translator[mutator_i_s.symbol],
+                                        mutator_i_s.index,
+                                        lexicon_i_s.index,
+                                        lexicon_i_s.weight + mutator_i_s.weight));
+                }
                 ++next_l;
                 lexicon_i_s = lexicon->take_non_epsilons(
                     next_l,
@@ -383,7 +395,7 @@ void Speller::consume_input(void)
     while (mutator_i_s.symbol != NO_SYMBOL) {
 
         if (mutator_i_s.symbol == 0) {
-        
+            
             queue.push_back(next_node.update(0,
                                              input_state + 1,
                                              mutator_i_s.index,
@@ -405,14 +417,17 @@ void Speller::consume_input(void)
             STransition lexicon_i_s = lexicon->take_non_epsilons(
                 next_l,
                 alphabet_translator[mutator_i_s.symbol]);
+
         
             while (lexicon_i_s.symbol != NO_SYMBOL) {
-                queue.push_back(
-                    next_node.update(alphabet_translator[mutator_i_s.symbol],
-                                     input_state + 1,
-                                     mutator_i_s.index,
-                                     lexicon_i_s.index,
-                                     lexicon_i_s.weight + mutator_i_s.weight));
+                if (!(limit >= 0.0 && lexicon_i_s.weight + mutator_i_s.weight > limit)) {
+                    queue.push_back(
+                        next_node.update(alphabet_translator[mutator_i_s.symbol],
+                                         input_state + 1,
+                                         mutator_i_s.index,
+                                         lexicon_i_s.index,
+                                         lexicon_i_s.weight + mutator_i_s.weight));
+                }
                 ++next_l;
                 lexicon_i_s = lexicon->take_non_epsilons(
                     next_l,
@@ -606,9 +621,23 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
     std::map<std::string, Weight> corrections;
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     queue.assign(1, start_node);
+    // No limit yet
+    limit = -1.0;
 
     // A queue to keep track of the current n best results
     WeightQueue nbest_queue;
+
+    enum LimitingBehaviour { None, MaxWeight, Nbest, MaxWeightAndNbest } limiting;
+    limiting = None;
+    if (maxweight >= 0.0 && nbest > 0) {
+        limiting = MaxWeightAndNbest;
+        limit = maxweight;
+    } else if (nbest > 0) {
+        limiting = Nbest;
+    } else {
+        limiting = MaxWeight;
+        limit = maxweight;
+    }
 
     while (queue.size() > 0) {
         /*
@@ -618,10 +647,15 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
         next_node = queue.back();
         queue.pop_back();
 
+        // See if we can bring down the weight limit
+        if (limiting == Nbest && nbest_queue.size() >= nbest) {
+            limit = nbest_queue.top();
+        } else if (limiting == MaxWeightAndNbest && nbest_queue.size() >= nbest) {
+            limit = std::min(maxweight, nbest_queue.top());
+        }
+
         // if we can't get an acceptable result, never mind
-        if ((maxweight >= 0.0 && next_node.weight > maxweight) ||
-            (nbest > 0 && nbest_queue.size() >= nbest &&
-             next_node.weight >= nbest_queue.top())) {
+        if (limit >= 0.0 && next_node.weight > limit) {
             continue;
         }
         lexicon_epsilons();
@@ -630,14 +664,12 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
             /* if our transducers are in final states
              * we generate the correction
              */
-            if (mutator->is_final(next_node.mutator_state)&&
+            if (mutator->is_final(next_node.mutator_state) &&
                 lexicon->is_final(next_node.lexicon_state)) {
                 Weight weight = next_node.weight +
                     lexicon->final_weight(next_node.lexicon_state) +
                     mutator->final_weight(next_node.mutator_state);
-                if ((maxweight >= 0.0 && weight > maxweight) || (
-                        nbest > 0 && nbest_queue.size() >= nbest &&
-                        weight >= nbest_queue.top())) {
+                if (limit >= 0.0 && weight > limit) {
                     continue;
                 }
                 std::string string = stringify(symbol_table, next_node.string);
@@ -646,9 +678,11 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
                 if (corrections.count(string) == 0 ||
                     corrections[string] > weight) {
                     corrections[string] = weight;
-                    nbest_queue.push(weight);
-                    if (nbest > 0 && nbest_queue.size() > nbest) {
-                        nbest_queue.pop();
+                    if (nbest > 0) {
+                        nbest_queue.push(weight);
+                        if (nbest_queue.size() > nbest) {
+                            nbest_queue.pop();
+                        }
                     }
                 }
             }
@@ -673,6 +707,7 @@ bool Speller::check(char * line)
     }
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     queue.assign(1, start_node);
+    limit = -1.0;
 
     while (queue.size() > 0) {
         next_node = queue.back();

@@ -356,6 +356,7 @@ public:
     InputString input; //!< current input
     TreeNodeQueue queue; //!< current traversal fifo stack
     TreeNode next_node;  //!< current next node
+    Weight limit; //!< current limit for weights
     SymbolVector alphabet_translator; //!< alphabets in automata
     OperationMap * operations; //!< flags in it
     std::vector<const char*> * symbol_table; //!< strings for symbols
