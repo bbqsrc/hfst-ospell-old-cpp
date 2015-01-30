@@ -148,7 +148,7 @@ TreeNode TreeNode::update_mutator(SymbolNumber symbol,
                                   Weight weight)
 {
     SymbolVector str(this->string);
-        if (symbol != 0) {
+    if (symbol != 0) {
         str.push_back(symbol);
     }
     return TreeNode(str,
@@ -246,7 +246,7 @@ Speller::Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr):
         input(InputString()),
         queue(TreeNodeQueue()),
         next_node(FlagDiacriticState(get_state_size(), 0)),
-        limit(-1.0),
+        limit(std::numeric_limits<Weight>::max()),
         alphabet_translator(SymbolVector()),
         operations(lexicon->get_operations()),
         symbol_table(lexicon->get_symbol_table())
@@ -272,8 +272,7 @@ void Speller::lexicon_epsilons(void)
     STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL) {
-        if (!(limit >= 0.0 && i_s.weight > limit)) {
-            // If we're going over the weight limit, do nothing
+        if (i_s.weight <= limit) {
             if (lexicon->transitions.input_symbol(next) == 0) {
                 queue.push_back(next_node.update_lexicon(0, // Update with epsilon because we want
                                                          // the surface tape for correcting
@@ -311,7 +310,7 @@ void Speller::lexicon_consume(void)
                                                  input[input_state]);
 
     while (i_s.symbol != NO_SYMBOL) {
-        if (!(limit >= 0.0 && i_s.weight > limit)) {
+        if (i_s.weight <= limit) {
             queue.push_back(next_node.update(
                                 i_s.symbol,
                                 input_state + 1,
@@ -335,7 +334,7 @@ void Speller::mutator_epsilons(void)
    
     while (mutator_i_s.symbol != NO_SYMBOL) {
         if (mutator_i_s.symbol == 0) {
-            if (limit >= 0.0 && mutator_i_s.weight > limit) {
+            if (mutator_i_s.weight > limit) {
                 ++next_m;
                 mutator_i_s = mutator->take_epsilons(next_m);
                 continue;
@@ -359,7 +358,7 @@ void Speller::mutator_epsilons(void)
                 alphabet_translator[mutator_i_s.symbol]);
         
             while (lexicon_i_s.symbol != NO_SYMBOL) {
-                if (!(limit >= 0.0 && lexicon_i_s.weight + mutator_i_s.weight > limit)) {
+                if (lexicon_i_s.weight + mutator_i_s.weight <= limit) {
                     queue.push_back(next_node.update(
                                         alphabet_translator[mutator_i_s.symbol],
                                         mutator_i_s.index,
@@ -420,7 +419,7 @@ void Speller::consume_input(void)
 
         
             while (lexicon_i_s.symbol != NO_SYMBOL) {
-                if (!(limit >= 0.0 && lexicon_i_s.weight + mutator_i_s.weight > limit)) {
+                if (lexicon_i_s.weight + mutator_i_s.weight <= limit) {
                     queue.push_back(
                         next_node.update(alphabet_translator[mutator_i_s.symbol],
                                          input_state + 1,
@@ -612,7 +611,8 @@ AnalysisQueue Speller::analyse(char * line, int /* nbest */)
     return lexicon->lookup(line);
   }
 
-CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
+CorrectionQueue Speller::correct(char * line, int nbest,
+                                 Weight maxweight, Weight beam)
 {
     // if input initialization fails, return empty correction queue
     if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
@@ -622,40 +622,102 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     queue.assign(1, start_node);
     // No limit yet
-    limit = -1.0;
+    limit = std::numeric_limits<Weight>::max();
 
     // A queue to keep track of the current n best results
     WeightQueue nbest_queue;
 
-    enum LimitingBehaviour { None, MaxWeight, Nbest, MaxWeightAndNbest } limiting;
+    enum LimitingBehaviour { None, MaxWeight, Nbest, Beam, MaxWeightNbest,
+                             MaxWeightBeam, NbestBeam, MaxWeightNbestBeam } limiting;
     limiting = None;
-    if (maxweight >= 0.0 && nbest > 0) {
-        limiting = MaxWeightAndNbest;
-        limit = maxweight;
-    } else if (nbest > 0) {
-        limiting = Nbest;
+
+//    bool MaxWeight = (maxweight >= 0.0);
+//    bool Nbest = (nbest > 0);
+//    bool Beam = (beam >= 0.0);
+    Weight best_suggestion = std::numeric_limits<Weight>::max();
+
+    if (maxweight >= 0) {
+        if (nbest > 0) {
+            if (beam >= 0.0) {
+                limiting = MaxWeightNbestBeam;
+                limit = maxweight;
+            } else {
+                limiting = MaxWeightNbest;
+                limit = maxweight;
+            }
+        } else {
+            if (beam >= 0.0) {
+                limiting = MaxWeightBeam;
+                limit = maxweight;
+            } else {
+                limiting = MaxWeight;
+                limit = maxweight;
+            }
+        }
     } else {
-        limiting = MaxWeight;
-        limit = maxweight;
+        if (nbest > 0) {
+            if (beam >= 0.0) {
+                limiting = NbestBeam;
+            } else {
+                limiting = Nbest;
+            }
+        } else {
+            if (beam >= 0.0) {
+                limiting = Beam;
+            }
+        }
+    }
+
+    if (maxweight >= 0.0 && nbest > 0 && beam >= 0.0) {
+    } else if (maxweight >= 0.0 && nbest > 0) {
+    } else if (maxweight >= 0.0 && beam >= 0.0) {
+    } else if (maxweight < 0.0 && nbest > 0 && beam >= 0.0) {
+
+    } else if (maxweight >= 0.0 && nbest == 0 && beam < 0.0) {
+    } else if (maxweight < 0.0 && nbest > 0 && beam < 0.0) {
+
+    } else if (maxweight < 0.0 && nbest == 0 && beam >= 0.0) {
+
     }
 
     while (queue.size() > 0) {
         /*
           For depth-first searching, we save the back node now, remove it
           from the queue and add new nodes to the search at the back.
-         */
+        */
         next_node = queue.back();
         queue.pop_back();
-
+        
         // See if we can bring down the weight limit
         if (limiting == Nbest && nbest_queue.size() >= nbest) {
             limit = nbest_queue.top();
-        } else if (limiting == MaxWeightAndNbest && nbest_queue.size() >= nbest) {
-            limit = std::min(maxweight, nbest_queue.top());
+        } else if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest) {
+            limit = std::min(limit, nbest_queue.top());
+        } else if (limiting == Beam && best_suggestion < std::numeric_limits<Weight>::max()) {
+            limit = best_suggestion + beam;
+        } else if (limiting == NbestBeam) {
+            if (best_suggestion < std::numeric_limits<Weight>::max()) {
+                if (nbest_queue.size() >= nbest) {
+                    limit = std::min(best_suggestion + beam, nbest_queue.top());
+                } else {
+                    limit = best_suggestion + beam;
+                }
+            }
+        } else if (limiting == MaxWeightBeam) {
+            if (best_suggestion < std::numeric_limits<Weight>::max()) {
+                limit = std::min(best_suggestion + beam, limit);
+            }
+        } else if (limiting == MaxWeightNbestBeam) {
+            if (best_suggestion < std::numeric_limits<Weight>::max()) {
+                limit = std::min(limit, best_suggestion + beam);
+            }
+            if (nbest_queue.size() >= nbest) {
+                limit = std::min(limit, nbest_queue.top());
+            }
         }
 
         // if we can't get an acceptable result, never mind
-        if (limit >= 0.0 && next_node.weight > limit) {
+        if (next_node.weight > limit) {
             continue;
         }
         lexicon_epsilons();
@@ -669,7 +731,7 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
                 Weight weight = next_node.weight +
                     lexicon->final_weight(next_node.lexicon_state) +
                     mutator->final_weight(next_node.mutator_state);
-                if (limit >= 0.0 && weight > limit) {
+                if (weight > limit) {
                     continue;
                 }
                 std::string string = stringify(symbol_table, next_node.string);
@@ -678,6 +740,7 @@ CorrectionQueue Speller::correct(char * line, int nbest, Weight maxweight)
                 if (corrections.count(string) == 0 ||
                     corrections[string] > weight) {
                     corrections[string] = weight;
+                    best_suggestion = std::min(best_suggestion, weight);
                     if (nbest > 0) {
                         nbest_queue.push(weight);
                         if (nbest_queue.size() > nbest) {
@@ -707,7 +770,7 @@ bool Speller::check(char * line)
     }
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     queue.assign(1, start_node);
-    limit = -1.0;
+    limit = std::numeric_limits<Weight>::max();
 
     while (queue.size() > 0) {
         next_node = queue.back();

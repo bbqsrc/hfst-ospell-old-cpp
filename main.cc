@@ -48,6 +48,7 @@ static bool verbose = false;
 static bool analyse = false;
 static unsigned long suggs = 0;
 static hfst_ol::Weight max_weight = -1.0;
+static hfst_ol::Weight beam = -1.0;
 #ifdef WINDOWS
   static bool output_to_console = false;
 #endif
@@ -118,18 +119,19 @@ bool print_usage(void)
     "Usage: " << PACKAGE_NAME << " [OPTIONS] ZHFST-ARCHIVE\n" <<
     "Use automata in ZHFST-ARCHIVE to check and correct\n"
     "\n" <<
-    "  -h, --help                  Print this help message\n" <<
-    "  -V, --version               Print version information\n" <<
-    "  -v, --verbose               Be verbose\n" <<
-    "  -q, --quiet                 Don't be verbose (default)\n" <<
-    "  -s, --silent                Same as quiet\n" <<
-    "  -a, --analyse               Analyse strings and corrections\n" <<
-    "  -n, --limit=N               Show at most N suggestions\n" <<
-    "  -w, --max-weight=W          Suppress corrections with weights above W\n" <<
-    "  -S, --suggest               Suggest corrections to mispellings\n" <<
-    "  -X, --real-word             Also suggest corrections to correct words\n" <<
+    "  -h, --help                Print this help message\n" <<
+    "  -V, --version             Print version information\n" <<
+    "  -v, --verbose             Be verbose\n" <<
+    "  -q, --quiet               Don't be verbose (default)\n" <<
+    "  -s, --silent              Same as quiet\n" <<
+    "  -a, --analyse             Analyse strings and corrections\n" <<
+    "  -n, --limit=N             Show at most N suggestions\n" <<
+    "  -w, --max-weight=W        Suppress corrections with weights above W\n" <<
+    "  -b, --beam=W              Suppress corrections worse than best candidate by more than W\n" <<
+    "  -S, --suggest             Suggest corrections to mispellings\n" <<
+    "  -X, --real-word           Also suggest corrections to correct words\n" <<
 #ifdef WINDOWS
-    "  -k, --output-to-console     Print output to console (Windows-specific)" <<
+    "  -k, --output-to-console   Print output to console (Windows-specific)" <<
 #endif
     "\n" <<
     "\n" <<
@@ -323,6 +325,11 @@ zhfst_spell(char* zhfst_filename)
   {
       hfst_fprintf(stdout, "Not printing suggestions worse than %f\n", suggs);
   }
+  speller.set_beam(beam);
+  if (beam >= 0.0 && verbose)
+  {
+      hfst_fprintf(stdout, "Not printing suggestions worse than best by margin %f\n", suggs);
+  }
   char * str = (char*) malloc(2000);
 
 #ifdef WINDOWS
@@ -376,8 +383,9 @@ int main(int argc, char **argv)
             {"quiet",        no_argument,       0, 'q'},
             {"silent",       no_argument,       0, 's'},
             {"analyse",      no_argument,       0, 'a'},
-            {"limit",  required_argument,       0, 'n'},
-            {"max-weight", required_argument,   0, 'w'},
+            {"limit",        required_argument, 0, 'n'},
+            {"max-weight",   required_argument, 0, 'w'},
+            {"beam",         required_argument, 0, 'b'},
             {"suggest",      no_argument,       0, 'S'},
             {"real-word",    no_argument,       0, 'X'},
 #ifdef WINDOWS
@@ -431,6 +439,19 @@ int main(int argc, char **argv)
             break;
         case 'w':
             max_weight = strtof(optarg, &endptr);
+            if (endptr == optarg)
+            {
+                fprintf(stderr, "%s is not a float\n", optarg);
+                exit(1);
+              }
+            else if (*endptr != '\0')
+              {
+                fprintf(stderr, "%s truncated from limit parameter\n", endptr);
+              }
+
+            break;
+        case 'b':
+            beam = strtof(optarg, &endptr);
             if (endptr == optarg)
             {
                 fprintf(stderr, "%s is not a float\n", optarg);

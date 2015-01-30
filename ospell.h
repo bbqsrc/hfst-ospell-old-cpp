@@ -20,6 +20,7 @@
 #include <deque>
 #include <queue>
 #include <stdexcept>
+#include <limits>
 #include "hfst-ol.h"
 
 namespace hfst_ol {
@@ -393,7 +394,9 @@ public:
     //
     //! The number of corrections given and stored at any given time
     //! is limited by @a nbest if ≥ 0. 
-    CorrectionQueue correct(char * line, int nbest = 0, Weight maxweight = -1.0);
+    CorrectionQueue correct(char * line, int nbest = 0,
+                            Weight maxweight = -1.0,
+                            Weight beam = -1.0);
     //! @brief analyse given string @a line.
     //
     //! If language model is two-tape, give a list of analyses for string.
