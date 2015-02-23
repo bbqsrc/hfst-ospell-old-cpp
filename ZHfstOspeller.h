@@ -52,7 +52,9 @@ namespace hfst_ol
             ZHfstOspeller();
             //! @brief destroy all automata used by the speller.
             ~ZHfstOspeller();
-            
+
+            //! @brief assign a speller-suggestor circumventing the ZHFST format
+            void inject_speller(Speller * s);
             //! @brief set upper limit to priority queue when performing
             //         suggestions or analyses.
             void set_queue_limit(unsigned long limit);

@@ -143,6 +143,15 @@ ZHfstOspeller::~ZHfstOspeller()
   }
 
 void
+ZHfstOspeller::inject_speller(Speller * s)
+  {
+      current_speller_ = s;
+      current_sugger_ = s;
+      can_spell_ = true;
+      can_correct_ = true;
+  }
+
+void
 ZHfstOspeller::set_queue_limit(unsigned long limit)
   {
     suggestions_maximum_ = limit;

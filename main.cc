@@ -49,6 +49,8 @@ static bool analyse = false;
 static unsigned long suggs = 0;
 static hfst_ol::Weight max_weight = -1.0;
 static hfst_ol::Weight beam = -1.0;
+static std::string error_model_filename = "";
+static std::string lexicon_filename = "";
 #ifdef WINDOWS
   static bool output_to_console = false;
 #endif
@@ -116,8 +118,8 @@ bool print_usage(void)
 {
     std::cout <<
     "\n" <<
-    "Usage: " << PACKAGE_NAME << " [OPTIONS] ZHFST-ARCHIVE\n" <<
-    "Use automata in ZHFST-ARCHIVE to check and correct\n"
+    "Usage: " << PACKAGE_NAME << " [OPTIONS] [ZHFST-ARCHIVE]\n" <<
+    "Use automata in ZHFST-ARCHIVE or from OPTIONS to check and correct\n"
     "\n" <<
     "  -h, --help                Print this help message\n" <<
     "  -V, --version             Print version information\n" <<
@@ -130,6 +132,8 @@ bool print_usage(void)
     "  -b, --beam=W              Suppress corrections worse than best candidate by more than W\n" <<
     "  -S, --suggest             Suggest corrections to mispellings\n" <<
     "  -X, --real-word           Also suggest corrections to correct words\n" <<
+    "  -m, --error-model         Use this error model (must also give lexicon as option)\n" <<
+    "  -l, --lexicon             Use this lexicon (must also give erro model as option)\n" <<
 #ifdef WINDOWS
     "  -k, --output-to-console   Print output to console (Windows-specific)" <<
 #endif
@@ -161,7 +165,7 @@ do_suggest(ZHfstOspeller& speller, const std::string& str)
   {
     hfst_ol::CorrectionQueue corrections = speller.suggest(str);
     if (corrections.size() > 0) 
-      {
+    {
         hfst_fprintf(stdout, "Corrections for \"%s\":\n", str.c_str());
         while (corrections.size() > 0)
           {
@@ -366,6 +370,62 @@ zhfst_spell(char* zhfst_filename)
     return EXIT_SUCCESS;
 }
 
+int
+    legacy_spell(hfst_ol::Speller * s)
+{
+      ZHfstOspeller speller;
+      speller.inject_speller(s);
+      speller.set_queue_limit(suggs);
+      if (suggs != 0 && verbose)
+      {
+          hfst_fprintf(stdout, "Printing only %lu top suggestions per line\n", suggs);
+      }
+      speller.set_weight_limit(max_weight);
+      if (max_weight >= 0.0 && verbose)
+      {
+          hfst_fprintf(stdout, "Not printing suggestions worse than %f\n", suggs);
+      }
+      speller.set_beam(beam);
+      if (beam >= 0.0 && verbose)
+      {
+          hfst_fprintf(stdout, "Not printing suggestions worse than best by margin %f\n", suggs);
+      }
+      char * str = (char*) malloc(2000);
+      
+#ifdef WINDOWS
+    SetConsoleCP(65001);
+    const HANDLE stdIn = GetStdHandle(STD_INPUT_HANDLE);
+    WCHAR buffer[0x1000];
+    DWORD numRead = 0;
+    while (ReadConsoleW(stdIn, buffer, sizeof buffer, &numRead, NULL))
+      {
+        std::wstring wstr(buffer, numRead-1); // skip the newline
+        std::string linestr = wide_string_to_string(wstr);
+        free(str);
+        str = strdup(linestr.c_str());
+#else    
+    while (!std::cin.eof()) {
+        std::cin.getline(str, 2000);
+#endif
+        if (str[0] == '\0') {
+            continue;
+        }
+        if (str[strlen(str) - 1] == '\r')
+          {
+#ifdef WINDOWS
+            str[strlen(str) - 1] = '\0';
+#else
+            hfst_fprintf(stderr, "There is a WINDOWS linebreak in this file\n"
+                               "Please convert with dos2unix or fromdos\n");
+            exit(1);
+#endif
+          }
+        do_spell(speller, str);
+    }
+    free(str);
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, char **argv)
 {
     
@@ -388,6 +448,8 @@ int main(int argc, char **argv)
             {"beam",         required_argument, 0, 'b'},
             {"suggest",      no_argument,       0, 'S'},
             {"real-word",    no_argument,       0, 'X'},
+            {"error-model",  required_argument, 0, 'm'},
+            {"lexicon",      required_argument, 0, 'l'},
 #ifdef WINDOWS
             {"output-to-console",       no_argument,       0, 'k'},
 #endif
@@ -395,7 +457,7 @@ int main(int argc, char **argv)
             };
           
         int option_index = 0;
-        c = getopt_long(argc, argv, "hVvqsan:w:SXk", long_options, &option_index);
+        c = getopt_long(argc, argv, "hVvqsan:w:b:SXm:l:k", long_options, &option_index);
         char* endptr = 0;
 
         if (c == -1) // no more options to look at
@@ -474,6 +536,12 @@ int main(int argc, char **argv)
         case 'X':
             suggest_reals = true;
             break;
+        case 'm':
+            error_model_filename = optarg;
+            break;
+        case 'l':
+            lexicon_filename = optarg;
+            break;
         default:
             std::cerr << "Invalid option\n\n";
             print_short_help();
@@ -486,7 +554,13 @@ int main(int argc, char **argv)
 #endif
     // no more options, we should now be at the input filenames
     if (optind == (argc - 1))
-      {
+    {
+        if (error_model_filename != "" || lexicon_filename != "") {
+            std::cerr << "Give *either* a zhfst speller or --error-model and --lexicon"
+                      << std::endl;
+            print_short_help();
+            return EXIT_FAILURE;
+        }
         return zhfst_spell(argv[optind]);
       }
     else if (optind < (argc - 1))
@@ -497,10 +571,18 @@ int main(int argc, char **argv)
       }
     else if (optind >= argc)
       {
-        std::cerr << "Give full path to a zhfst speller"
-            << std::endl;
-        print_short_help();
-        return EXIT_FAILURE;
+          if (error_model_filename == "" || lexicon_filename == "") {
+              std::cerr << "Give *either* a zhfst speller or --error-model and --lexicon"
+                        << std::endl;
+              print_short_help();
+              return EXIT_FAILURE;
+          }
+          FILE * err_file = fopen(error_model_filename.c_str(), "r");
+          FILE * lex_file = fopen(lexicon_filename.c_str(), "r");
+          hfst_ol::Transducer err(err_file);
+          hfst_ol::Transducer lex(lex_file);
+          hfst_ol::Speller * s = new hfst_ol::Speller(&err, &lex);
+          return legacy_spell(s);
       }
     return EXIT_SUCCESS;
   }
