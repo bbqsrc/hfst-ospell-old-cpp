@@ -636,48 +636,24 @@ CorrectionQueue Speller::correct(char * line, int nbest,
 //    bool Beam = (beam >= 0.0);
     Weight best_suggestion = std::numeric_limits<Weight>::max();
 
-    if (maxweight >= 0) {
-        if (nbest > 0) {
-            if (beam >= 0.0) {
-                limiting = MaxWeightNbestBeam;
-                limit = maxweight;
-            } else {
-                limiting = MaxWeightNbest;
-                limit = maxweight;
-            }
-        } else {
-            if (beam >= 0.0) {
-                limiting = MaxWeightBeam;
-                limit = maxweight;
-            } else {
-                limiting = MaxWeight;
-                limit = maxweight;
-            }
-        }
-    } else {
-        if (nbest > 0) {
-            if (beam >= 0.0) {
-                limiting = NbestBeam;
-            } else {
-                limiting = Nbest;
-            }
-        } else {
-            if (beam >= 0.0) {
-                limiting = Beam;
-            }
-        }
-    }
-
     if (maxweight >= 0.0 && nbest > 0 && beam >= 0.0) {
-    } else if (maxweight >= 0.0 && nbest > 0) {
-    } else if (maxweight >= 0.0 && beam >= 0.0) {
+        limiting = MaxWeightNbestBeam;
+        limit = maxweight;
+    } else if (maxweight >= 0.0 && nbest > 0 && beam < 0.0) {
+        limiting = MaxWeightNbest;
+        limit = maxweight;
+    } else if (maxweight >= 0.0 && beam >= 0.0 && nbest == 0) {
+        limiting = MaxWeightBeam;
+        limit = maxweight;
     } else if (maxweight < 0.0 && nbest > 0 && beam >= 0.0) {
-
+        limiting = NbestBeam;
     } else if (maxweight >= 0.0 && nbest == 0 && beam < 0.0) {
+        limiting = MaxWeight;
+        limit = maxweight;
     } else if (maxweight < 0.0 && nbest > 0 && beam < 0.0) {
-
+        limiting = Nbest;
     } else if (maxweight < 0.0 && nbest == 0 && beam >= 0.0) {
-
+        limiting = Beam;
     }
 
     while (queue.size() > 0) {
