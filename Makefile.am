@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# to silence: 
+# to silence:
 # libtoolize: Consider adding `-I m4' to ACLOCAL_AMFLAGS in Makefile.am.
 ACLOCAL_AMFLAGS=-I m4
 
@@ -24,7 +24,7 @@ CONFERENCE_DEMOS=hfst-ospell-norvig hfst-ospell-fsmnlp-2012 hfst-ospell-cicling\
 				 hfst-ospell-survey hfst-ospell-lrec2013 hfst-ispell
 endif # EXTRA_DEMOS
 
-bin_PROGRAMS=hfst-ospell $(CONFERENCE_DEMOS)
+bin_PROGRAMS=hfst-ospell hfst-ospell-office $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
 man1_MANS=hfst-ospell.1
 
@@ -58,6 +58,10 @@ hfst_ospell_SOURCES=main.cc
 hfst_ospell_LDADD=libhfstospell.la
 hfst_ospell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 					 $(PKG_CXXFLAGS)
+
+hfst_ospell_office_SOURCES=office.cpp
+hfst_ospell_office_LDADD=libhfstospell.la
+hfst_ospell_office_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) -std=c++0x $(PKG_CXXFLAGS)
 
 if EXTRA_DEMOS
 hfst_ospell_norvig_SOURCES=main-norvig.cc
