@@ -54,20 +54,19 @@ std::vector<word_t> words(8);
 std::string buffer;
 size_t cw;
 
-void find_alternatives(ZHfstOspeller& speller, const std::string& word, size_t b) {
+void find_alternatives(ZHfstOspeller& speller, const std::string& word) {
 	size_t dist = std::max(static_cast<size_t>(1), static_cast<size_t>(std::log(words[cw-1].buffer.size()) / std::log(2)));
-	std::cerr << "Max dist: " << dist << std::endl;
 	speller.set_weight_limit(dist);
 	speller.set_beam(dist / 2);
 
 	hfst_ol::CorrectionQueue corrections = speller.suggest(words[cw-1].buffer);
 
 	if (corrections.size() == 0) {
-		std::cout << "# " << word << " " << b << std::endl;
+		std::cout << "# " << word << " 0" << std::endl;
 		return;
 	}
 
-	std::cout << "& " << word << " " << corrections.size() << " " << b << ": ";
+	std::cout << "& " << word << " " << corrections.size() << " 0" << ": ";
 	for (size_t i=0, e=corrections.size() ; i<e ; ++i) {
 		if (i != 0) {
 			std::cout << ", ";
@@ -208,34 +207,12 @@ int zhfst_spell(const char* zhfst_filename) {
 			continue;
 		}
 
-		size_t b = 0, e = 0;
-		const char *skips = " \t\r\n!:;?{}\"";
-		for (;;) {
-			b = line.find_first_not_of(skips, e);
-			e = line.find_first_of(skips, b);
-			if (b == std::string::npos) {
-				break;
-			}
-
-			if (e == std::string::npos) {
-				word.assign(line.begin()+b, line.end());
-			}
-			else {
-				word.assign(line.begin()+b, line.begin()+e);
-			}
-
-			if (is_valid_word(speller, word)) {
-				std::cout << "*" << std::endl;
-				continue;
-			}
-
-			find_alternatives(speller, word, b);
-
-			if (e == std::string::npos) {
-				break;
-			}
+		if (is_valid_word(speller, line)) {
+			std::cout << "*" << std::endl;
+			continue;
 		}
-		std::cout << std::endl;
+
+		find_alternatives(speller, line);
 	}
     return EXIT_SUCCESS;
 }
