@@ -55,9 +55,11 @@ std::string buffer;
 size_t cw;
 
 void find_alternatives(ZHfstOspeller& speller, const std::string& word) {
+	/* Weights make this entirely pointless
 	size_t dist = std::max(static_cast<size_t>(1), static_cast<size_t>(std::log(words[cw-1].buffer.size()) / std::log(2)));
 	speller.set_weight_limit(dist);
 	speller.set_beam(dist / 2);
+	//*/
 
 	hfst_ol::CorrectionQueue corrections = speller.suggest(words[cw-1].buffer);
 
@@ -67,7 +69,8 @@ void find_alternatives(ZHfstOspeller& speller, const std::string& word) {
 	}
 
 	std::cout << "& " << word << " " << corrections.size() << " 0" << ": ";
-	for (size_t i=0, e=corrections.size() ; i<e ; ++i) {
+	// Because speller.set_queue_limit() doesn't actually work, hard limit it here
+	for (size_t i=0, e=corrections.size() ; i<e && i<30 ; ++i) {
 		if (i != 0) {
 			std::cout << ", ";
 		}
