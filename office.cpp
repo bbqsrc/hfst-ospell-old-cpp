@@ -55,14 +55,14 @@ std::vector<word_t> words(8);
 std::string buffer;
 size_t cw;
 
-bool find_alternatives(ZHfstOspeller& speller, const std::string& word, size_t suggs) {
+bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 	/* Weights make this entirely pointless
 	size_t dist = std::max(static_cast<size_t>(1), static_cast<size_t>(std::log(words[cw-1].buffer.size()) / std::log(2)));
 	speller.set_weight_limit(dist);
 	speller.set_beam(dist / 2);
 	//*/
 
-	for (size_t k=1 ; cw-k >= 0 ; ++k) {
+	for (size_t k=1 ; k <= cw ; ++k) {
 		hfst_ol::CorrectionQueue corrections = speller.suggest(words[cw-k].buffer);
 
 		if (corrections.size() == 0) {
@@ -227,13 +227,13 @@ int zhfst_spell(const char* zhfst_filename) {
 			continue;
 		}
 
-		if (!suggs || !find_alternatives(speller, line, suggs)) {
+		if (!suggs || !find_alternatives(speller, suggs)) {
 			std::cout << "#" << std::endl;
 		}
 	}
     return EXIT_SUCCESS;
 }
 
-int main(int argc, char **argv) {
+int main(int, char **argv) {
 	return zhfst_spell(argv[1]);
 }
