@@ -61,33 +61,37 @@ void find_alternatives(ZHfstOspeller& speller, const std::string& word) {
 	speller.set_beam(dist / 2);
 	//*/
 
-	hfst_ol::CorrectionQueue corrections = speller.suggest(words[cw-1].buffer);
+	for (size_t k=1 ; cw-k >= 0 ; ++k) {
+		hfst_ol::CorrectionQueue corrections = speller.suggest(words[cw-k].buffer);
 
-	if (corrections.size() == 0) {
-		std::cout << "# " << word << " 0" << std::endl;
+		if (corrections.size() == 0) {
+			continue;
+		}
+
+		std::cout << "& " << word << " " << corrections.size() << " 0" << ": ";
+		// Because speller.set_queue_limit() doesn't actually work, hard limit it here
+		for (size_t i=0, e=corrections.size() ; i<e && i<30 ; ++i) {
+			if (i != 0) {
+				std::cout << ", ";
+			}
+
+			buffer.clear();
+			if (cw - k != 0) {
+				buffer.append(words[0].buffer.begin(), words[0].buffer.begin() + words[cw-k].start);
+			}
+			buffer.append(corrections.top().first);
+			if (cw - k != 0) {
+				buffer.append(words[0].buffer.begin() + words[cw-k].start + words[cw-k].count, words[0].buffer.end());
+			}
+
+			std::cout << buffer;
+			corrections.pop();
+		}
+		std::cout << std::endl;
 		return;
 	}
 
-	std::cout << "& " << word << " " << corrections.size() << " 0" << ": ";
-	// Because speller.set_queue_limit() doesn't actually work, hard limit it here
-	for (size_t i=0, e=corrections.size() ; i<e && i<30 ; ++i) {
-		if (i != 0) {
-			std::cout << ", ";
-		}
-
-		buffer.clear();
-		if (cw - 1 != 0) {
-			buffer.append(words[0].buffer.begin(), words[0].buffer.begin() + words[cw-1].start);
-		}
-		buffer.append(corrections.top().first);
-		if (cw - 1 != 0) {
-			buffer.append(words[0].buffer.begin() + words[cw-1].start + words[cw-1].count, words[0].buffer.end());
-		}
-
-		std::cout << buffer;
-		corrections.pop();
-	}
-	std::cout << std::endl;
+	std::cout << "# " << word << " 0" << std::endl;
 }
 
 bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
