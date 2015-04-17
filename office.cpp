@@ -31,6 +31,7 @@
 #include <fstream>
 #include <algorithm>
 #include <unordered_map>
+#include <sstream>
 #include <cctype>
 #include <cwctype>
 #include <cmath>
@@ -54,7 +55,7 @@ std::vector<word_t> words(8);
 std::string buffer;
 size_t cw;
 
-void find_alternatives(ZHfstOspeller& speller, const std::string& word) {
+bool find_alternatives(ZHfstOspeller& speller, const std::string& word, size_t suggs) {
 	/* Weights make this entirely pointless
 	size_t dist = std::max(static_cast<size_t>(1), static_cast<size_t>(std::log(words[cw-1].buffer.size()) / std::log(2)));
 	speller.set_weight_limit(dist);
@@ -68,12 +69,10 @@ void find_alternatives(ZHfstOspeller& speller, const std::string& word) {
 			continue;
 		}
 
-		std::cout << "& " << word << " " << corrections.size() << " 0" << ": ";
+		std::cout << "&";
 		// Because speller.set_queue_limit() doesn't actually work, hard limit it here
-		for (size_t i=0, e=corrections.size() ; i<e && i<30 ; ++i) {
-			if (i != 0) {
-				std::cout << ", ";
-			}
+		for (size_t i=0, e=corrections.size() ; i<e && i<suggs ; ++i) {
+			std::cout << "\t";
 
 			buffer.clear();
 			if (cw - k != 0) {
@@ -88,10 +87,9 @@ void find_alternatives(ZHfstOspeller& speller, const std::string& word) {
 			corrections.pop();
 		}
 		std::cout << std::endl;
-		return;
+		return true;
 	}
-
-	std::cout << "# " << word << " 0" << std::endl;
+	return false;
 }
 
 bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
@@ -202,10 +200,11 @@ int zhfst_spell(const char* zhfst_filename) {
 		return EXIT_FAILURE;
 	}
 
-	std::cout << "@(#) International Ispell Version 3.1.20 (but really hfst-ospell-office)" << std::endl;
+	std::cout << "@@ hfst-ospell-office is alive" << std::endl;
 
 	std::string line;
 	std::string word;
+	std::istringstream ss;
 	while (std::getline(std::cin, line)) {
 		while (!line.empty() && std::iswspace(line[line.size()-1])) {
 			line.resize(line.size()-1);
@@ -214,12 +213,23 @@ int zhfst_spell(const char* zhfst_filename) {
 			continue;
 		}
 
+		ss.clear();
+		ss.str(line);
+		size_t suggs = 0;
+		char c = 0;
+		if (!(ss >> suggs) || !ss.get(c) || !std::getline(ss, line)) {
+			std::cout << "!" << std::endl;
+			continue;
+		}
+
 		if (is_valid_word(speller, line)) {
 			std::cout << "*" << std::endl;
 			continue;
 		}
 
-		find_alternatives(speller, line);
+		if (!suggs || !find_alternatives(speller, line, suggs)) {
+			std::cout << "#" << std::endl;
+		}
 	}
     return EXIT_SUCCESS;
 }
