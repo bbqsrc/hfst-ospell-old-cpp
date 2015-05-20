@@ -27,6 +27,16 @@ namespace hfst_ol {
 
 //! Internal class for transition processing.
 
+class TreeNode;
+class CacheContainer;
+typedef std::pair<std::string, std::string> StringPair;
+typedef std::pair<std::string, Weight> StringWeightPair;
+typedef std::vector<StringWeightPair> StringWeightVector;
+typedef std::pair<std::pair<std::string, std::string>, Weight>
+                                                        StringPairWeightPair;
+typedef std::vector<TreeNode> TreeNodeVector;
+typedef std::map<std::string, Weight> StringWeightMap;
+
 //! Contains low-level processing stuff.
 class STransition{
 public:
@@ -53,10 +63,6 @@ public:
         {}
 
 };
-typedef std::pair<std::string, std::string> StringPair;
-typedef std::pair<std::string, Weight> StringWeightPair;
-typedef std::pair<std::pair<std::string, std::string>, Weight>
-                                                        StringPairWeightPair;
 //! @brief comparison for establishing order for priority queue for suggestions.
 
 //! The suggestions that are stored in a priority queue are arranged in
@@ -194,17 +200,20 @@ public:
     //! get next epsilon inedx
     TransitionTableIndex next_e(const TransitionTableIndex i) const;
     //! 
-    //! whether state has anyt ransitions
+    //! whether state has any transitions with @a symbol
     bool has_transitions(const TransitionTableIndex i,
                          const SymbolNumber symbol) const;
     //!
-    //! whether state ha s epsilon s or flag s
+    //! whether state has epsilon s or flag s
     bool has_epsilons_or_flags(const TransitionTableIndex i);
+    //!
+    //! whether state has non-epsilons or non-flags
+    bool has_non_epsilons_or_flags(const TransitionTableIndex i);
     //! 
-    //! whether it's fina
+    //! whether it's final
     bool is_final(const TransitionTableIndex i);
     //! 
-    //! get final wieihgt
+    //! get final weight
     Weight final_weight(const TransitionTableIndex i) const;
     //!
     //! whether it's a flag
@@ -218,9 +227,8 @@ public:
 //! Internal class for alphabet processing.
 
 //! Contains low-level processing stuff.
-class TreeNode
+struct TreeNode
 {
-public:
 //    SymbolVector input_string; //<! the current input vector
     SymbolVector string; //!< the current output vector
     unsigned int input_state; //!< its input state
@@ -358,9 +366,17 @@ public:
     TreeNodeQueue queue; //!< current traversal fifo stack
     TreeNode next_node;  //!< current next node
     Weight limit; //!< current limit for weights
+    Weight best_suggestion; //!< best suggestion so far
+    WeightQueue nbest_queue; //!< queue to keep track of current n best results
     SymbolVector alphabet_translator; //!< alphabets in automata
     OperationMap * operations; //!< flags in it
     std::vector<const char*> * symbol_table; //!< strings for symbols
+    std::vector<CacheContainer> cache;
+//!< A cache for the result of first symbols
+    enum LimitingBehaviour { None, MaxWeight, Nbest, Beam, MaxWeightNbest,
+                             MaxWeightBeam, NbestBeam, MaxWeightNbestBeam } limiting;
+    //!< what kind of limiting behaviour we have
+
     
     //!
     //! Create a speller object form error model and language automata.
@@ -381,8 +397,8 @@ public:
     //! traverse epsilons in error modle
     void mutator_epsilons(void);
     //!
-    //! travers along input
-    void consume_input(void);
+    //! traverse along input
+    void consume_input(SymbolNumber input_sym = NO_SYMBOL);
     //!
     //! follow language model with stuff
     void lexicon_consume(void);
@@ -397,12 +413,40 @@ public:
     CorrectionQueue correct(char * line, int nbest = 0,
                             Weight maxweight = -1.0,
                             Weight beam = -1.0);
+
+    void set_limiting_behaviour(int nbest, Weight maxweight, Weight beam);
+    void adjust_weight_limits(int nbest, Weight beam);
+    
     //! @brief analyse given string @a line.
     //
     //! If language model is two-tape, give a list of analyses for string.
     //! If not, this should return queue of one result @a line if the
     //! string is in language model and 0 results if it isn't.
     AnalysisQueue analyse(char * line, int nbest = 0);
+
+    void build_cache(SymbolNumber first_sym);
+    //! @brief Construct a cache entry for @a first_sym..
+
+};
+
+struct CacheContainer
+{
+    // All the nodes that ultimately result from searching at input depth 1
+    TreeNodeVector nodes;
+    // The results are for length max one inputs only
+    StringWeightVector results_len_0;
+    StringWeightVector results_len_1;
+    bool empty;
+
+    CacheContainer(void): empty(true) {}
+    
+    void clear(void)
+        {
+            nodes.clear();
+            results_len_0.clear();
+            results_len_1.clear();
+        }
+    
 };
 
 std::string stringify(std::vector<const char *> * symbol_table,

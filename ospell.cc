@@ -249,11 +249,14 @@ Speller::Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr):
         limit(std::numeric_limits<Weight>::max()),
         alphabet_translator(SymbolVector()),
         operations(lexicon->get_operations()),
-        symbol_table(lexicon->get_symbol_table())
-        {
-          if (mutator != 0)
-            build_alphabet_translator();
-        }
+        symbol_table(lexicon->get_symbol_table()),
+        cache(mutator->get_symbol_table()->size(), CacheContainer()),
+        limiting(None)
+            {
+                if (mutator != 0) {
+                    build_alphabet_translator();
+                }
+            }
 
 
 SymbolNumber
@@ -376,20 +379,28 @@ void Speller::mutator_epsilons(void)
     }
 }
 
-void Speller::consume_input(void)
+void Speller::consume_input(SymbolNumber input_sym)
 {
     unsigned int input_state = next_node.input_state;
-    if (input_state >= input.len()||
-        !mutator->has_transitions(next_node.mutator_state + 1,
-                                  input[input_state])) {
-        return; // not enough input to consume or no suitable transitions
+    if (input_sym == NO_SYMBOL) {
+        // look in the input tape
+        if (input_state >= input.len()) {
+            return; // not enough input to consume or no suitable transitions
+        }
+        input_sym = input[input_state];
     }
+    if (!mutator->has_transitions(next_node.mutator_state + 1,
+                                  input_sym)) {
+        // no suitable symbols
+        return;
+    }
+
     
     TransitionTableIndex next_m = mutator->next(next_node.mutator_state,
-                                                input[input_state]);
+                                                input_sym);
     
     STransition mutator_i_s = mutator->take_non_epsilons(next_m,
-                                                         input[input_state]);
+                                                         input_sym);
     
     while (mutator_i_s.symbol != NO_SYMBOL) {
 
@@ -406,7 +417,7 @@ void Speller::consume_input(void)
                     alphabet_translator[mutator_i_s.symbol])) {
                 ++next_m;
                 mutator_i_s = mutator->take_non_epsilons(next_m,
-                                                         input[input_state]);
+                                                         input_sym);
                 continue;
             }
             TransitionTableIndex next_l = lexicon->next(
@@ -435,7 +446,7 @@ void Speller::consume_input(void)
         }
         ++next_m;
         mutator_i_s = mutator->take_non_epsilons(next_m,
-                                                 input[input_state]);
+                                                 input_sym);
     }
 }
 
@@ -532,6 +543,23 @@ bool Transducer::has_epsilons_or_flags(const TransitionTableIndex i)
     }
 }
 
+bool Transducer::has_non_epsilons_or_flags(const TransitionTableIndex i)
+{
+    if (i >= TARGET_TABLE) {
+        SymbolNumber this_input = transitions.input_symbol(i - TARGET_TABLE);
+        return((this_input != 0 && this_input != NO_SYMBOL) &&
+               !is_flag(this_input));
+    } else {
+        SymbolNumber max_symbol = get_symbol_table()->size();
+        for (SymbolNumber sym = 1; sym < max_symbol; ++sym) {
+            if (indices.input_symbol(i + sym) == sym) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 STransition Transducer::take_epsilons(const TransitionTableIndex i) const
 {
     if (transitions.input_symbol(i) != 0) {
@@ -607,9 +635,57 @@ Transducer::is_weighted(void)
 
 
 AnalysisQueue Speller::analyse(char * line, int /* nbest */)
-  {
+{
     return lexicon->lookup(line);
-  }
+}
+
+void Speller::build_cache(SymbolNumber first_sym)
+{
+    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    queue.assign(1, start_node);
+    limit = std::numeric_limits<Weight>::max();
+    // A placeholding map, only one weight per correction
+    StringWeightMap corrections_len_0;
+    StringWeightMap corrections_len_1;
+    while (queue.size() > 0) {
+        next_node = queue.back();
+        queue.pop_back();
+        lexicon_epsilons();
+        mutator_epsilons();
+        if (mutator->is_final(next_node.mutator_state) &&
+            lexicon->is_final(next_node.lexicon_state)) {
+            // complete result of length 0 or 1
+            Weight weight = next_node.weight +
+                lexicon->final_weight(next_node.lexicon_state) +
+                mutator->final_weight(next_node.mutator_state);
+            std::string string = stringify(symbol_table, next_node.string);
+            /* if the correction is novel or better than before, insert it
+             */
+            if (next_node.input_state == 0) {
+                if (corrections_len_0.count(string) == 0 ||
+                    corrections_len_0[string] > weight) {
+                    corrections_len_0[string] = weight;
+                }
+            } else {
+                if (corrections_len_1.count(string) == 0 ||
+                    corrections_len_1[string] > weight) {
+                    corrections_len_1[string] = weight;
+                }
+            }
+        }
+        if (next_node.input_state == 1) {
+            cache[first_sym].nodes.push_back(next_node);
+        } else {
+//            std::cerr << "discarded node\n";
+        }
+        if (first_sym > 0 && next_node.input_state == 0) {
+            consume_input(first_sym);
+        }
+    }
+    cache[first_sym].results_len_0.assign(corrections_len_0.begin(), corrections_len_0.end());
+    cache[first_sym].results_len_1.assign(corrections_len_1.begin(), corrections_len_1.end());
+    cache[first_sym].empty = false;
+}
 
 CorrectionQueue Speller::correct(char * line, int nbest,
                                  Weight maxweight, Weight beam)
@@ -618,43 +694,53 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
         return CorrectionQueue();
     }
+    set_limiting_behaviour(nbest, maxweight, beam);
+    nbest_queue = WeightQueue();
+    // The queue for our suggestions
+    CorrectionQueue correction_queue;
+    // A placeholding map, only one weight per correction
     std::map<std::string, Weight> corrections;
-    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-    queue.assign(1, start_node);
-    // No limit yet
-    limit = std::numeric_limits<Weight>::max();
-
-    // A queue to keep track of the current n best results
-    WeightQueue nbest_queue;
-
-    enum LimitingBehaviour { None, MaxWeight, Nbest, Beam, MaxWeightNbest,
-                             MaxWeightBeam, NbestBeam, MaxWeightNbestBeam } limiting;
-    limiting = None;
-
-//    bool MaxWeight = (maxweight >= 0.0);
-//    bool Nbest = (nbest > 0);
-//    bool Beam = (beam >= 0.0);
-    Weight best_suggestion = std::numeric_limits<Weight>::max();
-
-    if (maxweight >= 0.0 && nbest > 0 && beam >= 0.0) {
-        limiting = MaxWeightNbestBeam;
-        limit = maxweight;
-    } else if (maxweight >= 0.0 && nbest > 0 && beam < 0.0) {
-        limiting = MaxWeightNbest;
-        limit = maxweight;
-    } else if (maxweight >= 0.0 && beam >= 0.0 && nbest == 0) {
-        limiting = MaxWeightBeam;
-        limit = maxweight;
-    } else if (maxweight < 0.0 && nbest > 0 && beam >= 0.0) {
-        limiting = NbestBeam;
-    } else if (maxweight >= 0.0 && nbest == 0 && beam < 0.0) {
-        limiting = MaxWeight;
-        limit = maxweight;
-    } else if (maxweight < 0.0 && nbest > 0 && beam < 0.0) {
-        limiting = Nbest;
-    } else if (maxweight < 0.0 && nbest == 0 && beam >= 0.0) {
-        limiting = Beam;
+    SymbolNumber first_input = 0;
+    if (input.len() != 0) {
+        first_input = input[0];
     }
+    if (cache[first_input].empty) {
+        build_cache(first_input);
+    }
+    if (input.len() <= 1) {
+        // get the cached results and we're done
+        StringWeightVector * results;
+        if (input.len() == 0) {
+            results = &cache[first_input].results_len_0;
+        } else {
+            results = &cache[first_input].results_len_1;
+        }
+        for(StringWeightVector::const_iterator it = results->begin();
+              // First get the correct weight limit
+              it != results->end(); ++it) {
+                best_suggestion = std::min(best_suggestion, it->second);
+                if (nbest > 0) {
+                    nbest_queue.push(it->second);
+                    if (nbest_queue.size() > nbest) {
+                        nbest_queue.pop();
+                    }
+                }
+            }
+        adjust_weight_limits(nbest, beam);
+        for(StringWeightVector::const_iterator it = results->begin();
+              // Then collect the results
+              it != results->end(); ++it) {
+            if (it->second <= limit && (nbest == 0 || it->second <= nbest_queue.top())) {
+                correction_queue.push(StringWeightPair(it->first, it->second));
+            }
+        }
+        return correction_queue;
+    } else {
+        // populate the tree node queue
+        queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
+    }
+    // TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    // queue.assign(1, start_node);
 
     while (queue.size() > 0) {
         /*
@@ -663,41 +749,16 @@ CorrectionQueue Speller::correct(char * line, int nbest,
         */
         next_node = queue.back();
         queue.pop_back();
-        
-        // See if we can bring down the weight limit
-        if (limiting == Nbest && nbest_queue.size() >= nbest) {
-            limit = nbest_queue.top();
-        } else if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest) {
-            limit = std::min(limit, nbest_queue.top());
-        } else if (limiting == Beam && best_suggestion < std::numeric_limits<Weight>::max()) {
-            limit = best_suggestion + beam;
-        } else if (limiting == NbestBeam) {
-            if (best_suggestion < std::numeric_limits<Weight>::max()) {
-                if (nbest_queue.size() >= nbest) {
-                    limit = std::min(best_suggestion + beam, nbest_queue.top());
-                } else {
-                    limit = best_suggestion + beam;
-                }
-            }
-        } else if (limiting == MaxWeightBeam) {
-            if (best_suggestion < std::numeric_limits<Weight>::max()) {
-                limit = std::min(best_suggestion + beam, limit);
-            }
-        } else if (limiting == MaxWeightNbestBeam) {
-            if (best_suggestion < std::numeric_limits<Weight>::max()) {
-                limit = std::min(limit, best_suggestion + beam);
-            }
-            if (nbest_queue.size() >= nbest) {
-                limit = std::min(limit, nbest_queue.top());
-            }
-        }
-
+        adjust_weight_limits(nbest, beam);
         // if we can't get an acceptable result, never mind
         if (next_node.weight > limit) {
             continue;
         }
-        lexicon_epsilons();
-        mutator_epsilons();
+        if (next_node.input_state > 1) {
+            // Early epsilons were handled during the caching stage
+            lexicon_epsilons();
+            mutator_epsilons();
+        }
         if (next_node.input_state == input.len()) {
             /* if our transducers are in final states
              * we generate the correction
@@ -729,14 +790,73 @@ CorrectionQueue Speller::correct(char * line, int nbest,
             consume_input();
         }
     }
-    CorrectionQueue correction_queue;
+    adjust_weight_limits(nbest, beam);
     std::map<std::string, Weight>::iterator it;
     for (it = corrections.begin(); it != corrections.end(); ++it) {
-        if (nbest == 0 || it->second <= nbest_queue.top()) {
+        if (it->second <= limit && // we're not over our weight limit and
+            (nbest == 0 || // we either don't have an nbest condition or
+             (it->second <= nbest_queue.top() && // we're below the nbest weight and
+              correction_queue.size() < nbest_queue.size()))) { // number of results
             correction_queue.push(StringWeightPair(it->first, it->second));
         }
     }
     return correction_queue;
+}
+
+void Speller::set_limiting_behaviour(int nbest, Weight maxweight, Weight beam)
+{
+    limiting = None;
+    limit = std::numeric_limits<Weight>::max();
+    best_suggestion = std::numeric_limits<Weight>::max();
+    if (maxweight >= 0.0 && nbest > 0 && beam >= 0.0) {
+        limiting = MaxWeightNbestBeam;
+        limit = maxweight;
+    } else if (maxweight >= 0.0 && nbest > 0 && beam < 0.0) {
+        limiting = MaxWeightNbest;
+        limit = maxweight;
+    } else if (maxweight >= 0.0 && beam >= 0.0 && nbest == 0) {
+        limiting = MaxWeightBeam;
+        limit = maxweight;
+    } else if (maxweight < 0.0 && nbest > 0 && beam >= 0.0) {
+        limiting = NbestBeam;
+    } else if (maxweight >= 0.0 && nbest == 0 && beam < 0.0) {
+        limiting = MaxWeight;
+        limit = maxweight;
+    } else if (maxweight < 0.0 && nbest > 0 && beam < 0.0) {
+        limiting = Nbest;
+    } else if (maxweight < 0.0 && nbest == 0 && beam >= 0.0) {
+        limiting = Beam;
+    }
+}
+
+void Speller::adjust_weight_limits(int nbest, Weight beam)
+{
+    if (limiting == Nbest && nbest_queue.size() >= nbest) {
+        limit = nbest_queue.top();
+    } else if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest) {
+        limit = std::min(limit, nbest_queue.top());
+    } else if (limiting == Beam && best_suggestion < std::numeric_limits<Weight>::max()) {
+        limit = best_suggestion + beam;
+    } else if (limiting == NbestBeam) {
+        if (best_suggestion < std::numeric_limits<Weight>::max()) {
+            if (nbest_queue.size() >= nbest) {
+                limit = std::min(best_suggestion + beam, nbest_queue.top());
+            } else {
+                limit = best_suggestion + beam;
+            }
+        }
+    } else if (limiting == MaxWeightBeam) {
+        if (best_suggestion < std::numeric_limits<Weight>::max()) {
+            limit = std::min(best_suggestion + beam, limit);
+        }
+    } else if (limiting == MaxWeightNbestBeam) {
+        if (best_suggestion < std::numeric_limits<Weight>::max()) {
+            limit = std::min(limit, best_suggestion + beam);
+        }
+        if (nbest_queue.size() >= nbest) {
+            limit = std::min(limit, nbest_queue.top());
+        }
+    }
 }
 
 bool Speller::check(char * line)
