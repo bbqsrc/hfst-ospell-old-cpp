@@ -1,7 +1,5 @@
 #!/usr/bin/python
-
 # see editdist.py --help for usage
-
 
 import sys
 import struct
@@ -13,21 +11,21 @@ debug = False
 usage_string = "usage: %prog [options] alphabet"
 
 info_string = """
-Produce an edit distance transducer in ATT format.
+Produce an edit distance transducer.
 
-There are three ways to produce an edit distance transducer:
+Output is either an arc-by-arc -generated ATT listing (deprecated), or a large
+regular expression.
+
+There are three ways to give the alphabet and weights:
 
 * giving the alphabet as a command line argument
+    (weights are implicitly 1.0 per error)
 * giving a file with specialized configuration syntax
 * giving a transducer in optimized-lookup format to induce an alphabet
-    (in this case only symbols with length 1 are considered)
+    (in this case only symbols with length 1 are considered,
+    and weights are implicitly 1.0 per error)
 
 These ways may be combined freely.
-
-For the default case, all the desired transitions are generated with weight 1.0.
-The alphabet is read from a string which contains all the (utf-8) characters
-you want to use. Alternatively, an existing optimized-lookup transducer
-can be supplied for reading the alphabet.
 
 The specification file should be in the following format:
 * First, an (optional) list of tokens separated by newlines
@@ -62,59 +60,7 @@ with d for distance and S for size of alphabet plus one
 ** d*(3S^2 - 5S + 3) transitions
 """
 
-# Some utility classes
-
-class Header:
-    """Read and provide interface to header"""
-    
-    def __init__(self, file):
-        bytes = file.read(5) # "HFST\0"
-        if str(struct.unpack_from("<5s", bytes, 0)) == "('HFST\\x00',)":
-            # just ignore any hfst3 header
-            remaining = struct.unpack_from("<H", file.read(3), 0)[0]
-            self.handle_hfst3_header(file, remaining)
-            bytes = file.read(56) # 2 unsigned shorts, 4 unsigned ints and 9 uint-bools
-        else:
-            bytes = bytes + file.read(56 - 5)
-        self.number_of_input_symbols             = struct.unpack_from("<H", bytes, 0)[0]
-        self.number_of_symbols                   = struct.unpack_from("<H", bytes, 2)[0]
-        self.size_of_transition_index_table      = struct.unpack_from("<I", bytes, 4)[0]
-        self.size_of_transition_target_table     = struct.unpack_from("<I", bytes, 8)[0]
-        self.number_of_states                    = struct.unpack_from("<I", bytes, 12)[0]
-        self.number_of_transitions               = struct.unpack_from("<I", bytes, 16)[0]
-        self.weighted                            = struct.unpack_from("<I", bytes, 20)[0] != 0
-        self.deterministic                       = struct.unpack_from("<I", bytes, 24)[0] != 0
-        self.input_deterministic                 = struct.unpack_from("<I", bytes, 28)[0] != 0
-        self.minimized                           = struct.unpack_from("<I", bytes, 32)[0] != 0
-        self.cyclic                              = struct.unpack_from("<I", bytes, 36)[0] != 0
-        self.has_epsilon_epsilon_transitions     = struct.unpack_from("<I", bytes, 40)[0] != 0
-        self.has_input_epsilon_transitions       = struct.unpack_from("<I", bytes, 44)[0] != 0
-        self.has_input_epsilon_cycles            = struct.unpack_from("<I", bytes, 48)[0] != 0
-        self.has_unweighted_input_epsilon_cycles = struct.unpack_from("<I", bytes, 52)[0] != 0
-
-    def handle_hfst3_header(self, file, remaining):
-        chars = struct.unpack_from("<" + str(remaining) + "c",
-                                   file.read(remaining), 0)
-        # assume the h3-header doesn't say anything surprising for now
-
-class Alphabet:
-    """Read and provide interface to alphabet"""
-
-    def __init__(self, file, number_of_symbols):
-        stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
-        self.keyTable = [] # list of unicode objects, use foo.encode("utf-8") to print
-        for x in range(number_of_symbols):
-            symbol = ""
-            while True:
-                byte = file.read(1)
-                if byte == '\0': # a symbol has ended
-                    symbol = unicode(symbol, "utf-8")
-                    if len(symbol) != 1:
-                        stderr_u8.write("Ignored symbol " + symbol + "\n")
-                    else:
-                        self.keyTable.append(symbol)
-                    break
-                symbol += byte
+OTHER = u'@_UNKNOWN_SYMBOL_@'
 
 class MyOptionParser(OptionParser):
     # This is needed to override the formatting of the help string
@@ -122,6 +68,8 @@ class MyOptionParser(OptionParser):
         return self.epilog
 
 parser = MyOptionParser(usage=usage_string, epilog=info_string)
+parser.add_option("-r", "--regex", action = "store_true", dest = "make_regex",
+                  help = "write a regular expression")
 parser.add_option("-e", "--epsilon", dest = "epsilon",
                   help = "specify symbol to use as epsilon, default is @0@",
                   metavar = "EPS")
@@ -145,6 +93,7 @@ parser.add_option("-a", "--alphabet", dest = "alphabetfile",
                   metavar = "ALPHABET")
 parser.add_option("-v", "--verbose", action = "store_true", dest="verbose",
                   help = "print some diagnostics to standard error")
+parser.set_defaults(make_regex = False)
 parser.set_defaults(epsilon = '@0@')
 parser.set_defaults(distance = 1)
 parser.set_defaults(swap = False)
@@ -201,7 +150,60 @@ if options.alphabetfile != None:
         if c not in alphabet.keys() and c not in exclusions:
             alphabet[c] = 0.0
 epsilon = unicode(options.epsilon, 'utf-8')
-OTHER = u'@_UNKNOWN_SYMBOL_@'
+
+# Some utility classes
+
+class Header:
+    """Read and provide interface to header"""
+    
+    def __init__(self, file):
+        bytes = file.read(5) # "HFST\0"
+        if str(struct.unpack_from("<5s", bytes, 0)) == "('HFST\\x00',)":
+            # just ignore any hfst3 header
+            remaining = struct.unpack_from("<H", file.read(3), 0)[0]
+            self.handle_hfst3_header(file, remaining)
+            bytes = file.read(56) # 2 unsigned shorts, 4 unsigned ints and 9 uint-bools
+        else:
+            bytes = bytes + file.read(56 - 5)
+        self.number_of_input_symbols             = struct.unpack_from("<H", bytes, 0)[0]
+        self.number_of_symbols                   = struct.unpack_from("<H", bytes, 2)[0]
+        self.size_of_transition_index_table      = struct.unpack_from("<I", bytes, 4)[0]
+        self.size_of_transition_target_table     = struct.unpack_from("<I", bytes, 8)[0]
+        self.number_of_states                    = struct.unpack_from("<I", bytes, 12)[0]
+        self.number_of_transitions               = struct.unpack_from("<I", bytes, 16)[0]
+        self.weighted                            = struct.unpack_from("<I", bytes, 20)[0] != 0
+        self.deterministic                       = struct.unpack_from("<I", bytes, 24)[0] != 0
+        self.input_deterministic                 = struct.unpack_from("<I", bytes, 28)[0] != 0
+        self.minimized                           = struct.unpack_from("<I", bytes, 32)[0] != 0
+        self.cyclic                              = struct.unpack_from("<I", bytes, 36)[0] != 0
+        self.has_epsilon_epsilon_transitions     = struct.unpack_from("<I", bytes, 40)[0] != 0
+        self.has_input_epsilon_transitions       = struct.unpack_from("<I", bytes, 44)[0] != 0
+        self.has_input_epsilon_cycles            = struct.unpack_from("<I", bytes, 48)[0] != 0
+        self.has_unweighted_input_epsilon_cycles = struct.unpack_from("<I", bytes, 52)[0] != 0
+
+    def handle_hfst3_header(self, file, remaining):
+        chars = struct.unpack_from("<" + str(remaining) + "c",
+                                   file.read(remaining), 0)
+        # assume the h3-header doesn't say anything surprising for now
+
+class Alphabet:
+    """Read and provide interface to alphabet"""
+
+    def __init__(self, file, number_of_symbols):
+        stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
+        self.keyTable = [] # list of unicode objects, use foo.encode("utf-8") to print
+        for x in range(number_of_symbols):
+            symbol = ""
+            while True:
+                byte = file.read(1)
+                if byte == '\0': # a symbol has ended
+                    symbol = unicode(symbol, "utf-8")
+                    if len(symbol) != 1:
+                        stderr_u8.write("Ignored symbol " + symbol + "\n")
+                    else:
+                        self.keyTable.append(symbol)
+                    break
+                symbol += byte
 
 def p(string): # stupid python, or possibly stupid me
     return string.encode('utf-8')
@@ -345,37 +347,81 @@ class Transducer:
         self.transitions += self.make_identities(options.distance + options.no_initial)
         self.transitions.append(str(options.distance + options.no_initial) + "\t0.0")
 
-transducer = Transducer(alphabet)
+def replace_rules(alphabet, weight = 1.0):
+    corr = ' "<CORR>" '
+    unk = OTHER
+    corrections = "["
+    # first, the empty string may become the empty string anywhere
+    corrections += '"" -> \t[ "" |\n'
+    for a in alphabet:
+    # insertions
+        corrections += '\t[ "' + a + '" ' + corr + ' ]::' + str(weight) + ' |\n'
+    # trim the extra left by the last pass
+    corrections = corrections[:-3]
+    corrections += ' ] ,,\n'
+    for a in alphabet:
+    # the left-hand side of the rule
+        corrections += '"' + a + '" ->\t[ '
+    # identity
+        corrections += '"' + a + '" |\n'
+    # deletion
+        corrections += '\t[ ""' + corr + ']::' + str(weight) + ' |\n'
+        for b in alphabet:
+        #substitutions
+            if a == b:
+                # we don't handle identities here
+                continue
+            corrections += '\t[ "' + b + '"' + corr + ']::' + str(weight) + ' |\n'
+        corrections = corrections[:-3]
+        corrections += ' ] ,,\n'
+    # now the unknown symbol
+    corrections += '"' + unk + '" -> [\n\t[""' + corr + ']::' + str(weight) + ' |\n'
+    for a in alphabet:
+        corrections += '\t[ "' + a + '"' + corr + ']::' + str(weight) + ' |\n'
+    # trim the end again
+    corrections = corrections[:-3]
+    corrections += ' ]]'
+    return corrections
+        
 
-if options.inputfile != None:
-    while True:
-        line = inputfile.readline()
-        if line.startswith('##'):
-            continue
-        if line == "\n":
-            continue
-        if line == "":
-            break
-        transducer.process(unicode(line, "utf-8"))
+if options.make_regex:
+    corrections = replace_rules(alphabet)
+    corr_counter = '[[ [? - "<CORR>"]* ( "<CORR>":0 ) [? - "<CORR>"]* ]^' + str(options.distance) + ']'
+    corr_eater = '[[? - "<CORR>"]*]'
+    full_regex = corr_eater + '\n.o.\n' + corrections.encode('utf-8') + '\n.o.\n' + corr_counter + ";"
+    print full_regex
+else:
+    transducer = Transducer(alphabet)
 
-transducer.generate()
-transducer.make_transitions()
-for transition in transducer.transitions:
-    print transition
+    if options.inputfile != None:
+        while True:
+            line = inputfile.readline()
+            if line.startswith('##'):
+                continue
+            if line == "\n":
+                continue
+            if line == "":
+                break
+            transducer.process(unicode(line, "utf-8"))
 
-stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
+    transducer.generate()
+    transducer.make_transitions()
+    for transition in transducer.transitions:
+        print transition
 
-if options.verbose:
-    stderr_u8.write("\n" + str(transducer.state_clock) + " states and " + str(len(transducer.transitions)) + " transitions written for "+
-                     "distance " + str(options.distance) + " and base alphabet size " + str(len(transducer.alphabet)) +"\n\n")
-    stderr_u8.write("The alphabet was:\n")
-    for symbol, weight in alphabet.iteritems():
-        stderr_u8.write(symbol + "\t" + str(weight) + "\n")
-    if len(exclusions) != 0:
-        stderr_u8.write("The exclusions were:\n")
-        for symbol in exclusions:
-            stderr_u8.write(symbol + "\n")
-    print
-    if debug:
-        for message in transducer.debug_messages:
-            print message
+    stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
+
+    if options.verbose:
+        stderr_u8.write("\n" + str(transducer.state_clock) + " states and " + str(len(transducer.transitions)) + " transitions written for "+
+                        "distance " + str(options.distance) + " and base alphabet size " + str(len(transducer.alphabet)) +"\n\n")
+        stderr_u8.write("The alphabet was:\n")
+        for symbol, weight in alphabet.iteritems():
+            stderr_u8.write(symbol + "\t" + str(weight) + "\n")
+        if len(exclusions) != 0:
+            stderr_u8.write("The exclusions were:\n")
+            for symbol in exclusions:
+                stderr_u8.write(symbol + "\n")
+        print
+        if debug:
+            for message in transducer.debug_messages:
+                print message
