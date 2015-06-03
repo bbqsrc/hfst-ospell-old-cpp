@@ -76,6 +76,9 @@ parser.add_option("-e", "--epsilon", dest = "epsilon",
 parser.add_option("-d", "--distance", type = "int", dest = "distance",
                   help = "specify edit depth, default is 1",
                   metavar = "DIST")
+parser.add_option("-w", "--default-weight", type = "float", dest = "default_weight",
+                  help = "weight per correction when nothing else is specified (the default default is 1.0)",
+                  metavar = "DIST")
 parser.add_option("-s", "--swap", action = "store_true", dest="swap",
                   help = "generate swaps (as well as insertions and deletions)")
 parser.add_option("", "--no-elim", action = "store_true", dest="no_elim",
@@ -88,6 +91,7 @@ parser.add_option("", "--no-string-initial-correction", action = "store_true",
 parser.add_option("-i", "--input", dest = "inputfile",
                   help = "optional file with special edit-distance syntax",
                   metavar = "INPUT")
+parser.add_option("-o", "--output-file", dest = "outputfile", help = "output file (default is stdout)", metavar = "OUTPUT")
 parser.add_option("-a", "--alphabet", dest = "alphabetfile",
                   help = "read the alphabet from an existing optimized-lookup format transducer",
                   metavar = "ALPHABET")
@@ -96,6 +100,7 @@ parser.add_option("-v", "--verbose", action = "store_true", dest="verbose",
 parser.set_defaults(make_regex = False)
 parser.set_defaults(epsilon = '@0@')
 parser.set_defaults(distance = 1)
+parser.set_defaults(default_weight = 1.0)
 parser.set_defaults(swap = False)
 parser.set_defaults(no_elim = False)
 parser.set_defaults(no_initial = False)
@@ -105,6 +110,7 @@ parser.set_defaults(verbose = False)
 
 alphabet = {}
 exclusions = set()
+pair_info = {"edits": {}, "swaps": {}}
 
 if options.inputfile == None and options.alphabetfile == None \
         and len(args) == 0:
@@ -114,6 +120,11 @@ if len(args) > 1:
     print "Too many options!"
     sys.exit()
 
+if options.outputfile == None:
+    outputfile = codecs.getwriter('utf-8')(sys.stdout)
+else:
+    outputfile = codecs.getwriter('utf-8')(open(options.outputfile, 'w'))
+
 if options.inputfile != None:
     try:
         inputfile = open(options.inputfile)
@@ -121,6 +132,7 @@ if options.inputfile != None:
         print "Couldn't open " + options.inputfile
         sys.exit()
     while True:
+        # first the single-symbol info
         line = unicode(inputfile.readline(), 'utf-8')
         if line in ("@@\n", ""):
             break
@@ -132,11 +144,42 @@ if options.inputfile != None:
                 continue
             if '\t' in line:
                 weight = float(line.split('\t')[1])
-                symbol = linesplit('\t')[0]
+                symbol = line.split('\t')[0]
             else:
                 weight = 0.0
                 symbol = line.strip("\n")
             alphabet[symbol] = weight
+    while True:
+        # then pairs
+        line = unicode(inputfile.readline(), 'utf-8')
+        if line.startswith('##'):
+            continue
+        if line == "\n":
+            continue
+        if line == "":
+            break
+        parts = line.split('\t')
+        if len(parts) != 3:
+            raise ValueError("Got specification with " + str(len(parts)) +\
+                                 " parts, expected 3:\n" + specification)
+        weight = float(parts[2])
+        if ',' in parts[0]:
+            frompair = tuple(parts[0].split(','))
+            topair = tuple(parts[1].split(','))
+            if not (len(frompair) == len(topair) == 2):
+                raise ValueError("Got swap-specification with incorrect number "
+                                 "of comma separators:\n" + specification)
+            if (frompair, topair) not in pair_info["swaps"]:
+                pair_info["swaps"][(frompair, topair)] = weight
+            for sym in [frompair[0], frompair[1], topair[0], topair[1]]:
+                if sym != '' and sym not in alphabet:
+                    alphabet[sym] = weight
+        else:
+            if not (parts[0], parts[1]) in pair_info["edits"]:
+                pair_info["edits"][(parts[0], parts[1])] = weight
+            for sym in [parts[0], parts[1]]:
+                if sym != '' and sym not in alphabet:
+                    alphabet[sym] = weight
 
 if len(args) == 1:
     for c in unicode(args[0], 'utf-8'):
@@ -225,48 +268,36 @@ class Transducer:
         self.state_clock = self.distance + 1
         self.debug_messages = []
 
-    def process(self, specification):
-        parts = specification.split('\t')
-        if len(parts) != 3:
-            raise ValueError("Got specification with " + str(len(parts)) +\
-                                 " parts, expected 3:\n" + specification)
-        weight = float(parts[2])
-        if ',' in parts[0]:
-            frompair = tuple(parts[0].split(','))
-            topair = tuple(parts[1].split(','))
-            if not (len(frompair) == len(topair) == 2):
-                raise ValueError("Got swap-specification with incorrect number "
-                                 "of comma separators:\n" + specification)
-            if (frompair, topair) not in self.swaps:
-                self.swaps[(frompair, topair)] = weight
-        else:
-            if not (parts[0], parts[1]) in self.substitutions:
-                self.substitutions[(parts[0], parts[1])] = weight
+    def process_pair_info(self, specification):
+        for pair, weight in specification["edits"].iteritems():
+            self.substitutions[pair] = weight
+        for pairpair, weight in specification["swaps"].iteritems():
+            self.swaps[pairpair] = weight    
 
     def generate(self):
         # for substitutions and swaps that weren't defined by the user,
         # generate standard subs and swaps
         if (self.other, self.epsilon) not in self.substitutions:
-            self.substitutions[(self.other, self.epsilon)] = 1.0
+            self.substitutions[(self.other, self.epsilon)] = options.default_weight
         for symbol in self.alphabet.keys():
             if (self.other, symbol) not in self.substitutions:
-                self.substitutions[(self.other, symbol)] = 1.0 + alphabet[symbol]
+                self.substitutions[(self.other, symbol)] = options.default_weight + alphabet[symbol]
             if (self.epsilon, symbol) not in self.substitutions:
-                self.substitutions[(self.epsilon, symbol)] = 1.0 + alphabet[symbol]
+                self.substitutions[(self.epsilon, symbol)] = options.default_weight + alphabet[symbol]
             if (symbol, self.epsilon) not in self.substitutions:
-                self.substitutions[(symbol, self.epsilon)] = 1.0 + alphabet[symbol]
+                self.substitutions[(symbol, self.epsilon)] = options.default_weight + alphabet[symbol]
             for symbol2 in self.alphabet.keys():
                 if symbol == symbol2: continue
                 if ((symbol, symbol2), (symbol2, symbol)) not in self.swaps:
                     if ((symbol2, symbol), (symbol, symbol2)) in self.swaps:
                         self.swaps[((symbol, symbol2), (symbol2, symbol))] = self.swaps[((symbol2, symbol), (symbol, symbol2))]
                     else:
-                        self.swaps[((symbol, symbol2), (symbol2, symbol))] = 1.0 + alphabet[symbol] + alphabet[symbol2]
+                        self.swaps[((symbol, symbol2), (symbol2, symbol))] = options.default_weight + alphabet[symbol] + alphabet[symbol2]
                 if (symbol, symbol2) not in self.substitutions:
                     if (symbol2, symbol) in self.substitutions:
                         self.substitutions[(symbol, symbol2)] = self.substitutions[(symbol2, symbol)]
                     else:
-                        self.substitutions[(symbol, symbol2)] = 1.0 + alphabet[symbol] + alphabet[symbol2]
+                        self.substitutions[(symbol, symbol2)] = options.default_weight + alphabet[symbol] + alphabet[symbol2]
 
     def make_identities(self, state, nextstate = None):
         if nextstate is None:
@@ -347,31 +378,40 @@ class Transducer:
         self.transitions += self.make_identities(options.distance + options.no_initial)
         self.transitions.append(str(options.distance + options.no_initial) + "\t0.0")
 
-def replace_rules(alphabet, weight = 1.0):
+def replace_rules(alphabet, pair_info, weight = options.default_weight):
     corr = ' "<CORR>" '
     unk = OTHER
     corrections = "["
     # first, the empty string may become the empty string anywhere
     corrections += '"" -> \t[ "" |\n'
     for a in alphabet:
+        this_weight = weight
     # insertions
-        corrections += '\t[ "' + a + '" ' + corr + ' ]::' + str(weight) + ' |\n'
+        if ('', a) in pair_info["edits"]:
+            this_weight = pair_info["edits"][('', a)] + alphabet[a]
+        corrections += '\t[ "' + a + '" ' + corr + ' ]::' + str(this_weight) + ' |\n'
     # trim the extra left by the last pass
     corrections = corrections[:-3]
     corrections += ' ] ,,\n'
     for a in alphabet:
+        this_weight = weight
     # the left-hand side of the rule
         corrections += '"' + a + '" ->\t[ '
     # identity
         corrections += '"' + a + '" |\n'
     # deletion
-        corrections += '\t[ ""' + corr + ']::' + str(weight) + ' |\n'
+        if (a, '') in pair_info["edits"]:
+            this_weight = pair_info["edits"][(a, '')]
+        corrections += '\t[ ""' + corr + ']::' + str(this_weight) + ' |\n'
         for b in alphabet:
+            this_weight = weight + alphabet[b]
         #substitutions
             if a == b:
                 # we don't handle identities here
                 continue
-            corrections += '\t[ "' + b + '"' + corr + ']::' + str(weight) + ' |\n'
+            if (a, b) in pair_info["edits"]:
+                this_weight = pair_info["edits"][(a, b)] + alphabet[b]
+            corrections += '\t[ "' + b + '"' + corr + ']::' + str(this_weight) + ' |\n'
         corrections = corrections[:-3]
         corrections += ' ] ,,\n'
     # now the unknown symbol
@@ -385,29 +425,18 @@ def replace_rules(alphabet, weight = 1.0):
         
 
 if options.make_regex:
-    corrections = replace_rules(alphabet)
+    corrections = replace_rules(alphabet, pair_info)
     corr_counter = '[[ [? - "<CORR>"]* ( "<CORR>":0 ) [? - "<CORR>"]* ]^' + str(options.distance) + ']'
     corr_eater = '[[? - "<CORR>"]*]'
     full_regex = corr_eater + '\n.o.\n' + corrections.encode('utf-8') + '\n.o.\n' + corr_counter + ";"
-    print full_regex
+    outputfile.write(full_regex + '\n')
 else:
     transducer = Transducer(alphabet)
-
-    if options.inputfile != None:
-        while True:
-            line = inputfile.readline()
-            if line.startswith('##'):
-                continue
-            if line == "\n":
-                continue
-            if line == "":
-                break
-            transducer.process(unicode(line, "utf-8"))
-
+    transducer.process_pair_info(pair_info)
     transducer.generate()
     transducer.make_transitions()
     for transition in transducer.transitions:
-        print transition
+        outputfile.write(transition + '\n')
 
     stderr_u8 = codecs.getwriter('utf-8')(sys.stderr)
 
