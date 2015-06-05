@@ -30,7 +30,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <unordered_map>
+#include <map>
 #include <sstream>
 #include <cctype>
 #include <cwctype>
@@ -44,7 +44,7 @@
 using hfst_ol::ZHfstOspeller;
 using hfst_ol::Transducer;
 
-typedef std::unordered_map<std::string,bool> valid_words_t;
+typedef std::map<std::string,bool> valid_words_t;
 valid_words_t valid_words;
 
 struct word_t {

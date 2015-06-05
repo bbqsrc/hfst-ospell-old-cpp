@@ -61,7 +61,7 @@ hfst_ospell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 
 hfst_ospell_office_SOURCES=office.cpp
 hfst_ospell_office_LDADD=libhfstospell.la
-hfst_ospell_office_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) -std=c++0x $(PKG_CXXFLAGS)
+hfst_ospell_office_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
 
 if EXTRA_DEMOS
 hfst_ospell_norvig_SOURCES=main-norvig.cc
