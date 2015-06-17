@@ -142,7 +142,7 @@ bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 	}
 
 	for (size_t i=0, e=cw ; i<e ; ++i) {
-		typename valid_words_t::iterator it = valid_words.find(words[i].buffer);
+		valid_words_t::iterator it = valid_words.find(words[i].buffer);
 
 		if (it == valid_words.end()) {
 			bool valid = speller.spell(words[i].buffer);
@@ -161,7 +161,7 @@ bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 				++cw;
 
 				// Don't try again if the lower cased variant has already been tried
-				typename valid_words_t::iterator itl = valid_words.find(buffer);
+				valid_words_t::iterator itl = valid_words.find(buffer);
 				if (itl != valid_words.end()) {
 					it->second = itl->second;
 					it = itl;
