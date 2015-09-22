@@ -767,7 +767,7 @@ CorrectionQueue Speller::correct(char * line, int nbest,
                 if (nbest > 0) {
                     nbest_queue.push(it->second);
                     if (nbest_queue.size() > nbest) {
-                        nbest_queue.pop_back();
+                        nbest_queue.pop();
                     }
                 }
             }
@@ -775,8 +775,14 @@ CorrectionQueue Speller::correct(char * line, int nbest,
         for(StringWeightVector::const_iterator it = results->begin();
               // Then collect the results
               it != results->end(); ++it) {
-            if (is_under_weight_limit(it->second) && (nbest == 0 || it->second <= nbest_queue.get_highest())) {
+            if (it->second <= limit && (nbest == 0 || // we either don't have an nbest condition or
+                                        (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
+                                         correction_queue.size() < nbest &&
+                                         nbest_queue.size() > 0))) { // number of results
                 correction_queue.push(StringWeightPair(it->first, it->second));
+                if (nbest != 0) {
+                    nbest_queue.pop();
+                }
             }
         }
         return correction_queue;

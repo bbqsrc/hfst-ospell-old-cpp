@@ -107,15 +107,6 @@ public:
     bool operator() (StringPairWeightPair lhs, StringPairWeightPair rhs);
 };
 
-class WeightComparison
-{
-    bool reverse;
-public:
-    WeightComparison(bool reverse_result=true):
-        reverse(reverse_result) {}
-    bool operator() (Weight lhs, Weight rhs);
-};
-
 typedef std::priority_queue<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> CorrectionQueue;
