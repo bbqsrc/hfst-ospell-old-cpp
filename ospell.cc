@@ -858,7 +858,6 @@ void Speller::adjust_weight_limits(int nbest, Weight beam)
 {
     if (limiting == Nbest && nbest_queue.size() >= nbest) {
         limit = nbest_queue.get_lowest();
-        std::cerr << "limiting is nbest, adjusted to " << limit << std::endl;
     } else if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest) {
         limit = std::min(limit, nbest_queue.get_lowest());
     } else if (limiting == Beam && best_suggestion < std::numeric_limits<Weight>::max()) {
