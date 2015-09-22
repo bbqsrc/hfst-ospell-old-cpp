@@ -57,6 +57,31 @@ StringPairWeightComparison::operator()(StringPairWeightPair lhs,
         return (lhs.second > rhs.second);
     }
 }
+
+void WeightQueue::push(Weight w)
+{
+    for (WeightQueue::iterator it = begin(); it != end(); ++it) {
+        if (*it > w) {
+            insert(it, w);
+            return;
+        }
+    }
+    push_back(w);
+}
+
+void WeightQueue::pop(void)
+{
+    pop_back();
+}
+
+Weight WeightQueue::get_lowest(void)
+{
+    if (size() == 0) {
+        return std::numeric_limits<Weight>::max();
+    }
+    return front();
+}
+
 Transducer::Transducer(FILE* f):
     header(TransducerHeader(f)),
     alphabet(TransducerAlphabet(f, header.symbol_count())),
@@ -730,7 +755,7 @@ CorrectionQueue Speller::correct(char * line, int nbest,
         for(StringWeightVector::const_iterator it = results->begin();
               // Then collect the results
               it != results->end(); ++it) {
-            if (it->second <= limit && (nbest == 0 || it->second <= nbest_queue.top())) {
+            if (it->second <= limit && (nbest == 0 || it->second <= nbest_queue.get_lowest())) {
                 correction_queue.push(StringWeightPair(it->first, it->second));
             }
         }
@@ -795,7 +820,7 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     for (it = corrections.begin(); it != corrections.end(); ++it) {
         if (it->second <= limit && // we're not over our weight limit and
             (nbest == 0 || // we either don't have an nbest condition or
-             (it->second <= nbest_queue.top() && // we're below the nbest weight and
+             (it->second <= nbest_queue.get_lowest() && // we're below the nbest weight and
               correction_queue.size() < nbest_queue.size()))) { // number of results
             correction_queue.push(StringWeightPair(it->first, it->second));
         }
@@ -832,15 +857,16 @@ void Speller::set_limiting_behaviour(int nbest, Weight maxweight, Weight beam)
 void Speller::adjust_weight_limits(int nbest, Weight beam)
 {
     if (limiting == Nbest && nbest_queue.size() >= nbest) {
-        limit = nbest_queue.top();
+        limit = nbest_queue.get_lowest();
+        std::cerr << "limiting is nbest, adjusted to " << limit << std::endl;
     } else if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest) {
-        limit = std::min(limit, nbest_queue.top());
+        limit = std::min(limit, nbest_queue.get_lowest());
     } else if (limiting == Beam && best_suggestion < std::numeric_limits<Weight>::max()) {
         limit = best_suggestion + beam;
     } else if (limiting == NbestBeam) {
         if (best_suggestion < std::numeric_limits<Weight>::max()) {
             if (nbest_queue.size() >= nbest) {
-                limit = std::min(best_suggestion + beam, nbest_queue.top());
+                limit = std::min(best_suggestion + beam, nbest_queue.get_lowest());
             } else {
                 limit = best_suggestion + beam;
             }
@@ -854,7 +880,7 @@ void Speller::adjust_weight_limits(int nbest, Weight beam)
             limit = std::min(limit, best_suggestion + beam);
         }
         if (nbest_queue.size() >= nbest) {
-            limit = std::min(limit, nbest_queue.top());
+            limit = std::min(limit, nbest_queue.get_lowest());
         }
     }
 }

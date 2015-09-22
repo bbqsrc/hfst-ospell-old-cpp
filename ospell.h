@@ -19,6 +19,7 @@
 #include <string>
 #include <deque>
 #include <queue>
+#include <list>
 #include <stdexcept>
 #include <limits>
 #include "hfst-ol.h"
@@ -118,7 +119,13 @@ typedef std::priority_queue<StringWeightPair,
 typedef std::priority_queue<StringPairWeightPair,
                             std::vector<StringPairWeightPair>,
                             StringPairWeightComparison> AnalysisCorrectionQueue;
-typedef std::priority_queue<Weight> WeightQueue;
+
+struct WeightQueue: public std::list<Weight>
+{
+    void push(Weight w); // add a new weight
+    void pop(void); // delete the biggest weight
+    Weight get_lowest(void);
+};
 
 //! Internal class for Transducer processing.
 
