@@ -107,6 +107,15 @@ public:
     bool operator() (StringPairWeightPair lhs, StringPairWeightPair rhs);
 };
 
+class WeightComparison
+{
+    bool reverse;
+public:
+    WeightComparison(bool reverse_result=true):
+        reverse(reverse_result) {}
+    bool operator() (Weight lhs, Weight rhs);
+};
+
 typedef std::priority_queue<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> CorrectionQueue;
@@ -401,9 +410,17 @@ public:
     //!
     //! travers epsilons in language model
     void lexicon_epsilons(void);
+    bool has_lexicon_epsilons(void) const
+        {
+            return lexicon->has_epsilons_or_flags(next_node.lexicon_state + 1);
+        }
     //!
     //! traverse epsilons in error modle
     void mutator_epsilons(void);
+    bool has_mutator_epsilons(void) const
+        {
+            return mutator->has_transitions(next_node.mutator_state + 1, 0);
+        }
     //!
     //! traverse along input
     void consume_input(SymbolNumber input_sym = NO_SYMBOL);
@@ -422,6 +439,7 @@ public:
                             Weight maxweight = -1.0,
                             Weight beam = -1.0);
 
+    bool is_under_weight_limit(Weight w);
     void set_limiting_behaviour(int nbest, Weight maxweight, Weight beam);
     void adjust_weight_limits(int nbest, Weight beam);
     

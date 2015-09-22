@@ -308,7 +308,7 @@ void Speller::lexicon_epsilons(void)
     STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL) {
-        if (i_s.weight <= limit) {
+        if (is_under_weight_limit(i_s.weight)) {
             if (lexicon->transitions.input_symbol(next) == 0) {
                 queue.push_back(next_node.update_lexicon(0, // Update with epsilon because we want
                                                          // the surface tape for correcting
@@ -346,7 +346,7 @@ void Speller::lexicon_consume(void)
                                                  input[input_state]);
 
     while (i_s.symbol != NO_SYMBOL) {
-        if (i_s.weight <= limit) {
+        if (is_under_weight_limit(i_s.weight)) {
             queue.push_back(next_node.update(
                                 i_s.symbol,
                                 input_state + 1,
@@ -394,7 +394,7 @@ void Speller::mutator_epsilons(void)
                 alphabet_translator[mutator_i_s.symbol]);
         
             while (lexicon_i_s.symbol != NO_SYMBOL) {
-                if (lexicon_i_s.weight + mutator_i_s.weight <= limit) {
+                if (is_under_weight_limit(lexicon_i_s.weight + mutator_i_s.weight)) {
                     queue.push_back(next_node.update(
                                         alphabet_translator[mutator_i_s.symbol],
                                         mutator_i_s.index,
@@ -412,6 +412,14 @@ void Speller::mutator_epsilons(void)
     }
 }
 
+bool Speller::is_under_weight_limit(Weight w)
+{
+    if (limiting == Nbest) {
+        return w < limit;
+    }
+    return w <= limit;
+}
+
 void Speller::consume_input(SymbolNumber input_sym)
 {
     unsigned int input_state = next_node.input_state;
@@ -424,11 +432,13 @@ void Speller::consume_input(SymbolNumber input_sym)
     }
     if (!mutator->has_transitions(next_node.mutator_state + 1,
                                   input_sym)) {
+        // need to check whether there are other or id transitions
         // no suitable symbols
         return;
     }
 
-    
+
+    // these functions need to understand other and id
     TransitionTableIndex next_m = mutator->next(next_node.mutator_state,
                                                 input_sym);
     
@@ -438,13 +448,15 @@ void Speller::consume_input(SymbolNumber input_sym)
     while (mutator_i_s.symbol != NO_SYMBOL) {
 
         if (mutator_i_s.symbol == 0) {
-            
+
+            // nothing special for id and other needed
             queue.push_back(next_node.update(0,
                                              input_state + 1,
                                              mutator_i_s.index,
                                              next_node.lexicon_state,
                                              mutator_i_s.weight));
         } else {
+            // needs to know about id and other
             if (!lexicon->has_transitions(
                     next_node.lexicon_state + 1,
                     alphabet_translator[mutator_i_s.symbol])) {
@@ -463,7 +475,7 @@ void Speller::consume_input(SymbolNumber input_sym)
 
         
             while (lexicon_i_s.symbol != NO_SYMBOL) {
-                if (lexicon_i_s.weight + mutator_i_s.weight <= limit) {
+                if (is_under_weight_limit(lexicon_i_s.weight + mutator_i_s.weight <= limit)) {
                     queue.push_back(
                         next_node.update(alphabet_translator[mutator_i_s.symbol],
                                          input_state + 1,
@@ -755,7 +767,7 @@ CorrectionQueue Speller::correct(char * line, int nbest,
                 if (nbest > 0) {
                     nbest_queue.push(it->second);
                     if (nbest_queue.size() > nbest) {
-                        nbest_queue.pop();
+                        nbest_queue.pop_back();
                     }
                 }
             }
@@ -763,7 +775,7 @@ CorrectionQueue Speller::correct(char * line, int nbest,
         for(StringWeightVector::const_iterator it = results->begin();
               // Then collect the results
               it != results->end(); ++it) {
-            if (it->second <= limit && (nbest == 0 || it->second <= nbest_queue.get_lowest())) {
+            if (is_under_weight_limit(it->second) && (nbest == 0 || it->second <= nbest_queue.get_highest())) {
                 correction_queue.push(StringWeightPair(it->first, it->second));
             }
         }
@@ -828,9 +840,13 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     for (it = corrections.begin(); it != corrections.end(); ++it) {
         if (it->second <= limit && // we're not over our weight limit and
             (nbest == 0 || // we either don't have an nbest condition or
-             (it->second <= nbest_queue.get_lowest() && // we're below the nbest weight and
-              correction_queue.size() < nbest_queue.size()))) { // number of results
+             (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
+              correction_queue.size() < nbest &&
+              nbest_queue.size() > 0))) { // number of results
             correction_queue.push(StringWeightPair(it->first, it->second));
+            if (nbest != 0) {
+                nbest_queue.pop();
+            }
         }
     }
     return correction_queue;
