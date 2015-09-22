@@ -124,8 +124,8 @@ struct WeightQueue: public std::list<Weight>
 {
     void push(Weight w); // add a new weight
     void pop(void); // delete the biggest weight
-    Weight get_lowest(void);
-    Weight get_highest(void);
+    Weight get_lowest(void) const;
+    Weight get_highest(void) const;
 };
 
 //! Internal class for Transducer processing.
@@ -430,7 +430,7 @@ public:
                             Weight maxweight = -1.0,
                             Weight beam = -1.0);
 
-    bool is_under_weight_limit(Weight w);
+    bool is_under_weight_limit(Weight w) const;
     void set_limiting_behaviour(int nbest, Weight maxweight, Weight beam);
     void adjust_weight_limits(int nbest, Weight beam);
     

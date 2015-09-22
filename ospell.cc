@@ -74,7 +74,7 @@ void WeightQueue::pop(void)
     pop_back();
 }
 
-Weight WeightQueue::get_lowest(void)
+Weight WeightQueue::get_lowest(void) const
 {
     if (size() == 0) {
         return std::numeric_limits<Weight>::max();
@@ -82,7 +82,7 @@ Weight WeightQueue::get_lowest(void)
     return front();
 }
 
-Weight WeightQueue::get_highest(void)
+Weight WeightQueue::get_highest(void) const
 {
     if (size() == 0) {
         return std::numeric_limits<Weight>::max();
@@ -412,7 +412,7 @@ void Speller::mutator_epsilons(void)
     }
 }
 
-bool Speller::is_under_weight_limit(Weight w)
+bool Speller::is_under_weight_limit(Weight w) const
 {
     if (limiting == Nbest) {
         return w < limit;
