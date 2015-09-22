@@ -125,6 +125,7 @@ struct WeightQueue: public std::list<Weight>
     void push(Weight w); // add a new weight
     void pop(void); // delete the biggest weight
     Weight get_lowest(void);
+    Weight get_highest(void);
 };
 
 //! Internal class for Transducer processing.

@@ -82,6 +82,14 @@ Weight WeightQueue::get_lowest(void)
     return front();
 }
 
+Weight WeightQueue::get_highest(void)
+{
+    if (size() == 0) {
+        return std::numeric_limits<Weight>::max();
+    }
+    return back();
+}
+
 Transducer::Transducer(FILE* f):
     header(TransducerHeader(f)),
     alphabet(TransducerAlphabet(f, header.symbol_count())),
@@ -857,7 +865,7 @@ void Speller::set_limiting_behaviour(int nbest, Weight maxweight, Weight beam)
 void Speller::adjust_weight_limits(int nbest, Weight beam)
 {
     if (limiting == Nbest && nbest_queue.size() >= nbest) {
-        limit = nbest_queue.get_lowest();
+        limit = nbest_queue.get_highest();
     } else if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest) {
         limit = std::min(limit, nbest_queue.get_lowest());
     } else if (limiting == Beam && best_suggestion < std::numeric_limits<Weight>::max()) {
