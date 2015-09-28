@@ -23,7 +23,7 @@ namespace hfst_ol {
 int nByte_utf8(unsigned char c)
 {
     /* utility function to determine how many bytes to peel off as
-       a utf-8 character for representing as OTHER */
+       a utf-8 character for representing as unknown symbol */
     if (c <= 127) {
         return 1;
     } else if ( (c & (128 + 64 + 32 + 16)) == (128 + 64 + 32 + 16) ) {
@@ -97,9 +97,7 @@ Transducer::Transducer(FILE* f):
     encoder(keys,header.input_symbol_count()),
     indices(f,header.index_table_size()),
     transitions(f,header.target_table_size())
-        {
-            set_symbol_table();
-        }
+    {}
 
 Transducer::Transducer(char* raw):
     header(TransducerHeader(&raw)),
@@ -108,57 +106,7 @@ Transducer::Transducer(char* raw):
     encoder(keys,header.input_symbol_count()),
     indices(&raw,header.index_table_size()),
     transitions(&raw,header.target_table_size())
-        {
-            set_symbol_table();
-        }
-
-
-bool InputString::initialize(Encoder * encoder,
-                             char * input,
-                             SymbolNumber other)
-{
-    // Initialize the symbol vector to the tokenization given by encoder.
-    // In the case of tokenization failure, valid utf-8 characters
-    // are tokenized as "other" and tokenization is reattempted from
-    // such a character onwards. The empty string is tokenized as an
-    // empty vector; there is no end marker.
-    
-    s.clear();
-    SymbolNumber k = NO_SYMBOL;
-    char ** inpointer = &input;
-    char * oldpointer;
-    
-    while (**inpointer != '\0') {
-        oldpointer = *inpointer;
-        k = encoder->find_key(inpointer);
-    
-        if (k == NO_SYMBOL) { // no tokenization from alphabet
-            int n = nByte_utf8(static_cast<unsigned char>(*oldpointer));
-            if (n == 0) {
-                return false; // can't parse utf-8 character, admit failure
-            } else {
-                if (other == NO_SYMBOL) {
-                    return false; // if we don't have an "other" symbol
-                }
-                oldpointer += n;
-                *inpointer = oldpointer;
-                s.push_back(other);
-                continue;
-            }
-        } else {
-            s.push_back(k);
-        }
-    }
-    
-    return true;
-}
-
-unsigned int
-InputString::len()
-{
-    return s.size();
-}
-
+    {}
 
 TreeNode TreeNode::update_lexicon(SymbolNumber symbol,
                                   TransitionTableIndex next_lexicon,
@@ -176,15 +124,10 @@ TreeNode TreeNode::update_lexicon(SymbolNumber symbol,
                     this->weight + weight);
 }
 
-TreeNode TreeNode::update_mutator(SymbolNumber symbol,
-                                  TransitionTableIndex next_mutator,
+TreeNode TreeNode::update_mutator(TransitionTableIndex next_mutator,
                                   Weight weight)
 {
-    SymbolVector str(this->string);
-    if (symbol != 0) {
-        str.push_back(symbol);
-    }
-    return TreeNode(str,
+    return TreeNode(this->string,
                     this->input_state,
                     next_mutator,
                     this->lexicon_state,
@@ -276,18 +219,19 @@ bool TreeNode::try_compatible_with(FlagDiacriticOperation op)
 Speller::Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr):
         mutator(mutator_ptr),
         lexicon(lexicon_ptr),
-        input(InputString()),
+        input(),
         queue(TreeNodeQueue()),
         next_node(FlagDiacriticState(get_state_size(), 0)),
         limit(std::numeric_limits<Weight>::max()),
         alphabet_translator(SymbolVector()),
         operations(lexicon->get_operations()),
-        symbol_table(lexicon->get_symbol_table()),
-        cache(mutator->get_symbol_table()->size(), CacheContainer()),
-        limiting(None)
+        limiting(None),
+        mode(Correct)
             {
-                if (mutator != 0) {
+                if (mutator != NULL) {
                     build_alphabet_translator();
+                    cache = std::vector<CacheContainer>(
+                        mutator->get_key_table()->size(), CacheContainer());
                 }
             }
 
@@ -308,10 +252,9 @@ void Speller::lexicon_epsilons(void)
     STransition i_s = lexicon->take_epsilons_and_flags(next);
     
     while (i_s.symbol != NO_SYMBOL) {
-        if (is_under_weight_limit(i_s.weight)) {
+        if (is_under_weight_limit(next_node.weight + i_s.weight)) {
             if (lexicon->transitions.input_symbol(next) == 0) {
-                queue.push_back(next_node.update_lexicon(0, // Update with epsilon because we want
-                                                         // the surface tape for correcting
+                queue.push_back(next_node.update_lexicon((mode == Correct) ? 0 : i_s.symbol,
                                                          i_s.index,
                                                          i_s.weight));
             } else {
@@ -334,30 +277,61 @@ void Speller::lexicon_epsilons(void)
 void Speller::lexicon_consume(void)
 {
     unsigned int input_state = next_node.input_state;
-    if (input_state >= input.len()||
-        !lexicon->has_transitions(
-            next_node.lexicon_state + 1, input[input_state])) {
+    if (input_state >= input.size()) {
+        // no more input
         return;
     }
+    SymbolNumber this_input = alphabet_translator[input[input_state]];
+    if(!lexicon->has_transitions(
+           next_node.lexicon_state + 1, this_input)) {
+        // we have no regular transitions for this
+        if (this_input >= lexicon->get_alphabet()->get_orig_symbol_count()) {
+            // this input was not originally in the alphabet, so unknown or identity
+            // may apply
+            if (lexicon->get_unknown() != NO_SYMBOL &&
+                lexicon->has_transitions(next_node.lexicon_state + 1,
+                                         lexicon->get_unknown())) {
+                queue_lexicon_arcs(lexicon->get_unknown(),
+                                   next_node.mutator_state,
+                                   0.0, 1);
+            }
+            if (lexicon->get_identity() != NO_SYMBOL &&
+                lexicon->has_transitions(next_node.lexicon_state + 1,
+                                         lexicon->get_identity())) {
+                queue_lexicon_arcs(lexicon->get_identity(),
+                                   next_node.mutator_state,
+                                   0.0, 1);
+            }
+        }
+        return;
+    }
+    queue_lexicon_arcs(this_input,
+                       next_node.mutator_state, 0.0, 1);
+}
 
+void Speller::queue_lexicon_arcs(SymbolNumber input_sym,
+                                 unsigned int mutator_state,
+                                 Weight mutator_weight,
+                                 int input_increment)
+{
     TransitionTableIndex next = lexicon->next(next_node.lexicon_state,
-                                              input[input_state]);
-    STransition i_s = lexicon->take_non_epsilons(next,
-                                                 input[input_state]);
-
+                                              input_sym);
+    STransition i_s = lexicon->take_non_epsilons(next, input_sym);
     while (i_s.symbol != NO_SYMBOL) {
-        if (is_under_weight_limit(i_s.weight)) {
+        if (i_s.symbol == lexicon->get_identity()) {
+            i_s.symbol = input[next_node.input_state];
+        }
+        if (is_under_weight_limit(next_node.weight + i_s.weight + mutator_weight)) {
             queue.push_back(next_node.update(
-                                i_s.symbol,
-                                input_state + 1,
-                                next_node.mutator_state,
+                                (mode == Correct) ? input_sym : i_s.symbol,
+                                next_node.input_state + input_increment,
+                                mutator_state,
                                 i_s.index,
-                                i_s.weight));
+                                i_s.weight + mutator_weight));
         }
         ++next;
-        i_s = lexicon->take_non_epsilons(next, input[input_state]);
+        i_s = lexicon->take_non_epsilons(next, input_sym);
     }
-    
 }
 
 void Speller::mutator_epsilons(void)
@@ -370,47 +344,45 @@ void Speller::mutator_epsilons(void)
    
     while (mutator_i_s.symbol != NO_SYMBOL) {
         if (mutator_i_s.symbol == 0) {
-            if (mutator_i_s.weight > limit) {
-                ++next_m;
-                mutator_i_s = mutator->take_epsilons(next_m);
-                continue;
+            if (is_under_weight_limit(
+                    next_node.weight + mutator_i_s.weight)) {
+                queue.push_back(next_node.update_mutator(mutator_i_s.index,
+                                                         mutator_i_s.weight));
             }
-            queue.push_back(next_node.update_mutator(mutator_i_s.symbol,
-                                                     mutator_i_s.index,
-                                                     mutator_i_s.weight));
-        } else {
-            if (!lexicon->has_transitions(
-                    next_node.lexicon_state + 1,
-                    alphabet_translator[mutator_i_s.symbol])) {
-                ++next_m;
-                mutator_i_s = mutator->take_epsilons(next_m);
-                continue;
-            }
-            TransitionTableIndex next_l = lexicon->next(
-                next_node.lexicon_state,
-                alphabet_translator[mutator_i_s.symbol]);
-            STransition lexicon_i_s = lexicon->take_non_epsilons(
-                next_l,
-                alphabet_translator[mutator_i_s.symbol]);
-        
-            while (lexicon_i_s.symbol != NO_SYMBOL) {
-                if (is_under_weight_limit(lexicon_i_s.weight + mutator_i_s.weight)) {
-                    queue.push_back(next_node.update(
-                                        alphabet_translator[mutator_i_s.symbol],
-                                        mutator_i_s.index,
-                                        lexicon_i_s.index,
-                                        lexicon_i_s.weight + mutator_i_s.weight));
+            ++next_m;
+            mutator_i_s = mutator->take_epsilons(next_m);
+            continue;
+        } else if (!lexicon->has_transitions(
+                       next_node.lexicon_state + 1,
+                       alphabet_translator[mutator_i_s.symbol])) {
+            // we have no regular transitions for this
+            if (alphabet_translator[mutator_i_s.symbol] >= lexicon->get_alphabet()->get_orig_symbol_count()) {
+                // this input was not originally in the alphabet, so unknown or identity
+                // may apply
+                if (lexicon->get_unknown() != NO_SYMBOL &&
+                    lexicon->has_transitions(next_node.lexicon_state + 1,
+                                             lexicon->get_unknown())) {
+                    queue_lexicon_arcs(lexicon->get_unknown(),
+                                       mutator_i_s.index, mutator_i_s.weight);
                 }
-                ++next_l;
-                lexicon_i_s = lexicon->take_non_epsilons(
-                    next_l,
-                    alphabet_translator[mutator_i_s.symbol]);
+                if (lexicon->get_identity() != NO_SYMBOL &&
+                    lexicon->has_transitions(next_node.lexicon_state + 1,
+                                             lexicon->get_identity())) {
+                    queue_lexicon_arcs(lexicon->get_identity(),
+                                       mutator_i_s.index, mutator_i_s.weight);
+                }
             }
+            ++next_m;
+            mutator_i_s = mutator->take_epsilons(next_m);
+            continue;
         }
+        queue_lexicon_arcs(alphabet_translator[mutator_i_s.symbol],
+                           mutator_i_s.index, mutator_i_s.weight);
         ++next_m;
         mutator_i_s = mutator->take_epsilons(next_m);
     }
 }
+
 
 bool Speller::is_under_weight_limit(Weight w) const
 {
@@ -420,75 +392,78 @@ bool Speller::is_under_weight_limit(Weight w) const
     return w <= limit;
 }
 
-void Speller::consume_input(SymbolNumber input_sym)
+void Speller::consume_input()
 {
-    unsigned int input_state = next_node.input_state;
-    if (input_sym == NO_SYMBOL) {
-        // look in the input tape
-        if (input_state >= input.len()) {
-            return; // not enough input to consume or no suitable transitions
-        }
-        input_sym = input[input_state];
+    if (next_node.input_state >= input.size()) {
+        return; // not enough input to consume
     }
+    SymbolNumber input_sym = input[next_node.input_state];
     if (!mutator->has_transitions(next_node.mutator_state + 1,
                                   input_sym)) {
-        // need to check whether there are other or id transitions
-        // no suitable symbols
-        return;
-    }
-
-
-    // these functions need to understand other and id
-    TransitionTableIndex next_m = mutator->next(next_node.mutator_state,
-                                                input_sym);
-    
-    STransition mutator_i_s = mutator->take_non_epsilons(next_m,
-                                                         input_sym);
-    
-    while (mutator_i_s.symbol != NO_SYMBOL) {
-
-        if (mutator_i_s.symbol == 0) {
-
-            // nothing special for id and other needed
-            queue.push_back(next_node.update(0,
-                                             input_state + 1,
-                                             mutator_i_s.index,
-                                             next_node.lexicon_state,
-                                             mutator_i_s.weight));
-        } else {
-            // needs to know about id and other
-            if (!lexicon->has_transitions(
-                    next_node.lexicon_state + 1,
-                    alphabet_translator[mutator_i_s.symbol])) {
-                ++next_m;
-                mutator_i_s = mutator->take_non_epsilons(next_m,
-                                                         input_sym);
-                continue;
+        // we have no regular transitions for this
+        if (input_sym >= mutator->get_alphabet()->get_orig_symbol_count()) {
+            // this input was not originally in the alphabet, so unknown or identity
+            // may apply
+            if (mutator->get_identity() != NO_SYMBOL &&
+                mutator->has_transitions(next_node.mutator_state + 1,
+                                         mutator->get_identity())) {
+                queue_mutator_arcs(mutator->get_identity());
             }
-            TransitionTableIndex next_l = lexicon->next(
-                next_node.lexicon_state,
-                alphabet_translator[mutator_i_s.symbol]);
-        
-            STransition lexicon_i_s = lexicon->take_non_epsilons(
-                next_l,
-                alphabet_translator[mutator_i_s.symbol]);
-
-        
-            while (lexicon_i_s.symbol != NO_SYMBOL) {
-                if (is_under_weight_limit(lexicon_i_s.weight + mutator_i_s.weight <= limit)) {
-                    queue.push_back(
-                        next_node.update(alphabet_translator[mutator_i_s.symbol],
-                                         input_state + 1,
-                                         mutator_i_s.index,
-                                         lexicon_i_s.index,
-                                         lexicon_i_s.weight + mutator_i_s.weight));
-                }
-                ++next_l;
-                lexicon_i_s = lexicon->take_non_epsilons(
-                    next_l,
-                    alphabet_translator[mutator_i_s.symbol]);
+            if (mutator->get_unknown() != NO_SYMBOL &&
+                mutator->has_transitions(next_node.mutator_state + 1,
+                                         mutator->get_unknown())) {
+                queue_mutator_arcs(lexicon->get_unknown());
             }
         }
+    } else {
+        queue_mutator_arcs(input_sym);
+    }
+}
+
+void Speller::queue_mutator_arcs(SymbolNumber input_sym)
+{
+    TransitionTableIndex next_m = mutator->next(next_node.mutator_state,
+                                                input_sym);
+    STransition mutator_i_s = mutator->take_non_epsilons(next_m,
+                                                         input_sym);
+    while (mutator_i_s.symbol != NO_SYMBOL) {
+        if (mutator_i_s.symbol == 0) {
+            if (is_under_weight_limit(
+                    next_node.weight + mutator_i_s.weight)) {
+                queue.push_back(next_node.update(0, next_node.input_state + 1,
+                                                 mutator_i_s.index,
+                                                 next_node.lexicon_state,
+                                                 mutator_i_s.weight));
+            }
+            ++next_m;
+            mutator_i_s = mutator->take_non_epsilons(next_m, input_sym);
+            continue;
+        } else if (!lexicon->has_transitions(
+                    next_node.lexicon_state + 1,
+                    alphabet_translator[mutator_i_s.symbol])) {
+                // we have no regular transitions for this
+                if (alphabet_translator[mutator_i_s.symbol] >= lexicon->get_alphabet()->get_orig_symbol_count()) {
+                    // this input was not originally in the alphabet, so unknown or identity
+                    // may apply
+                    if (lexicon->get_unknown() != NO_SYMBOL &&
+                        lexicon->has_transitions(next_node.lexicon_state + 1,
+                                                 lexicon->get_unknown())) {
+                        queue_lexicon_arcs(lexicon->get_unknown(),
+                                           mutator_i_s.index, mutator_i_s.weight, 1);
+                    }
+                    if (lexicon->get_identity() != NO_SYMBOL &&
+                        lexicon->has_transitions(next_node.lexicon_state + 1,
+                                                 lexicon->get_identity())) {
+                        queue_lexicon_arcs(lexicon->get_identity(),
+                                           mutator_i_s.index, mutator_i_s.weight, 1);
+                    }
+                }
+                ++next_m;
+                mutator_i_s = mutator->take_non_epsilons(next_m, input_sym);
+                continue;
+        }
+        queue_lexicon_arcs(alphabet_translator[mutator_i_s.symbol],
+                           mutator_i_s.index, mutator_i_s.weight, 1);
         ++next_m;
         mutator_i_s = mutator->take_non_epsilons(next_m,
                                                  input_sym);
@@ -531,16 +506,16 @@ Transducer::get_state_size()
     return alphabet.get_state_size();
 }
 
-std::vector<const char*>*
-Transducer::get_symbol_table()
+SymbolNumber
+Transducer::get_unknown() const
 {
-    return &symbol_table;
+    return alphabet.get_unknown();
 }
 
 SymbolNumber
-Transducer::get_other()
+Transducer::get_identity() const
 {
-    return alphabet.get_other();
+    return alphabet.get_identity();
 }
 
 TransducerAlphabet*
@@ -595,7 +570,7 @@ bool Transducer::has_non_epsilons_or_flags(const TransitionTableIndex i)
         return((this_input != 0 && this_input != NO_SYMBOL) &&
                !is_flag(this_input));
     } else {
-        SymbolNumber max_symbol = get_symbol_table()->size();
+        SymbolNumber max_symbol = get_key_table()->size();
         for (SymbolNumber sym = 1; sym < max_symbol; ++sym) {
             if (indices.input_symbol(i + sym) == sym) {
                 return true;
@@ -655,17 +630,6 @@ Weight Transducer::final_weight(const TransitionTableIndex i) const
     }
 }
 
-void Transducer::set_symbol_table(void)
-{
-    for(KeyTable::iterator it = keys->begin();
-        it != keys->end();
-        ++it)
-    {
-        const char * key_name = it->c_str();
-        symbol_table.push_back(key_name);
-    }
-}
-
 bool
 Transducer::is_flag(const SymbolNumber symbol)
 {
@@ -679,10 +643,43 @@ Transducer::is_weighted(void)
 }
 
 
-AnalysisQueue Speller::analyse(char * line, int /* nbest */)
+AnalysisQueue Speller::analyse(char * line, int nbest)
 {
-    return lexicon->lookup(line);
+    mode = Lookup;
+    if (!init_input(line)) {
+        return AnalysisQueue();
+    }
+    std::map<std::string, Weight> outputs;
+    AnalysisQueue analyses;
+    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    queue.assign(1, start_node);
+    while (queue.size() > 0) {
+        next_node = queue.back();
+        queue.pop_back();
+        // Final states
+        if (next_node.input_state == input.size() &&
+            lexicon->is_final(next_node.lexicon_state)) {
+            Weight weight = next_node.weight +
+                lexicon->final_weight(next_node.lexicon_state);
+            std::string output = stringify(lexicon->get_key_table(),
+                                           next_node.string);
+            /* if the result is novel or lower weighted than before, insert it */
+            if (outputs.count(output) == 0 ||
+                outputs[output] > weight) {
+                outputs[output] = weight;
+            }
+        }
+        lexicon_epsilons();
+        lexicon_consume();
+    }
+    std::map<std::string, Weight>::const_iterator it;
+    for (it = outputs.begin(); it != outputs.end(); ++it) {
+        analyses.push(StringWeightPair(it->first, it->second));
+    }
+    return analyses;
 }
+
+
 
 void Speller::build_cache(SymbolNumber first_sym)
 {
@@ -703,7 +700,7 @@ void Speller::build_cache(SymbolNumber first_sym)
             Weight weight = next_node.weight +
                 lexicon->final_weight(next_node.lexicon_state) +
                 mutator->final_weight(next_node.mutator_state);
-            std::string string = stringify(symbol_table, next_node.string);
+            std::string string = stringify(lexicon->get_key_table(), next_node.string);
             /* if the correction is novel or better than before, insert it
              */
             if (next_node.input_state == 0) {
@@ -724,7 +721,7 @@ void Speller::build_cache(SymbolNumber first_sym)
 //            std::cerr << "discarded node\n";
         }
         if (first_sym > 0 && next_node.input_state == 0) {
-            consume_input(first_sym);
+            consume_input();
         }
     }
     cache[first_sym].results_len_0.assign(corrections_len_0.begin(), corrections_len_0.end());
@@ -735,8 +732,9 @@ void Speller::build_cache(SymbolNumber first_sym)
 CorrectionQueue Speller::correct(char * line, int nbest,
                                  Weight maxweight, Weight beam)
 {
+    mode = Correct;
     // if input initialization fails, return empty correction queue
-    if (!init_input(line, mutator->get_encoder(), mutator->get_other())) {
+    if (!init_input(line)) {
         return CorrectionQueue();
     }
     set_limiting_behaviour(nbest, maxweight, beam);
@@ -745,17 +743,14 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     CorrectionQueue correction_queue;
     // A placeholding map, only one weight per correction
     std::map<std::string, Weight> corrections;
-    SymbolNumber first_input = 0;
-    if (input.len() != 0) {
-        first_input = input[0];
-    }
+    SymbolNumber first_input = (input.size() == 0) ? 0 : input[0];
     if (cache[first_input].empty) {
         build_cache(first_input);
     }
-    if (input.len() <= 1) {
+    if (input.size() <= 1) {
         // get the cached results and we're done
         StringWeightVector * results;
-        if (input.len() == 0) {
+        if (input.size() == 0) {
             results = &cache[first_input].results_len_0;
         } else {
             results = &cache[first_input].results_len_1;
@@ -810,10 +805,14 @@ CorrectionQueue Speller::correct(char * line, int nbest,
             lexicon_epsilons();
             mutator_epsilons();
         }
-        if (next_node.input_state == input.len()) {
+        if (next_node.input_state == input.size()) {
             /* if our transducers are in final states
              * we generate the correction
              */
+            if (!mutator->is_final(next_node.mutator_state)) {
+            }
+            if (!lexicon->is_final(next_node.lexicon_state)) {
+            }
             if (mutator->is_final(next_node.mutator_state) &&
                 lexicon->is_final(next_node.lexicon_state)) {
                 Weight weight = next_node.weight +
@@ -822,7 +821,7 @@ CorrectionQueue Speller::correct(char * line, int nbest,
                 if (weight > limit) {
                     continue;
                 }
-                std::string string = stringify(symbol_table, next_node.string);
+                std::string string = stringify(lexicon->get_key_table(), next_node.string);
                 /* if the correction is novel or better than before, insert it
                  */
                 if (corrections.count(string) == 0 ||
@@ -916,7 +915,8 @@ void Speller::adjust_weight_limits(int nbest, Weight beam)
 
 bool Speller::check(char * line)
 {
-    if (!init_input(line, lexicon->get_encoder(), NO_SYMBOL)) {
+    mode = Check;
+    if (!init_input(line)) {
         return false;
     }
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
@@ -926,7 +926,7 @@ bool Speller::check(char * line)
     while (queue.size() > 0) {
         next_node = queue.back();
         queue.pop_back();
-        if (next_node.input_state == input.len() &&
+        if (next_node.input_state == input.size() &&
             lexicon->is_final(next_node.lexicon_state)) {
             return true;
         }
@@ -936,113 +936,17 @@ bool Speller::check(char * line)
     return false;
 }
 
-AnalysisQueue Transducer::lookup(char * line)
-{
-    std::map<std::string, Weight> outputs;
-    AnalysisQueue analyses;
-    InputString input;
-    TreeNodeQueue queue;
-    if (!input.initialize(&encoder, line, NO_SYMBOL)) {
-        return analyses;
-    }
-    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-    queue.assign(1, start_node);
-
-    while (queue.size() > 0) {
-        TreeNode next_node = queue.back();
-        queue.pop_back();
-
-        // Final states
-        if (next_node.input_state == input.len() &&
-            is_final(next_node.lexicon_state)) {
-            Weight weight = next_node.weight +
-                final_weight(next_node.lexicon_state);
-            std::string output = stringify(&symbol_table,
-                                           next_node.string);
-            /* if the result is novel or lower weighted than before, insert it */
-            if (outputs.count(output) == 0 ||
-                outputs[output] > weight) {
-                outputs[output] = weight;
-            }
-        }
-
-        TransitionTableIndex next_index;
-        // epsilon loop
-        if (has_epsilons_or_flags(next_node.lexicon_state + 1)) {
-            next_index = next(next_node.lexicon_state, 0);
-            STransition i_s = take_epsilons_and_flags(next_index);
-            while (i_s.symbol != NO_SYMBOL) {
-                if (transitions.input_symbol(next_index) == 0) {
-                    queue.push_back(next_node.update_lexicon(i_s.symbol,
-                                                             i_s.index,
-                                                             i_s.weight));
-                    // Not a true epsilon but a flag diacritic
-                } else {
-                    FlagDiacriticState old_flags = next_node.flag_state;
-                    if (next_node.try_compatible_with(
-                            get_operations()->operator[](
-                                transitions.input_symbol(next_index)))) {
-                        queue.push_back(next_node.update_lexicon(i_s.symbol,
-                                                                 i_s.index,
-                                                                 i_s.weight));
-                        next_node.flag_state = old_flags;
-                    }
-                }
-                ++next_index;
-                i_s = take_epsilons_and_flags(next_index);
-            }
-        }
-        
-        // input consumption loop
-        unsigned int input_state = next_node.input_state;
-        if (input_state < input.len() &&
-            has_transitions(
-                next_node.lexicon_state + 1, input[input_state])) {
-            
-            next_index = next(next_node.lexicon_state,
-                              input[input_state]);
-            STransition i_s = take_non_epsilons(next_index,
-                                                input[input_state]);
-            
-            while (i_s.symbol != NO_SYMBOL) {
-                queue.push_back(next_node.update(
-                                    i_s.symbol,
-                                    input_state + 1,
-                                    next_node.mutator_state,
-                                    i_s.index,
-                                    i_s.weight));
-                
-                ++next_index;
-                i_s = take_non_epsilons(next_index, input[input_state]);
-            }
-        }
-        
-    }
-    
-    std::map<std::string, Weight>::const_iterator it;
-    for (it = outputs.begin(); it != outputs.end(); ++it) {
-        analyses.push(StringWeightPair(it->first, it->second));
-    }
-    
-    return analyses;
-}
-
-std::string stringify(std::vector<const char *> * symbol_table,
+std::string stringify(KeyTable * key_table,
                       SymbolVector & symbol_vector)
 {
     std::string s;
     for (SymbolVector::iterator it = symbol_vector.begin();
          it != symbol_vector.end(); ++it) {
-        s.append(symbol_table->at(*it));
+        if (*it < key_table->size()) {
+            s.append(key_table->at(*it));
+        }
     }
     return s;
-}
-
-bool Speller::init_input(char * str,
-                         Encoder * encoder,
-                         SymbolNumber other)
-{
-    return input.initialize(encoder, str, other);
 }
 
 void Speller::build_alphabet_translator(void)
@@ -1053,26 +957,15 @@ void Speller::build_alphabet_translator(void)
     StringSymbolMap * to_symbols = to->get_string_to_symbol();
     alphabet_translator.push_back(0); // zeroth element is always epsilon
     for (SymbolNumber i = 1; i < from_keys->size(); ++i) {
-        if ( (from->is_flag(i)) || // if it's a flag
-             (i == from->get_other()) ) {   // or the OTHER symbol
-            alphabet_translator.push_back(NO_SYMBOL);
-            continue; // no translation
-        }
         if (to_symbols->count(from_keys->operator[](i)) != 1) {
             // A symbol in the error source isn't present in the
-            // lexicon. We can either error out or silently translate it to
-            // NO_SYMBOL which will never be accepted by the lexicon.
-            alphabet_translator.push_back(NO_SYMBOL);
-            std::string name(from_keys->operator[](i));
-            if (name != "") {
-                std::cerr << "ospell: warning: symbol " <<
-                    std::string(from_keys->operator[](i))
-                          << " not present in lexicon\n";
-            }
+            // lexicon, so we add it.
+            std::string sym = from_keys->operator[](i);
+            SymbolNumber lexicon_key = lexicon->get_key_table()->size();
+            lexicon->get_encoder()->read_input_symbol(sym, lexicon_key);
+            lexicon->get_alphabet()->add_symbol(sym);
+            alphabet_translator.push_back(lexicon_key);
             continue;
-            // If we want to die instead
-                // throw AlphabetTranslationException(
-                //     std::string(from_keys->operator[](i)));
         }
         // translator at i points to lexicon's symbol for mutator's string for
         // mutator's symbol number i
@@ -1080,6 +973,55 @@ void Speller::build_alphabet_translator(void)
             to_symbols->operator[](
                 from_keys->operator[](i)));
     }
+}
+
+bool Speller::init_input(char * line)
+{
+    // Initialize the symbol vector to the tokenization given by encoder.
+    // In the case of tokenization failure, valid utf-8 characters
+    // are tokenized as unknown and tokenization is reattempted from
+    // such a character onwards. The empty string is tokenized as an
+    // empty vector; there is no end marker.
+    input.clear();
+    SymbolNumber k = NO_SYMBOL;
+    char ** inpointer = &line;
+    char * oldpointer;
+    
+    while (**inpointer != '\0') {
+        oldpointer = *inpointer;
+        k = mutator->get_encoder()->find_key(inpointer);
+        if (k == NO_SYMBOL) { // no tokenization from alphabet
+            int bytes_to_tokenize = nByte_utf8(static_cast<unsigned char>(*oldpointer));
+            if (bytes_to_tokenize == 0) {
+                return false; // can't parse utf-8 character, admit failure
+            } else {
+                char * new_symbol = new char[bytes_to_tokenize + 1];
+                memcpy(new_symbol, *inpointer, bytes_to_tokenize);
+                new_symbol[bytes_to_tokenize] = '\0';
+                oldpointer += bytes_to_tokenize;
+                *inpointer = oldpointer;
+                mutator->get_alphabet()->add_symbol(new_symbol);
+                cache.push_back(CacheContainer());
+                lexicon->get_alphabet()->add_symbol(new_symbol);
+                k = mutator->get_alphabet()->get_key_table()->size() - 1;
+                SymbolNumber k_lexicon = lexicon->get_alphabet()->get_key_table()->size() - 1;
+                mutator->get_encoder()->read_input_symbol(new_symbol, k);
+                lexicon->get_encoder()->read_input_symbol(new_symbol, k_lexicon);
+                add_symbol_to_alphabet_translator(k_lexicon);
+                delete [] new_symbol;
+                input.push_back(k);
+                continue;
+            }
+        } else {
+            input.push_back(k);
+        }
+    }
+    return true;
+}
+
+void Speller::add_symbol_to_alphabet_translator(SymbolNumber to_sym)
+{
+    alphabet_translator.push_back(to_sym);
 }
 
 } // namespace hfst_ol

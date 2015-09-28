@@ -29,7 +29,7 @@ namespace hfst_ol {
 //! Internal class for transition processing.
 
 class TreeNode;
-class CacheContainer;
+struct CacheContainer;
 typedef std::pair<std::string, std::string> StringPair;
 typedef std::pair<std::string, Weight> StringWeightPair;
 typedef std::vector<StringWeightPair> StringWeightVector;
@@ -39,11 +39,10 @@ typedef std::vector<TreeNode> TreeNodeVector;
 typedef std::map<std::string, Weight> StringWeightMap;
 
 //! Contains low-level processing stuff.
-class STransition{
-public:
+struct STransition{
     TransitionTableIndex index; //!< index to transition
     SymbolNumber symbol; //!< symbol of transition
-    Weight weight; //!< wieght of transtios
+    Weight weight; //!< weight of transition
 
     //!
     //! create transition without weight
@@ -141,13 +140,6 @@ protected:
 
     static const TransitionTableIndex START_INDEX = 0; //!< position of first
   
-    std::vector<const char*> symbol_table; //!< symbols known
- 
-    //!
-    //! set symbol table to void
-    void set_symbol_table(void);
-
- 
 public:
     //! 
     //! read transducer from file @a f
@@ -155,9 +147,6 @@ public:
     //!
     //! read transducer from raw dara @a data
     Transducer(char * raw);
-    //!
-    //! Analyse string @a line using the transducer
-    AnalysisQueue lookup(char * line);
     IndexTable indices; //!< index table
     TransitionTable transitions; //!< transition table
     //!
@@ -179,11 +168,9 @@ public:
     //! get size of a state
     unsigned int get_state_size(void);
     //!
-    //! get symbols of automatn
-    std::vector<const char*> * get_symbol_table(void);
-    //!
-    //! get position of the other symbol
-    SymbolNumber get_other(void);
+    //! get position of the ? symbols
+    SymbolNumber get_unknown(void) const;
+    SymbolNumber get_identity(void) const;
     //!
     //! get alphabet of automaton
     TransducerAlphabet * get_alphabet(void);
@@ -284,21 +271,16 @@ struct TreeNode
 
     //!
     //! traverse some node in error model
-    TreeNode update_mutator(SymbolNumber next_symbol,
-                            TransitionTableIndex next_mutator,
+    TreeNode update_mutator(TransitionTableIndex next_mutator,
                             Weight weight);
 
     //!
-    //! do some stuff with error model
-    void increment_mutator(void);
-
-    //!
     //! The update functions return updated copies of this state
-    TreeNode update(SymbolNumber output_symbol,
-                    unsigned int next_input,
-                    TransitionTableIndex next_mutator,
-                    TransitionTableIndex next_lexicon,
-                    Weight weight);
+     TreeNode update(SymbolNumber output_symbol,
+                     unsigned int next_input,
+                     TransitionTableIndex next_mutator,
+                     TransitionTableIndex next_lexicon,
+                     Weight weight);
 
     TreeNode update(SymbolNumber output_symbol,
                     TransitionTableIndex next_mutator,
@@ -311,37 +293,6 @@ struct TreeNode
 typedef std::vector<TreeNode> TreeNodeQueue;
 
 int nByte_utf8(unsigned char c);
-
-//! Internal class for string processing.
-
-//! Contains low-level processing stuff.
-class InputString
-{
-  
-private:
-    SymbolVector s;
-
-public:
-    InputString():
-        s(SymbolVector())
-        { }
-
-    //!
-    //! set up string with encoder and input and other symbol
-    bool initialize(Encoder * encoder, char * input, SymbolNumber other);
-    
-    //!
-    //! lengtho fo teh setring
-    unsigned int len(void);
-
-    //!
-    //! character at position
-    SymbolNumber operator[](unsigned int i)
-        {
-            return s[i];
-        }
-
-};
 
 //! Exception when speller cannot map characters of error model to language
 //! model.
@@ -370,7 +321,7 @@ class Speller
 public:
     Transducer * mutator; //!< error model
     Transducer * lexicon; //!< languag model
-    InputString input; //!< current input
+    SymbolVector input; //!< current input
     TreeNodeQueue queue; //!< current traversal fifo stack
     TreeNode next_node;  //!< current next node
     Weight limit; //!< current limit for weights
@@ -378,26 +329,27 @@ public:
     WeightQueue nbest_queue; //!< queue to keep track of current n best results
     SymbolVector alphabet_translator; //!< alphabets in automata
     OperationMap * operations; //!< flags in it
-    std::vector<const char*> * symbol_table; //!< strings for symbols
+    //!< A cache for the result of first symbols
     std::vector<CacheContainer> cache;
-//!< A cache for the result of first symbols
+    //!< what kind of limiting behaviour we have
     enum LimitingBehaviour { None, MaxWeight, Nbest, Beam, MaxWeightNbest,
                              MaxWeightBeam, NbestBeam, MaxWeightNbestBeam } limiting;
-    //!< what kind of limiting behaviour we have
-
+    //! what mode we're in
+    enum Mode { Check, Correct, Lookup } mode;
     
     //!
     //! Create a speller object form error model and language automata.
     Speller(Transducer * mutator_ptr, Transducer * lexicon_ptr);
-    //!
-    //! Create inpyt for speller
-    bool init_input(char * str, Encoder * encoder, SymbolNumber other);
     //!
     //! size of states
     SymbolNumber get_state_size(void);
     //!
     //! initialise string conversions
     void build_alphabet_translator(void);
+    void add_symbol_to_alphabet_translator(SymbolNumber to_sym);
+    //!
+    //! initialize input string
+    bool init_input(char * line);
     //!
     //! travers epsilons in language model
     void lexicon_epsilons(void);
@@ -414,10 +366,14 @@ public:
         }
     //!
     //! traverse along input
-    void consume_input(SymbolNumber input_sym = NO_SYMBOL);
-    //!
-    //! follow language model with stuff
+    void consume_input();
+    //! helper functions for traversal
+    void queue_mutator_arcs(SymbolNumber input);
     void lexicon_consume(void);
+    void queue_lexicon_arcs(SymbolNumber input,
+                            unsigned int mutator_state,
+                            Weight mutator_weight = 0.0,
+                            int input_increment = 0);
     //! @brief Check if the given string is accepted by the speller
     //
     //! foo
@@ -466,9 +422,8 @@ struct CacheContainer
     
 };
 
-std::string stringify(std::vector<const char *> * symbol_table,
+std::string stringify(KeyTable * key_table,
                       SymbolVector & symbol_vector);
-
 
 } // namespace hfst_ol
 

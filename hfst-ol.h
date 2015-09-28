@@ -171,8 +171,10 @@ class TransducerAlphabet
 private:
     KeyTable kt;
     OperationMap operations;
-    SymbolNumber other_symbol;
+    SymbolNumber unknown_symbol;
+    SymbolNumber identity_symbol;
     SymbolNumber flag_state_size;
+    SymbolNumber orig_symbol_count;
     StringSymbolMap string_to_symbol;
     void process_symbol(char * line);
     
@@ -186,6 +188,9 @@ public:
     //! 
     //! read alphabes from raw data @a raw
     TransducerAlphabet(char ** raw, SymbolNumber number_of_symbols);
+    
+    void add_symbol(std::string & sym);
+    void add_symbol(char * sym);
     //!
     //! get alphabet's keytable mapping
     KeyTable * get_key_table(void);
@@ -196,8 +201,11 @@ public:
     //! get state's size
     SymbolNumber get_state_size(void);
     //! 
-    //! get position of other symbol
-    SymbolNumber get_other(void);
+    //! get position of unknown symbol
+    SymbolNumber get_unknown(void) const;
+    SymbolNumber get_identity(void) const;
+    //! get orig symbol count
+    SymbolNumber get_orig_symbol_count(void) const;
     //!
     //! get mapping from strings to symbols
     StringSymbolMap * get_string_to_symbol(void);
@@ -247,9 +255,9 @@ public:
     //!
     //! create encoder from keytable 
     Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols);
-    //!
-    //! find corresponding key for alphabet or something
     SymbolNumber find_key(char ** p);
+    void read_input_symbol(const char * s, const int s_num);
+    void read_input_symbol(std::string const & s, const int s_num);
 };
 
 typedef std::vector<ValueNumber> FlagDiacriticState;

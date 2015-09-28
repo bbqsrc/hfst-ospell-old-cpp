@@ -341,9 +341,13 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
                 kt.push_back(std::string(""));
                 continue;
 
-            } else if (strcmp(line, "@_UNKNOWN_SYMBOL_@") == 0) { // other symbol
-                other_symbol = k;
-                kt.push_back(std::string(""));
+            } else if (strcmp(line, "@_UNKNOWN_SYMBOL_@") == 0) {
+                unknown_symbol = k;
+                kt.push_back(std::string(line));
+                continue;
+            } else if (strcmp(line, "@_IDENTITY_SYMBOL_@") == 0) {
+                identity_symbol = k;
+                kt.push_back(std::string(line));
                 continue;
             } else { // we don't know what this is, ignore and suppress
                 kt.push_back(std::string(""));
@@ -411,8 +415,13 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
                 skip_c_string(raw);
                 continue;
 
-            } else if (strcmp(*raw, "@_UNKNOWN_SYMBOL_@") == 0) { // other symbol
-                other_symbol = k;
+            } else if (strcmp(*raw, "@_UNKNOWN_SYMBOL_@") == 0) {
+                unknown_symbol = k;
+                kt.push_back(std::string(""));
+                skip_c_string(raw);
+                continue;
+            } else if (strcmp(*raw, "@_IDENTITY_SYMBOL_@") == 0) {
+                identity_symbol = k;
                 kt.push_back(std::string(""));
                 skip_c_string(raw);
                 continue;
@@ -430,17 +439,33 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
 }
 
 TransducerAlphabet::TransducerAlphabet(FILE* f, SymbolNumber number_of_symbols):
-        other_symbol(NO_SYMBOL)
+    unknown_symbol(NO_SYMBOL),
+    identity_symbol(NO_SYMBOL),
+    orig_symbol_count(number_of_symbols)
         {
             read(f, number_of_symbols);
         }
 
 TransducerAlphabet::TransducerAlphabet(char** raw,
                                        SymbolNumber number_of_symbols):
-        other_symbol(NO_SYMBOL)
+    unknown_symbol(NO_SYMBOL),
+    identity_symbol(NO_SYMBOL),
+    orig_symbol_count(number_of_symbols)
         {
             read(raw, number_of_symbols);
         }
+
+void TransducerAlphabet::add_symbol(std::string & sym)
+{
+    string_to_symbol[sym] = kt.size();
+    kt.push_back(sym);
+}
+
+void TransducerAlphabet::add_symbol(char * sym)
+{
+    std::string s(sym);
+    add_symbol(s);
+}
 
 KeyTable*
 TransducerAlphabet::get_key_table()
@@ -461,10 +486,21 @@ TransducerAlphabet::get_state_size()
   }
 
 SymbolNumber
-TransducerAlphabet::get_other()
+TransducerAlphabet::get_unknown() const
   {
-    return other_symbol;
+    return unknown_symbol;
   }
+
+SymbolNumber
+TransducerAlphabet::get_identity() const
+  {
+    return identity_symbol;
+  }
+
+SymbolNumber TransducerAlphabet::get_orig_symbol_count() const
+{
+    return orig_symbol_count;
+}
 
 StringSymbolMap*
 TransducerAlphabet::get_string_to_symbol()
@@ -565,20 +601,30 @@ Encoder::Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols):
             read_input_symbols(kt, number_of_input_symbols);
         }
 
+void Encoder::read_input_symbol(const char * s, const int s_num)
+{
+    if (strlen(s) == 0) { // ignore empty strings
+        return;
+    }
+    if ((strlen(s) == 1) && (unsigned char)(*s) <= 127)
+    {
+        ascii_symbols[(unsigned char)(*s)] = s_num;
+    }
+    letters.add_string(s, s_num);
+}
+
+void Encoder::read_input_symbol(std::string const & s, const int s_num)
+{
+    read_input_symbol(s.c_str(), s_num);
+}
+
 void Encoder::read_input_symbols(KeyTable * kt,
                                  SymbolNumber number_of_input_symbols)
 {
     for (SymbolNumber k = 0; k < number_of_input_symbols; ++k)
     {
         const char * p = kt->at(k).c_str();
-        if (strlen(p) == 0) { // ignore empty strings
-            continue;
-        }
-        if ((strlen(p) == 1) && (unsigned char)(*p) <= 127)
-        {
-            ascii_symbols[(unsigned char)(*p)] = k;
-        }
-        letters.add_string(p,k);
+        read_input_symbol(p, k);
     }
 }
 
