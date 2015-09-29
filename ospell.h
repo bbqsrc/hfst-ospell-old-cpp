@@ -150,6 +150,13 @@ public:
     IndexTable indices; //!< index table
     TransitionTable transitions; //!< transition table
     //!
+    //! Deprecated functions for single-tranducer lookup
+    //! Speller::analyse() is recommended
+    bool initialize_input_vector(SymbolVector & input_vector,
+                                 Encoder * encoder,
+                                 char * line);
+    AnalysisQueue lookup(char * line);
+    //!
     //! whether it's final transition in this transducer
     bool final_transition(TransitionTableIndex i);
     //!

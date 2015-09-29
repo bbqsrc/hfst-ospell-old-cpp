@@ -135,7 +135,6 @@ TreeNode TreeNode::update_mutator(TransitionTableIndex next_mutator,
                     this->weight + weight);
 }
 
-
 TreeNode TreeNode::update(SymbolNumber symbol,
                           unsigned int next_input,
                           TransitionTableIndex next_mutator,
@@ -468,6 +467,118 @@ void Speller::queue_mutator_arcs(SymbolNumber input_sym)
         mutator_i_s = mutator->take_non_epsilons(next_m,
                                                  input_sym);
     }
+}
+
+bool Transducer::initialize_input_vector(SymbolVector & input_vector,
+                                         Encoder * encoder,
+                                         char * line)
+{
+    input_vector.clear();
+    SymbolNumber k = NO_SYMBOL;
+    char ** inpointer = &line;
+    char * oldpointer;
+    while (**inpointer != '\0') {
+        oldpointer = *inpointer;
+        k = encoder->find_key(inpointer);
+        if (k == NO_SYMBOL) { // no tokenization from alphabet
+            // for real handling of other and identity for unseen symbols,
+            // use the Speller interface analyse()!
+            return false;
+        }
+        input_vector.push_back(k);
+    }
+    return true;
+}
+
+AnalysisQueue Transducer::lookup(char * line)
+{
+    std::map<std::string, Weight> outputs;
+    AnalysisQueue analyses;
+    SymbolVector input;
+    TreeNodeQueue queue;
+    if (!initialize_input_vector(input, &encoder, line)) {
+        return analyses;
+    }
+    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    queue.assign(1, start_node);
+
+    while (queue.size() > 0) {
+        TreeNode next_node = queue.back();
+        queue.pop_back();
+
+        // Final states
+        if (next_node.input_state == input.size() &&
+            is_final(next_node.lexicon_state)) {
+            Weight weight = next_node.weight +
+                final_weight(next_node.lexicon_state);
+            std::string output = stringify(get_key_table(),
+                                           next_node.string);
+            /* if the result is novel or lower weighted than before, insert it */
+            if (outputs.count(output) == 0 ||
+                outputs[output] > weight) {
+                outputs[output] = weight;
+            }
+        }
+
+        TransitionTableIndex next_index;
+        // epsilon loop
+        if (has_epsilons_or_flags(next_node.lexicon_state + 1)) {
+            next_index = next(next_node.lexicon_state, 0);
+            STransition i_s = take_epsilons_and_flags(next_index);
+            while (i_s.symbol != NO_SYMBOL) {
+                if (transitions.input_symbol(next_index) == 0) {
+                    queue.push_back(next_node.update_lexicon(i_s.symbol,
+                                                             i_s.index,
+                                                             i_s.weight));
+                    // Not a true epsilon but a flag diacritic
+                } else {
+                    FlagDiacriticState old_flags = next_node.flag_state;
+                    if (next_node.try_compatible_with(
+                            get_operations()->operator[](
+                                transitions.input_symbol(next_index)))) {
+                        queue.push_back(next_node.update_lexicon(i_s.symbol,
+                                                                 i_s.index,
+                                                                 i_s.weight));
+                        next_node.flag_state = old_flags;
+                    }
+                }
+                ++next_index;
+                i_s = take_epsilons_and_flags(next_index);
+            }
+        }
+        
+        // input consumption loop
+        unsigned int input_state = next_node.input_state;
+        if (input_state < input.size() &&
+            has_transitions(
+                next_node.lexicon_state + 1, input[input_state])) {
+            
+            next_index = next(next_node.lexicon_state,
+                              input[input_state]);
+            STransition i_s = take_non_epsilons(next_index,
+                                                input[input_state]);
+            
+            while (i_s.symbol != NO_SYMBOL) {
+                queue.push_back(next_node.update(
+                                    i_s.symbol,
+                                    input_state + 1,
+                                    next_node.mutator_state,
+                                    i_s.index,
+                                    i_s.weight));
+                
+                ++next_index;
+                i_s = take_non_epsilons(next_index, input[input_state]);
+            }
+        }
+        
+    }
+    
+    std::map<std::string, Weight>::const_iterator it;
+    for (it = outputs.begin(); it != outputs.end(); ++it) {
+        analyses.push(StringWeightPair(it->first, it->second));
+    }
+    
+    return analyses;
 }
 
 bool
