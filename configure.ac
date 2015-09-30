@@ -128,6 +128,20 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([strndup error])
 # Checks for system services
 
+# Checks for highest supported C++ standard
+AC_LANG(C++)
+AX_CHECK_COMPILE_FLAG([-std=c++17], [CXXFLAGS="$CXXFLAGS -std=c++17"], [
+ AX_CHECK_COMPILE_FLAG([-std=c++1z], [CXXFLAGS="$CXXFLAGS -std=c++1z"], [
+  AX_CHECK_COMPILE_FLAG([-std=c++14], [CXXFLAGS="$CXXFLAGS -std=c++14"], [
+   AX_CHECK_COMPILE_FLAG([-std=c++1y], [CXXFLAGS="$CXXFLAGS -std=c++1y"], [
+    AX_CHECK_COMPILE_FLAG([-std=c++11], [CXXFLAGS="$CXXFLAGS -std=c++11"], [
+     AX_CHECK_COMPILE_FLAG([-std=c++0x], [CXXFLAGS="$CXXFLAGS -std=c++0x"], [])
+    ])
+   ])
+  ])
+ ])
+])
+
 # config files
 AC_CONFIG_FILES([Makefile hfstospell.pc])
 
