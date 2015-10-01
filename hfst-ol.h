@@ -365,7 +365,7 @@ private:
               TransitionTableIndex number_of_table_entries);
     void read(char ** raw,
               TransitionTableIndex number_of_table_entries);
-
+    TransitionTableIndex size;
 
 public:
     //!
@@ -408,7 +408,7 @@ protected:
     //! read known amount of transitions from raw dara @a data
     void read(char ** raw,
               TransitionTableIndex number_of_table_entries);
-
+    TransitionTableIndex size;
 public:
     //! 
     //! read transition table from file @a f

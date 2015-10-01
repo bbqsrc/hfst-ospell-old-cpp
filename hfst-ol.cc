@@ -693,14 +693,16 @@ Transition::final(void) const
 
 IndexTable::IndexTable(FILE* f,
                        TransitionTableIndex number_of_table_entries):
-        indices(NULL)
+    indices(NULL),
+    size(number_of_table_entries)
         {
             read(f, number_of_table_entries);
         }
     
 IndexTable::IndexTable(char ** raw,
                        TransitionTableIndex number_of_table_entries):
-        indices(NULL)
+    indices(NULL),
+    size(number_of_table_entries)
         {
             read(raw, number_of_table_entries);
         }
@@ -715,15 +717,23 @@ IndexTable::~IndexTable(void)
 SymbolNumber
 IndexTable::input_symbol(TransitionTableIndex i) const
         {
-          return *((SymbolNumber *)
-                   (indices + TransitionIndex::SIZE * i)); 
+            if (i < size) {
+                return *((SymbolNumber *)
+                         (indices + TransitionIndex::SIZE * i));
+            } else {
+                return NO_SYMBOL;
+            }
         }
 
 TransitionTableIndex
 IndexTable::target(TransitionTableIndex i) const
   {
-     return *((TransitionTableIndex *) 
-              (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+      if (i < size) {
+          return *((TransitionTableIndex *) 
+                   (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+      } else {
+          return NO_TABLE_INDEX;
+      }
   }
 
 bool
@@ -735,20 +745,26 @@ IndexTable::final(TransitionTableIndex i) const
 Weight
 IndexTable::final_weight(TransitionTableIndex i) const
         {
-            return *((Weight *)
-                     (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+            if (i < size) {
+                return *((Weight *)
+                         (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+            } else {
+                return INFINITE_WEIGHT;
+            }
         }
 
 TransitionTable::TransitionTable(FILE * f,
                                  TransitionTableIndex transition_count):
-        transitions(NULL)
+    transitions(NULL),
+    size(transition_count)
         {
             read(f, transition_count);
         }
   
 TransitionTable::TransitionTable(char ** raw,
                     TransitionTableIndex transition_count):
-        transitions(NULL)
+    transitions(NULL),
+    size(transition_count)
         {
             read(raw, transition_count);
         }
@@ -763,32 +779,48 @@ TransitionTable::~TransitionTable(void)
 SymbolNumber
 TransitionTable::input_symbol(TransitionTableIndex i) const
         {
-            return *((SymbolNumber *)
-                     (transitions + Transition::SIZE * i));
+            if (i < size) {
+                return *((SymbolNumber *)
+                         (transitions + Transition::SIZE * i));
+            } else {
+                return NO_SYMBOL;
+            }
         }
 
 SymbolNumber
 TransitionTable::output_symbol(TransitionTableIndex i) const
         {
-            return *((SymbolNumber *)
-                     (transitions + Transition::SIZE * i +
-                      sizeof(SymbolNumber)));
+            if (i < size) {
+                return *((SymbolNumber *)
+                         (transitions + Transition::SIZE * i +
+                          sizeof(SymbolNumber)));
+            } else {
+                return NO_SYMBOL;
+            }
         }
 
 TransitionTableIndex
 TransitionTable::target(TransitionTableIndex i) const
         {
-            return *((TransitionTableIndex *)
-                     (transitions + Transition::SIZE * i +
-                      2*sizeof(SymbolNumber)));
+            if (i < size) {
+                return *((TransitionTableIndex *)
+                         (transitions + Transition::SIZE * i +
+                          2*sizeof(SymbolNumber)));
+            } else {
+                return NO_TABLE_INDEX;
+            }
         }
 
 Weight
 TransitionTable::weight(TransitionTableIndex i) const
         {
+            if (i < size) {
             return *((Weight *)
                      (transitions + Transition::SIZE * i +
                       2*sizeof(SymbolNumber) + sizeof(TransitionTableIndex)));
+            } else {
+                return INFINITE_WEIGHT;
+            }
         }
 
 bool
