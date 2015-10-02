@@ -1106,20 +1106,28 @@ bool Speller::init_input(char * line)
             if (bytes_to_tokenize == 0) {
                 return false; // can't parse utf-8 character, admit failure
             } else {
-                char * new_symbol = new char[bytes_to_tokenize + 1];
-                memcpy(new_symbol, *inpointer, bytes_to_tokenize);
+                char new_symbol[5]; // max size plus NUL
+                memcpy(new_symbol, oldpointer, bytes_to_tokenize);
                 new_symbol[bytes_to_tokenize] = '\0';
+                std::string new_symbol_string(new_symbol);
                 oldpointer += bytes_to_tokenize;
                 *inpointer = oldpointer;
-                mutator->get_alphabet()->add_symbol(new_symbol);
                 cache.push_back(CacheContainer());
-                lexicon->get_alphabet()->add_symbol(new_symbol);
-                k = mutator->get_alphabet()->get_key_table()->size() - 1;
-                SymbolNumber k_lexicon = lexicon->get_alphabet()->get_key_table()->size() - 1;
-                mutator->get_encoder()->read_input_symbol(new_symbol, k);
+                if (!lexicon->get_alphabet()->has_string(new_symbol_string)) {
+                    lexicon->get_alphabet()->add_symbol(new_symbol_string);
+                }
+                SymbolNumber k_lexicon = lexicon->get_alphabet()->get_string_to_symbol()
+                    ->operator[](new_symbol_string);
                 lexicon->get_encoder()->read_input_symbol(new_symbol, k_lexicon);
-                add_symbol_to_alphabet_translator(k_lexicon);
-                delete [] new_symbol;
+                if (!mutator->get_alphabet()->has_string(new_symbol_string)) {
+                    mutator->get_alphabet()->add_symbol(new_symbol_string);
+                }
+                k = mutator->get_alphabet()->get_string_to_symbol()->
+                    operator[](new_symbol_string);
+                mutator->get_encoder()->read_input_symbol(new_symbol, k);
+                if (k >= alphabet_translator.size()) {
+                    add_symbol_to_alphabet_translator(k_lexicon);
+                }
                 input.push_back(k);
                 continue;
             }

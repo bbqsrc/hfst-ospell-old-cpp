@@ -209,6 +209,7 @@ public:
     //!
     //! get mapping from strings to symbols
     StringSymbolMap * get_string_to_symbol(void);
+    bool has_string(std::string const & s) const;
     //! 
     //! get if given symbol is a flag
     bool is_flag(SymbolNumber symbol);

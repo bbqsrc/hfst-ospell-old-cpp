@@ -508,6 +508,11 @@ TransducerAlphabet::get_string_to_symbol()
     return &string_to_symbol;
   }
 
+bool TransducerAlphabet::has_string(std::string const & s) const
+{
+    return string_to_symbol.count(s) != 0;
+}
+
 bool
 TransducerAlphabet::is_flag(SymbolNumber symbol)
   {
