@@ -411,7 +411,7 @@ void Speller::consume_input()
             if (mutator->get_unknown() != NO_SYMBOL &&
                 mutator->has_transitions(next_node.mutator_state + 1,
                                          mutator->get_unknown())) {
-                queue_mutator_arcs(lexicon->get_unknown());
+                queue_mutator_arcs(mutator->get_unknown());
             }
         }
     } else {
