@@ -114,7 +114,14 @@ AS_IF([test x$with_tinyxml2 != xno -a x$with_libxmlpp = xno],
                           enable_xml=no])])
 AM_CONDITIONAL([WANT_TINYXML2], [test x$enable_xml = xtinyxml2])
 
-PKG_CHECK_MODULES(ICU, [icu-uc >= 4], LIBS="$LIBS $ICU_LIBS")
+# Find ICU in the new and old way
+PKG_CHECK_MODULES(ICU, [icu-uc >= 4], [], [
+ AC_PATH_PROG([ICU_CONFIG], [icu-config], [false])
+ AS_IF([test x$ICU_CONFIG != xfalse], [
+  ICU_LIBS=$($ICU_CONFIG --ldflags)
+ ])
+])
+LIBS="$LIBS $ICU_LIBS"
 
 # Checks for header files
 AC_CHECK_HEADERS([getopt.h error.h])
