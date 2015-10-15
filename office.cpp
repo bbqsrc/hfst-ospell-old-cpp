@@ -32,11 +32,12 @@
 #include <algorithm>
 #include <map>
 #include <sstream>
-#include <clocale>
-#include <cctype>
-#include <cwctype>
 #include <cmath>
 #include <cerrno>
+#include <unicode/uclean.h>
+#include <unicode/ucnv.h>
+#include <unicode/uloc.h>
+#include <unicode/unistr.h>
 
 #include "ol-exceptions.h"
 #include "ospell.h"
@@ -45,29 +46,17 @@
 using hfst_ol::ZHfstOspeller;
 using hfst_ol::Transducer;
 
-typedef std::map<std::wstring,bool> valid_words_t;
+typedef std::map<std::string,bool> valid_words_t;
 valid_words_t valid_words;
 
 struct word_t {
 	size_t start, count;
-	std::wstring buffer;
+	std::string buffer;
 };
 std::vector<word_t> words(8);
 std::string buffer;
-std::wstring wbuffer, wtmp;
+UnicodeString ubuffer;
 size_t cw;
-
-void w_to_n(const std::wstring& w, std::string& n) {
-	n.clear();
-	n.resize(w.size()*4);
-	n.resize(wcstombs(&n[0], w.c_str(), w.size()));
-}
-
-void n_to_w(const std::string& n, std::wstring& w) {
-	w.clear();
-	w.resize(n.size()*2);
-	w.resize(mbstowcs(&w[0], n.c_str(), n.size()));
-}
 
 bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 	/* Weights make this entirely pointless
@@ -77,8 +66,7 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 	//*/
 
 	for (size_t k=1 ; k <= cw ; ++k) {
-		w_to_n(words[cw-k].buffer, buffer);
-		hfst_ol::CorrectionQueue corrections = speller.suggest(buffer);
+		hfst_ol::CorrectionQueue corrections = speller.suggest(words[cw-k].buffer);
 
 		if (corrections.size() == 0) {
 			continue;
@@ -89,17 +77,15 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 		for (size_t i=0, e=corrections.size() ; i<e && i<suggs ; ++i) {
 			std::cout << "\t";
 
-			wbuffer.clear();
+			buffer.clear();
 			if (cw - k != 0) {
-				wbuffer.append(words[0].buffer.begin(), words[0].buffer.begin() + words[cw-k].start);
+				buffer.append(words[0].buffer.begin(), words[0].buffer.begin() + words[cw-k].start);
 			}
-			n_to_w(corrections.top().first, wtmp);
-			wbuffer.append(wtmp);
+			buffer.append(corrections.top().first);
 			if (cw - k != 0) {
-				wbuffer.append(words[0].buffer.begin() + words[cw-k].start + words[cw-k].count, words[0].buffer.end());
+				buffer.append(words[0].buffer.begin() + words[cw-k].start + words[cw-k].count, words[0].buffer.end());
 			}
 
-			w_to_n(wbuffer, buffer);
 			std::cout << buffer;
 			corrections.pop();
 		}
@@ -109,9 +95,9 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 	return false;
 }
 
-bool is_valid_word(ZHfstOspeller& speller, const std::wstring& word) {
+bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 	size_t ichStart = 0, cchUse = word.size();
-	const wchar_t *pwsz = word.c_str();
+	const char *pwsz = word.c_str();
 
 	// Always test the full given input
 	words[0].buffer.resize(0);
@@ -162,33 +148,32 @@ bool is_valid_word(ZHfstOspeller& speller, const std::wstring& word) {
 		valid_words_t::iterator it = valid_words.find(words[i].buffer);
 
 		if (it == valid_words.end()) {
-			w_to_n(words[i].buffer, buffer);
-			bool valid = speller.spell(buffer);
+			bool valid = speller.spell(words[i].buffer);
 			it = valid_words.insert(std::make_pair(words[i].buffer,valid)).first;
 
 			if (!valid) {
 				// If the word was not valid, fold it to lower case and try again
-				wbuffer.resize(0);
-				wbuffer.reserve(words[i].buffer.size());
-				std::transform(words[i].buffer.begin(), words[i].buffer.end(), std::back_inserter(wbuffer), std::towlower);
+				buffer.resize(0);
+				ubuffer.setTo(UnicodeString::fromUTF8(buffer));
+				ubuffer.toLower();
+				ubuffer.toUTF8String(buffer);
 
 				// Add the lower case variant to the list so that we get suggestions using that, if need be
 				words[cw].start = words[i].start;
 				words[cw].count = words[i].count;
-				words[cw].buffer = wbuffer;
+				words[cw].buffer = buffer;
 				++cw;
 
 				// Don't try again if the lower cased variant has already been tried
-				valid_words_t::iterator itl = valid_words.find(wbuffer);
+				valid_words_t::iterator itl = valid_words.find(buffer);
 				if (itl != valid_words.end()) {
 					it->second = itl->second;
 					it = itl;
 				}
 				else {
-					w_to_n(wbuffer, buffer);
 					valid = speller.spell(buffer);
 					it->second = valid; // Also mark the original mixed case variant as whatever the lower cased one was
-					it = valid_words.insert(std::make_pair(wbuffer,valid)).first;
+					it = valid_words.insert(std::make_pair(buffer,valid)).first;
 				}
 			}
 		}
@@ -222,7 +207,7 @@ int zhfst_spell(const char* zhfst_filename) {
 	std::cout << "@@ hfst-ospell-office is alive" << std::endl;
 
 	std::string line;
-	std::wstring wline;
+	std::string word;
 	std::istringstream ss;
 	while (std::getline(std::cin, line)) {
 		while (!line.empty() && std::iswspace(line[line.size()-1])) {
@@ -241,8 +226,7 @@ int zhfst_spell(const char* zhfst_filename) {
 			continue;
 		}
 
-		n_to_w(line, wline);
-		if (is_valid_word(speller, wline)) {
+		if (is_valid_word(speller, line)) {
 			std::cout << "*" << std::endl;
 			continue;
 		}
@@ -255,7 +239,18 @@ int zhfst_spell(const char* zhfst_filename) {
 }
 
 int main(int, char **argv) {
-	setlocale(LC_ALL, "");
-	setlocale(LC_ALL, "C.UTF-8");
-	return zhfst_spell(argv[1]);
+	UErrorCode status = U_ZERO_ERROR;
+	u_init(&status);
+	if (U_FAILURE(status) && status != U_FILE_ACCESS_ERROR) {
+		std::cerr << "Error: Cannot initialize ICU. Status = " << u_errorName(status) << std::endl;
+		return -1;
+	}
+
+	ucnv_setDefaultName("UTF-8");
+	uloc_setDefault("en_US_POSIX", &status);
+
+	int rv = zhfst_spell(argv[1]);
+
+	u_cleanup();
+	return rv;
 }

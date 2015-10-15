@@ -89,7 +89,7 @@ AC_PROG_MAKE_SET
 AC_PATH_PROG([HFST_TXT2FST], [hfst-txt2fst], [false])
 AC_PATH_PROG([HFST_FST2FST], [hfst-fst2fst], [false])
 AC_PATH_PROG([ZIP], [zip], [false])
-AM_CONDITIONAL([CAN_TEST], 
+AM_CONDITIONAL([CAN_TEST],
                [test x$HFST_TXT2FST != xfalse -a x$HFST_FST2FST != xfalse -a x$ZIP != xfalse])
 
 # Checks for libraries
@@ -100,7 +100,7 @@ AS_IF([test x$enable_zhfst != xno],
                   [enable_zhfst=no])])
 AM_CONDITIONAL([WANT_ARCHIVE], [test x$enable_zhfst != xno])
 AS_IF([test x$with_libxmlpp != xno],
-      [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0], 
+      [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0],
                          [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])
                           enable_xml=libxmlpp],
                          [AC_MSG_ERROR([libxml++ failed])
@@ -113,6 +113,8 @@ AS_IF([test x$with_tinyxml2 != xno -a x$with_libxmlpp = xno],
                          [AC_MSG_ERROR([tinyxml missing])
                           enable_xml=no])])
 AM_CONDITIONAL([WANT_TINYXML2], [test x$enable_xml = xtinyxml2])
+
+PKG_CHECK_MODULES(ICU, [icu-uc >= 4], LIBS="$LIBS $ICU_LIBS")
 
 # Checks for header files
 AC_CHECK_HEADERS([getopt.h error.h])
