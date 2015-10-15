@@ -154,7 +154,7 @@ bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 			if (!valid) {
 				// If the word was not valid, fold it to lower case and try again
 				buffer.resize(0);
-				ubuffer.setTo(UnicodeString::fromUTF8(buffer));
+				ubuffer.setTo(UnicodeString::fromUTF8(words[i].buffer));
 				ubuffer.toLower();
 				ubuffer.toUTF8String(buffer);
 
