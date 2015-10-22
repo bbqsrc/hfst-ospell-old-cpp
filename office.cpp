@@ -82,7 +82,6 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 			std::cout << "\t";
 
 			buffer.clear();
-			ubuffer.remove();
 			if (cw - k != 0) {
 				words[0].buffer.tempSubString(0, words[cw-k].start).toUTF8String(buffer);
 			}
@@ -239,7 +238,7 @@ int zhfst_spell(const char* zhfst_filename) {
 			continue;
 		}
 		// Just in case anyone decides to use the speller for a minor eternity
-		if (valid_words.size() > 2048) {
+		if (valid_words.size() > 20480) {
 			valid_words.clear();
 		}
 
