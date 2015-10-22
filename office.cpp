@@ -21,9 +21,9 @@
 /*
 	Tests up to 8 variations of each input token:
 	- Verbatim
-	- With leading punctuaton removed
-	- With trailing punctuaton removed
-	- With leading and trailing punctuaton removed
+	- With leading non-alphanumerics removed
+	- With trailing non-alphanumerics removed
+	- With leading and trailing non-alphanumerics removed
 	- Lower-case of all the above
 */
 
@@ -34,9 +34,11 @@
 #include <sstream>
 #include <cmath>
 #include <cerrno>
+#include <cctype>
 #include <unicode/uclean.h>
 #include <unicode/ucnv.h>
 #include <unicode/uloc.h>
+#include <unicode/uchar.h>
 #include <unicode/unistr.h>
 
 #include "ol-exceptions.h"
@@ -46,12 +48,12 @@
 using hfst_ol::ZHfstOspeller;
 using hfst_ol::Transducer;
 
-typedef std::map<std::string,bool> valid_words_t;
+typedef std::map<UnicodeString,bool> valid_words_t;
 valid_words_t valid_words;
 
 struct word_t {
 	size_t start, count;
-	std::string buffer;
+	UnicodeString buffer;
 };
 std::vector<word_t> words(8);
 std::string buffer;
@@ -66,7 +68,9 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 	//*/
 
 	for (size_t k=1 ; k <= cw ; ++k) {
-		hfst_ol::CorrectionQueue corrections = speller.suggest(words[cw-k].buffer);
+		buffer.clear();
+		words[cw-k].buffer.toUTF8String(buffer);
+		hfst_ol::CorrectionQueue corrections = speller.suggest(buffer);
 
 		if (corrections.size() == 0) {
 			continue;
@@ -78,12 +82,13 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 			std::cout << "\t";
 
 			buffer.clear();
+			ubuffer.remove();
 			if (cw - k != 0) {
-				buffer.append(words[0].buffer.begin(), words[0].buffer.begin() + words[cw-k].start);
+				words[0].buffer.tempSubString(0, words[cw-k].start).toUTF8String(buffer);
 			}
 			buffer.append(corrections.top().first);
 			if (cw - k != 0) {
-				buffer.append(words[0].buffer.begin() + words[cw-k].start + words[cw-k].count, words[0].buffer.end());
+				words[0].buffer.tempSubString(words[cw-k].start + words[cw-k].count).toUTF8String(buffer);
 			}
 
 			std::cout << buffer;
@@ -96,50 +101,65 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 }
 
 bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
+	ubuffer.setTo(UnicodeString::fromUTF8(word));
+
+	bool has_letters = false;
+	for (int32_t i=0 ; i<ubuffer.length() ; ++i) {
+		if (u_isalpha(ubuffer[i])) {
+			has_letters = true;
+			break;
+		}
+	}
+
+	// If there are no letters in this token, just ignore it
+	if (has_letters == false) {
+		return true;
+	}
+
 	size_t ichStart = 0, cchUse = word.size();
-	const char *pwsz = word.c_str();
+	const UChar *pwsz = ubuffer.getTerminatedBuffer();
 
 	// Always test the full given input
-	words[0].buffer.resize(0);
+	words[0].buffer.remove();
 	words[0].start = ichStart;
 	words[0].count = cchUse;
-	words[0].buffer.append(pwsz+ichStart, pwsz+ichStart+cchUse);
+	words[0].buffer = ubuffer;
 	cw = 1;
 
 	if (cchUse > 1) {
 		size_t count = cchUse;
-		while (count && (std::iswpunct(pwsz[ichStart+count-1]) || std::iswspace(pwsz[ichStart+count-1]))) {
+		while (count && !u_isalnum(pwsz[ichStart+count-1])) {
 			--count;
 		}
 		if (count != cchUse) {
-			// If the input ended with punctuation, test input with punctuation trimmed from the end
-			words[cw].buffer.resize(0);
+			// If the input ended with non-alphanumerics, test input with non-alphanumerics trimmed from the end
+			words[cw].buffer.remove();
 			words[cw].start = ichStart;
 			words[cw].count = count;
-			words[cw].buffer.append(pwsz+words[cw].start, pwsz+words[cw].start+words[cw].count);
+			words[cw].buffer.append(pwsz, words[cw].start, words[cw].count);
 			++cw;
 		}
 
 		size_t start = ichStart, count2 = cchUse;
-		while (start < ichStart+cchUse && (std::iswpunct(pwsz[start]) || std::iswspace(pwsz[start]))) {
+		while (start < ichStart+cchUse && !u_isalnum(pwsz[start])) {
 			++start;
 			--count2;
 		}
 		if (start != ichStart) {
-			// If the input started with punctuation, test input with punctuation trimmed from the start
-			words[cw].buffer.resize(0);
+			// If the input started with non-alphanumerics, test input with non-alphanumerics trimmed from the start
+			words[cw].buffer.remove();
 			words[cw].start = start;
 			words[cw].count = count2;
-			words[cw].buffer.append(pwsz+words[cw].start, pwsz+words[cw].start+words[cw].count);
+			words[cw].buffer.append(pwsz, words[cw].start, words[cw].count);
 			++cw;
 		}
 
 		if (start != ichStart && count != cchUse) {
-			// If the input both started and ended with punctuation, test input with punctuation trimmed from both sides
-			words[cw].buffer.resize(0);
+			// If the input both started and ended with non-alphanumerics, test input with non-alphanumerics trimmed from both sides
+			words[cw].buffer.remove();
 			words[cw].start = start;
 			words[cw].count = count - (cchUse - count2);
-			words[cw].buffer.append(pwsz+words[cw].start, pwsz+words[cw].start+words[cw].count);
+			words[cw].buffer.append(pwsz, words[cw].start, words[cw].count);
 			++cw;
 		}
 	}
@@ -148,24 +168,26 @@ bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 		valid_words_t::iterator it = valid_words.find(words[i].buffer);
 
 		if (it == valid_words.end()) {
-			bool valid = speller.spell(words[i].buffer);
+			buffer.clear();
+			words[i].buffer.toUTF8String(buffer);
+			bool valid = speller.spell(buffer);
 			it = valid_words.insert(std::make_pair(words[i].buffer,valid)).first;
 
 			if (!valid) {
 				// If the word was not valid, fold it to lower case and try again
-				buffer.resize(0);
-				ubuffer.setTo(UnicodeString::fromUTF8(words[i].buffer));
+				buffer.clear();
+				ubuffer = words[i].buffer;
 				ubuffer.toLower();
 				ubuffer.toUTF8String(buffer);
 
 				// Add the lower case variant to the list so that we get suggestions using that, if need be
 				words[cw].start = words[i].start;
 				words[cw].count = words[i].count;
-				words[cw].buffer = buffer;
+				words[cw].buffer = ubuffer;
 				++cw;
 
 				// Don't try again if the lower cased variant has already been tried
-				valid_words_t::iterator itl = valid_words.find(buffer);
+				valid_words_t::iterator itl = valid_words.find(ubuffer);
 				if (itl != valid_words.end()) {
 					it->second = itl->second;
 					it = itl;
@@ -173,7 +195,7 @@ bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 				else {
 					valid = speller.spell(buffer);
 					it->second = valid; // Also mark the original mixed case variant as whatever the lower cased one was
-					it = valid_words.insert(std::make_pair(buffer,valid)).first;
+					it = valid_words.insert(std::make_pair(words[i].buffer,valid)).first;
 				}
 			}
 		}
@@ -210,11 +232,15 @@ int zhfst_spell(const char* zhfst_filename) {
 	std::string word;
 	std::istringstream ss;
 	while (std::getline(std::cin, line)) {
-		while (!line.empty() && std::iswspace(line[line.size()-1])) {
+		while (!line.empty() && std::isspace(line[line.size()-1])) {
 			line.resize(line.size()-1);
 		}
 		if (line.empty()) {
 			continue;
+		}
+		// Just in case anyone decides to use the speller for a minor eternity
+		if (valid_words.size() > 2048) {
+			valid_words.clear();
 		}
 
 		ss.clear();
