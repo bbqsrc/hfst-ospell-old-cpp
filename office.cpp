@@ -115,7 +115,7 @@ bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 		return true;
 	}
 
-	size_t ichStart = 0, cchUse = word.size();
+	size_t ichStart = 0, cchUse = ubuffer.length();
 	const UChar *pwsz = ubuffer.getTerminatedBuffer();
 
 	// Always test the full given input
