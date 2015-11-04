@@ -29,9 +29,12 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <string>
 #include <algorithm>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <cmath>
 #include <cerrno>
 #include <cctype>
@@ -59,6 +62,8 @@ std::vector<word_t> words(8);
 std::string buffer;
 UnicodeString ubuffer;
 size_t cw;
+
+bool verbatim = false;
 
 bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 	/* Weights make this entirely pointless
@@ -125,7 +130,7 @@ bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 	words[0].buffer = ubuffer;
 	cw = 1;
 
-	if (cchUse > 1) {
+	if (cchUse > 1 && !verbatim) {
 		size_t count = cchUse;
 		while (count && !u_isalnum(pwsz[ichStart+count-1])) {
 			--count;
@@ -172,7 +177,7 @@ bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 			bool valid = speller.spell(buffer);
 			it = valid_words.insert(std::make_pair(words[i].buffer,valid)).first;
 
-			if (!valid) {
+			if (!valid && !verbatim) {
 				// If the word was not valid, fold it to lower case and try again
 				buffer.clear();
 				ubuffer = words[i].buffer;
@@ -263,7 +268,7 @@ int zhfst_spell(const char* zhfst_filename) {
     return EXIT_SUCCESS;
 }
 
-int main(int, char **argv) {
+int main(int argc, char **argv) {
 	UErrorCode status = U_ZERO_ERROR;
 	u_init(&status);
 	if (U_FAILURE(status) && status != U_FILE_ACCESS_ERROR) {
@@ -274,7 +279,22 @@ int main(int, char **argv) {
 	ucnv_setDefaultName("UTF-8");
 	uloc_setDefault("en_US_POSIX", &status);
 
-	int rv = zhfst_spell(argv[1]);
+	std::vector<std::string> args(argv, argv+argc);
+	for (std::vector<std::string>::iterator it=args.begin() ; it != args.end() ; ) {
+		if (*it == "--verbatim") {
+			verbatim = true;
+			it = args.erase(it);
+		}
+		else {
+			++it;
+		}
+	}
+
+	if (args.size() < 2) {
+		throw std::invalid_argument("Must pass a zhfst as argument");
+	}
+
+	int rv = zhfst_spell(args[1].c_str());
 
 	u_cleanup();
 	return rv;
