@@ -38,6 +38,8 @@
 #include <cmath>
 #include <cerrno>
 #include <cctype>
+
+#define U_CHARSET_IS_UTF8 1
 #include <unicode/uclean.h>
 #include <unicode/ucnv.h>
 #include <unicode/uloc.h>
@@ -60,10 +62,12 @@ struct word_t {
 };
 std::vector<word_t> words(8);
 std::string buffer;
-UnicodeString ubuffer;
+UnicodeString ubuffer, uc_buffer;
 size_t cw;
 
 bool verbatim = false;
+bool uc_first = false;
+bool uc_all = true;
 
 bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 	/* Weights make this entirely pointless
@@ -90,7 +94,19 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 			if (cw - k != 0) {
 				words[0].buffer.tempSubString(0, words[cw-k].start).toUTF8String(buffer);
 			}
-			buffer.append(corrections.top().first);
+			if (uc_all) {
+				UnicodeString::fromUTF8(corrections.top().first).toUpper().toUTF8String(buffer);
+			}
+			else if (uc_first) {
+				uc_buffer.setTo(UnicodeString::fromUTF8(corrections.top().first));
+				ubuffer.setTo(uc_buffer, 0, 1);
+				ubuffer.toUpper();
+				ubuffer.append(uc_buffer, 1, uc_buffer.length()-1);
+				ubuffer.toUTF8String(buffer);
+			}
+			else {
+				buffer.append(corrections.top().first);
+			}
 			if (cw - k != 0) {
 				words[0].buffer.tempSubString(words[cw-k].start + words[cw-k].count).toUTF8String(buffer);
 			}
@@ -107,11 +123,19 @@ bool find_alternatives(ZHfstOspeller& speller, size_t suggs) {
 bool is_valid_word(ZHfstOspeller& speller, const std::string& word) {
 	ubuffer.setTo(UnicodeString::fromUTF8(word));
 
+	uc_first = false;
+	uc_all = true;
 	bool has_letters = false;
 	for (int32_t i=0 ; i<ubuffer.length() ; ++i) {
 		if (u_isalpha(ubuffer[i])) {
 			has_letters = true;
-			break;
+			if (u_isupper(ubuffer[i]) && uc_all) {
+				uc_first = true;
+			}
+			else if (u_islower(ubuffer[i])) {
+				uc_all = false;
+				break;
+			}
 		}
 	}
 
