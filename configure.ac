@@ -53,6 +53,11 @@ AC_ARG_ENABLE([extra_demos],
                               [build conference demos for science reproduction @<:@default=no@:>@])],
               [enable_extra_demos=$enableval], [enable_extra_demos=no])
 AM_CONDITIONAL([EXTRA_DEMOS], [test x$enable_extra_demos != xno])
+AC_ARG_ENABLE([hfst_ospell_office],
+              [AS_HELP_STRING([--enable-hfst-ospell-office],
+                              [build hfst-ospell-office @<:@default=yes@:>@])],
+              [enable_hfst_ospell_ofiice=$enableval], [enable_hfst_ospell_office=yes])
+AM_CONDITIONAL([HFST_OSPELL_OFFICE], [test x$enable_hfst_ospell_office != xno])
 AC_ARG_ENABLE([zhfst],
               [AS_HELP_STRING([--enable-zhfst],
                               [support zipped complex automaton sets @<:@default=check@:>@])],
@@ -97,7 +102,11 @@ AS_IF([test x$enable_zhfst != xno],
       [PKG_CHECK_MODULES([LIBARCHIVE], [libarchive > 3],
                   [AC_DEFINE([HAVE_LIBARCHIVE], [1], [Use archives])
                    enable_zhfst=yes],
-                  [enable_zhfst=no])])
+                  [PKG_CHECK_MODULES([LIBARCHIVE], [libarchive > 2],
+                  [AC_DEFINE([HAVE_LIBARCHIVE], [1], [Use archives])
+		   AC_DEFINE([USE_LIBARCHIVE_2], [1], [Use libarchive2])
+                   enable_zhfst=yes],[enable_zhfst=no])])])
+
 AM_CONDITIONAL([WANT_ARCHIVE], [test x$enable_zhfst != xno])
 AS_IF([test x$with_libxmlpp != xno],
       [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0],
@@ -163,6 +172,7 @@ cat <<EOF
     * zhfst support: $enable_zhfst
     * extracting to: $with_extract
     * xml support: $enable_xml
+    * hfst-ospell-office: $enable_hfst_ospell_office
     * conference demos: $enable_extra_demos
 EOF
 AS_IF([test x$with_libxmlpp != xno -a x$with_tinyxml2 != xno],

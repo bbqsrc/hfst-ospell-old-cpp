@@ -243,7 +243,13 @@ ZHfstOspeller::read_zhfst(const string& filename)
 #if HAVE_LIBARCHIVE
     struct archive* ar = archive_read_new();
     struct archive_entry* entry = 0;
+
+#if USE_LIBARCHIVE_2
+    archive_read_support_compression_all(ar);
+#else
     archive_read_support_filter_all(ar);
+#endif // USE_LIBARCHIVE_2
+
     archive_read_support_format_all(ar);
     int rr = archive_read_open_filename(ar, filename.c_str(), 10240);
     if (rr != ARCHIVE_OK)
@@ -355,7 +361,13 @@ ZHfstOspeller::read_zhfst(const string& filename)
         free(filename);
       } // while r != ARCHIVE_EOF
     archive_read_close(ar);
+
+#if USE_LIBARCHIVE_2
+    archive_read_finish(ar);
+#else
     archive_read_free(ar);
+#endif // USE_LIBARCHIVE_2
+
     if ((errmodels_.find("default") != errmodels_.end()) &&
         (acceptors_.find("default") != acceptors_.end()))
       {

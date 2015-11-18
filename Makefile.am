@@ -24,7 +24,11 @@ CONFERENCE_DEMOS=hfst-ospell-norvig hfst-ospell-fsmnlp-2012 hfst-ospell-cicling\
 				 hfst-ospell-survey hfst-ospell-lrec2013 hfst-ispell
 endif # EXTRA_DEMOS
 
-bin_PROGRAMS=hfst-ospell hfst-ospell-office $(CONFERENCE_DEMOS)
+if HFST_OSPELL_OFFICE
+MAYBE_HFST_OSPELL_OFFICE=hfst-ospell-office
+endif # HFST_OSPELL_OFFICE 
+
+bin_PROGRAMS=hfst-ospell $(MAYBE_HFST_OSPELL_OFFICE) $(CONFERENCE_DEMOS)
 lib_LTLIBRARIES=libhfstospell.la
 man1_MANS=hfst-ospell.1
 
@@ -59,11 +63,16 @@ hfst_ospell_LDADD=libhfstospell.la
 hfst_ospell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 					 $(PKG_CXXFLAGS)
 
+if HFST_OSPELL_OFFICE
+
 hfst_ospell_office_SOURCES=office.cpp
 hfst_ospell_office_LDADD=libhfstospell.la
 hfst_ospell_office_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
 
+endif # HFST_OSPELL_OFFICE
+
 if EXTRA_DEMOS
+
 hfst_ospell_norvig_SOURCES=main-norvig.cc
 hfst_ospell_norvig_LDADD=libhfstospell.la
 hfst_ospell_norvig_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
@@ -90,10 +99,14 @@ hfst_ospell_fsmnlp_2012_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 								 $(PKG_CXXFLAGS)
 endif # EXTRA_DEMOS
 
+if EXTRA_DEMOS
+
 hfst_ispell_SOURCES=main-ispell.cc
 hfst_ispell_LDADD=libhfstospell.la
 hfst_ispell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 							$(PKG_CXXFLAGS)
+
+endif # EXTRA_DEMOS
 
 # install headers for library in hfst's includedir
 include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h \
