@@ -67,7 +67,7 @@ AC_ARG_ENABLE([xml],
                               [support XML metadata @<:@default=yes@:>@])],
               [enable_xml=$enableval], [enable_xml=yes])
 AM_CONDITIONAL([XML], [test x$enable_xml != xno])
-AS_IF([test x$enable_xml != no], [
+AS_IF([test x$enable_xml != xno], [
   AC_DEFINE([XML_ENABLED], [1], [Enable XML related functionality])
 ])
 AC_ARG_WITH([libxmlpp],
