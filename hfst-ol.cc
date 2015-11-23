@@ -17,6 +17,14 @@
 
 namespace hfst_ol {
 
+template <typename T>
+inline T hfst_deref(T* ptr)
+{
+    T dest;
+    memcpy(&dest, ptr, sizeof(dest));
+    return dest;
+}
+
 void skip_c_string(char ** raw)
 {
     while (**raw != 0)
@@ -113,7 +121,7 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
             }
         }
     }
-    else   // nope. put back what we've taken
+    else // nope. put back what we've taken
     {
         ungetc(c, f); // first the non-matching character
         for(int i = header_loc - 1; i>=0; i--)
@@ -142,7 +150,7 @@ void TransducerHeader::skip_hfst3_header(char ** raw)
         unsigned short remaining_header_len = *((unsigned short *) *raw);
         (*raw) += sizeof(unsigned short) + 1 + remaining_header_len;
     }
-    else   // nope. put back what we've taken
+    else // nope. put back what we've taken
     {
         --(*raw); // first the non-matching character
         for(int i = header_loc - 1; i>=0; i--)
@@ -382,7 +390,7 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
                 kt.push_back(std::string(line));
                 continue;
             }
-            else     // we don't know what this is, ignore and suppress
+            else // we don't know what this is, ignore and suppress
             {
                 kt.push_back(std::string(""));
                 continue;
@@ -474,7 +482,7 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
                 skip_c_string(raw);
                 continue;
             }
-            else     // we don't know what this is, ignore and suppress
+            else // we don't know what this is, ignore and suppress
             {
                 kt.push_back(std::string(""));
                 skip_c_string(raw);
@@ -778,8 +786,8 @@ IndexTable::input_symbol(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return *((SymbolNumber *)
-                 (indices + TransitionIndex::SIZE * i));
+        return hfst_deref((SymbolNumber *)
+                          (indices + TransitionIndex::SIZE * i));
     }
     else
     {
@@ -792,8 +800,9 @@ IndexTable::target(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return *((TransitionTableIndex *)
-                 (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+        return hfst_deref((TransitionTableIndex *)
+                          (indices + TransitionIndex::SIZE * i +
+                           sizeof(SymbolNumber)));
     }
     else
     {
@@ -812,8 +821,7 @@ IndexTable::final_weight(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return *((Weight *)
-                 (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+        return hfst_deref((Weight *)(indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
     }
     else
     {
@@ -850,8 +858,8 @@ TransitionTable::input_symbol(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return *((SymbolNumber *)
-                 (transitions + Transition::SIZE * i));
+        return hfst_deref((SymbolNumber *)
+                          (transitions + Transition::SIZE * i));
     }
     else
     {
@@ -864,9 +872,9 @@ TransitionTable::output_symbol(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return *((SymbolNumber *)
-                 (transitions + Transition::SIZE * i +
-                  sizeof(SymbolNumber)));
+        return hfst_deref((SymbolNumber *)
+                          (transitions + Transition::SIZE * i +
+                           sizeof(SymbolNumber)));
     }
     else
     {
@@ -879,9 +887,9 @@ TransitionTable::target(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return *((TransitionTableIndex *)
-                 (transitions + Transition::SIZE * i +
-                  2*sizeof(SymbolNumber)));
+        return hfst_deref((TransitionTableIndex *)
+                          (transitions + Transition::SIZE * i +
+                           2*sizeof(SymbolNumber)));
     }
     else
     {
@@ -894,9 +902,10 @@ TransitionTable::weight(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return *((Weight *)
-                 (transitions + Transition::SIZE * i +
-                  2*sizeof(SymbolNumber) + sizeof(TransitionTableIndex)));
+        return hfst_deref((Weight*)
+                          (transitions + Transition::SIZE * i +
+                           2*sizeof(SymbolNumber) +
+                           sizeof(TransitionTableIndex)));
     }
     else
     {
@@ -924,3 +933,4 @@ SymbolNumber Encoder::find_key(char ** p)
 }
 
 } // namespace hfst_ol
+
