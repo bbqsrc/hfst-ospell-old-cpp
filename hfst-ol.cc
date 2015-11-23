@@ -19,7 +19,8 @@ namespace hfst_ol {
 
 void skip_c_string(char ** raw)
 {
-    while (**raw != 0) {
+    while (**raw != 0)
+    {
         ++(*raw);
     }
     ++(*raw);
@@ -29,7 +30,8 @@ void
 TransducerHeader::read_property(bool& property, FILE* f)
 {
     unsigned int prop;
-    if (fread(&prop,sizeof(unsigned int),1,f) != 1) {
+    if (fread(&prop,sizeof(unsigned int),1,f) != 1)
+    {
         HFST_THROW_MESSAGE(HeaderParsingException,
                            "Header ended unexpectedly\n");
     }
@@ -70,7 +72,8 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
     for(header_loc = 0; header_loc < strlen(header1) + 1; header_loc++)
     {
         c = getc(f);
-        if(c != header1[header_loc]) {
+        if(c != header1[header_loc])
+        {
             break;
         }
     }
@@ -79,7 +82,8 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
         unsigned short remaining_header_len;
         if (fread(&remaining_header_len,
                   sizeof(remaining_header_len), 1, f) != 1 ||
-            getc(f) != '\0') {
+            getc(f) != '\0')
+        {
             HFST_THROW_MESSAGE(HeaderParsingException,
                                "Found broken HFST3 header\n");
         }
@@ -89,15 +93,18 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
             HFST_THROW_MESSAGE(HeaderParsingException,
                                "HFST3 header ended unexpectedly\n");
         }
-        if (headervalue[remaining_header_len - 1] != '\0') {
+        if (headervalue[remaining_header_len - 1] != '\0')
+        {
             HFST_THROW_MESSAGE(HeaderParsingException,
                                "Found broken HFST3 header\n");
         }
         std::string header_tail(headervalue, remaining_header_len);
         size_t type_field = header_tail.find("type");
-        if (type_field != std::string::npos) {
+        if (type_field != std::string::npos)
+        {
             if (header_tail.find("HFST_OL") != type_field + 5 &&
-                header_tail.find("HFST_OLW") != type_field + 5) {
+                header_tail.find("HFST_OLW") != type_field + 5)
+            {
                 delete headervalue;
                 HFST_THROW_MESSAGE(
                     TransducerTypeException,
@@ -105,10 +112,12 @@ void TransducerHeader::skip_hfst3_header(FILE * f)
                     "hfst-optimized-lookup\n");
             }
         }
-    } else // nope. put back what we've taken
+    }
+    else   // nope. put back what we've taken
     {
         ungetc(c, f); // first the non-matching character
-        for(int i = header_loc - 1; i>=0; i--) {
+        for(int i = header_loc - 1; i>=0; i--)
+        {
             // then the characters that did match (if any)
             ungetc(header1[i], f);
         }
@@ -122,7 +131,8 @@ void TransducerHeader::skip_hfst3_header(char ** raw)
 
     for(header_loc = 0; header_loc < strlen(header1) + 1; header_loc++)
     {
-        if(**raw != header1[header_loc]) {
+        if(**raw != header1[header_loc])
+        {
             break;
         }
         ++(*raw);
@@ -131,10 +141,12 @@ void TransducerHeader::skip_hfst3_header(char ** raw)
     {
         unsigned short remaining_header_len = *((unsigned short *) *raw);
         (*raw) += sizeof(unsigned short) + 1 + remaining_header_len;
-    } else // nope. put back what we've taken
+    }
+    else   // nope. put back what we've taken
     {
         --(*raw); // first the non-matching character
-        for(int i = header_loc - 1; i>=0; i--) {
+        for(int i = header_loc - 1; i>=0; i--)
+        {
             // then the characters that did match (if any)
             --(*raw);
         }
@@ -157,7 +169,8 @@ TransducerHeader::TransducerHeader(FILE* f)
         fread(&number_of_states,
               sizeof(TransitionTableIndex),1,f) != 1||
         fread(&number_of_transitions,
-              sizeof(TransitionTableIndex),1,f) != 1) {
+              sizeof(TransitionTableIndex),1,f) != 1)
+    {
         HFST_THROW_MESSAGE(HeaderParsingException,
                            "Header ended unexpectedly\n");
     }
@@ -200,31 +213,32 @@ TransducerHeader::TransducerHeader(char** raw)
 
 SymbolNumber
 TransducerHeader::symbol_count()
-  {
-    return number_of_symbols; 
-  }
+{
+    return number_of_symbols;
+}
 
 SymbolNumber
 TransducerHeader::input_symbol_count()
-  {
-    return number_of_input_symbols; 
-  }
+{
+    return number_of_input_symbols;
+}
 TransitionTableIndex
 TransducerHeader::index_table_size(void)
-  {
-    return size_of_transition_index_table; 
-  }
+{
+    return size_of_transition_index_table;
+}
 
-TransitionTableIndex 
+TransitionTableIndex
 TransducerHeader::target_table_size()
-  {
-    return size_of_transition_target_table; 
-  }
+{
+    return size_of_transition_target_table;
+}
 
 bool
 TransducerHeader::probe_flag(HeaderFlag flag)
-  {
-    switch (flag) {
+{
+    switch (flag)
+    {
     case Weighted:
         return weighted;
     case Deterministic:
@@ -245,32 +259,32 @@ TransducerHeader::probe_flag(HeaderFlag flag)
         return has_unweighted_input_epsilon_cycles;
     }
     return false;
-  }
+}
 
 bool
 FlagDiacriticOperation::isFlag() const
-  {
-    return feature != NO_SYMBOL; 
-  }
+{
+    return feature != NO_SYMBOL;
+}
 
 FlagDiacriticOperator
 FlagDiacriticOperation::Operation() const
-  {
+{
     return operation;
-  }
+}
 
 SymbolNumber
 FlagDiacriticOperation::Feature() const
-  {
+{
     return feature;
-  }
+}
 
 
 ValueNumber
 FlagDiacriticOperation::Value() const
-  {
+{
     return value;
-  }
+}
 
 
 void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
@@ -284,17 +298,22 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
 
     kt.push_back(std::string("")); // zeroth symbol is epsilon
     int byte;
-    while ( (byte = fgetc(f)) != 0 ) {
+    while ( (byte = fgetc(f)) != 0 )
+    {
         /* pass over epsilon */
-        if (byte == EOF) {
+        if (byte == EOF)
+        {
             HFST_THROW(AlphabetParsingException);
         }
     }
 
-    for (SymbolNumber k = 1; k < number_of_symbols; ++k) {
+    for (SymbolNumber k = 1; k < number_of_symbols; ++k)
+    {
         char * sym = line;
-        while ( (byte = fgetc(f)) != 0 ) {
-            if (byte == EOF) {
+        while ( (byte = fgetc(f)) != 0 )
+        {
+            if (byte == EOF)
+            {
                 HFST_THROW(AlphabetParsingException);
             }
             *sym = byte;
@@ -302,12 +321,15 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
         }
         *sym = 0;
         // Detect and handle special symbols, which begin and end with @
-        if (line[0] == '@' && line[strlen(line) - 1] == '@') {
-            if (strlen(line) >= 5 && line[2] == '.') { // flag diacritic
+        if (line[0] == '@' && line[strlen(line) - 1] == '@')
+        {
+            if (strlen(line) >= 5 && line[2] == '.')   // flag diacritic
+            {
                 std::string feat;
                 std::string val;
                 FlagDiacriticOperator op = P; // for the compiler
-                switch (line[1]) {
+                switch (line[1])
+                {
                 case 'P': op = P; break;
                 case 'N': op = N; break;
                 case 'R': op = R; break;
@@ -316,10 +338,16 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
                 case 'U': op = U; break;
                 }
                 char * c = line;
-                for (c +=3; *c != '.' && *c != '@'; c++) { feat.append(c,1); }
+                for (c +=3; *c != '.' && *c != '@'; c++)
+                {
+                    feat.append(c,1);
+                }
                 if (*c == '.')
                 {
-                    for (++c; *c != '@'; c++) { val.append(c,1); }
+                    for (++c; *c != '@'; c++)
+                    {
+                        val.append(c,1);
+                    }
                 }
                 if (feature_bucket.count(feat) == 0)
                 {
@@ -341,15 +369,21 @@ void TransducerAlphabet::read(FILE * f, SymbolNumber number_of_symbols)
                 kt.push_back(std::string(""));
                 continue;
 
-            } else if (strcmp(line, "@_UNKNOWN_SYMBOL_@") == 0) {
+            }
+            else if (strcmp(line, "@_UNKNOWN_SYMBOL_@") == 0)
+            {
                 unknown_symbol = k;
                 kt.push_back(std::string(line));
                 continue;
-            } else if (strcmp(line, "@_IDENTITY_SYMBOL_@") == 0) {
+            }
+            else if (strcmp(line, "@_IDENTITY_SYMBOL_@") == 0)
+            {
                 identity_symbol = k;
                 kt.push_back(std::string(line));
                 continue;
-            } else { // we don't know what this is, ignore and suppress
+            }
+            else     // we don't know what this is, ignore and suppress
+            {
                 kt.push_back(std::string(""));
                 continue;
             }
@@ -372,15 +406,19 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
     kt.push_back(std::string("")); // zeroth symbol is epsilon
     skip_c_string(raw);
 
-    for (SymbolNumber k = 1; k < number_of_symbols; ++k) {
+    for (SymbolNumber k = 1; k < number_of_symbols; ++k)
+    {
 
         // Detect and handle special symbols, which begin and end with @
-        if ((*raw)[0] == '@' && (*raw)[strlen(*raw) - 1] == '@') {
-            if (strlen(*raw) >= 5 && (*raw)[2] == '.') { // flag diacritic
+        if ((*raw)[0] == '@' && (*raw)[strlen(*raw) - 1] == '@')
+        {
+            if (strlen(*raw) >= 5 && (*raw)[2] == '.')   // flag diacritic
+            {
                 std::string feat;
                 std::string val;
                 FlagDiacriticOperator op = P; // for the compiler
-                switch ((*raw)[1]) {
+                switch ((*raw)[1])
+                {
                 case 'P': op = P; break;
                 case 'N': op = N; break;
                 case 'R': op = R; break;
@@ -389,10 +427,16 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
                 case 'U': op = U; break;
                 }
                 char * c = *raw;
-                for (c +=3; *c != '.' && *c != '@'; c++) { feat.append(c,1); }
+                for (c +=3; *c != '.' && *c != '@'; c++)
+                {
+                    feat.append(c,1);
+                }
                 if (*c == '.')
                 {
-                    for (++c; *c != '@'; c++) { val.append(c,1); }
+                    for (++c; *c != '@'; c++)
+                    {
+                        val.append(c,1);
+                    }
                 }
                 if (feature_bucket.count(feat) == 0)
                 {
@@ -415,17 +459,23 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
                 skip_c_string(raw);
                 continue;
 
-            } else if (strcmp(*raw, "@_UNKNOWN_SYMBOL_@") == 0) {
+            }
+            else if (strcmp(*raw, "@_UNKNOWN_SYMBOL_@") == 0)
+            {
                 unknown_symbol = k;
                 kt.push_back(std::string(""));
                 skip_c_string(raw);
                 continue;
-            } else if (strcmp(*raw, "@_IDENTITY_SYMBOL_@") == 0) {
+            }
+            else if (strcmp(*raw, "@_IDENTITY_SYMBOL_@") == 0)
+            {
                 identity_symbol = k;
                 kt.push_back(std::string(""));
                 skip_c_string(raw);
                 continue;
-            } else { // we don't know what this is, ignore and suppress
+            }
+            else     // we don't know what this is, ignore and suppress
+            {
                 kt.push_back(std::string(""));
                 skip_c_string(raw);
                 continue;
@@ -438,22 +488,22 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
     flag_state_size = feature_bucket.size();
 }
 
-TransducerAlphabet::TransducerAlphabet(FILE* f, SymbolNumber number_of_symbols):
+TransducerAlphabet::TransducerAlphabet(FILE* f, SymbolNumber number_of_symbols) :
     unknown_symbol(NO_SYMBOL),
     identity_symbol(NO_SYMBOL),
     orig_symbol_count(number_of_symbols)
-        {
-            read(f, number_of_symbols);
-        }
+{
+    read(f, number_of_symbols);
+}
 
 TransducerAlphabet::TransducerAlphabet(char** raw,
-                                       SymbolNumber number_of_symbols):
+                                       SymbolNumber number_of_symbols) :
     unknown_symbol(NO_SYMBOL),
     identity_symbol(NO_SYMBOL),
     orig_symbol_count(number_of_symbols)
-        {
-            read(raw, number_of_symbols);
-        }
+{
+    read(raw, number_of_symbols);
+}
 
 void TransducerAlphabet::add_symbol(std::string & sym)
 {
@@ -469,33 +519,33 @@ void TransducerAlphabet::add_symbol(char * sym)
 
 KeyTable*
 TransducerAlphabet::get_key_table()
-  {
-    return &kt; 
-  }
+{
+    return &kt;
+}
 
 OperationMap*
 TransducerAlphabet::get_operation_map()
-  {
+{
     return &operations;
-  }
+}
 
 SymbolNumber
 TransducerAlphabet::get_state_size()
-  {
+{
     return flag_state_size;
-  }
+}
 
 SymbolNumber
 TransducerAlphabet::get_unknown() const
-  {
+{
     return unknown_symbol;
-  }
+}
 
 SymbolNumber
 TransducerAlphabet::get_identity() const
-  {
+{
     return identity_symbol;
-  }
+}
 
 SymbolNumber TransducerAlphabet::get_orig_symbol_count() const
 {
@@ -504,9 +554,9 @@ SymbolNumber TransducerAlphabet::get_orig_symbol_count() const
 
 StringSymbolMap*
 TransducerAlphabet::get_string_to_symbol()
-  {
+{
     return &string_to_symbol;
-  }
+}
 
 bool TransducerAlphabet::has_string(std::string const & s) const
 {
@@ -515,16 +565,17 @@ bool TransducerAlphabet::has_string(std::string const & s) const
 
 bool
 TransducerAlphabet::is_flag(SymbolNumber symbol)
-  {
+{
     return operations.count(symbol) == 1;
-  }
+}
 
 void IndexTable::read(FILE * f,
                       TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
     indices = (char*)(malloc(table_size));
-    if (fread(indices,table_size, 1, f) != 1) {
+    if (fread(indices,table_size, 1, f) != 1)
+    {
         HFST_THROW(IndexTableReadingException);
     }
 }
@@ -543,7 +594,8 @@ void TransitionTable::read(FILE * f,
 {
     size_t table_size = number_of_table_entries*Transition::SIZE;
     transitions = (char*)(malloc(table_size));
-    if (fread(transitions, table_size, 1, f) != 1) {
+    if (fread(transitions, table_size, 1, f) != 1)
+    {
         HFST_THROW(TransitionTableReadingException);
     }
 }
@@ -589,26 +641,27 @@ SymbolNumber LetterTrie::find_key(char ** p)
 }
 
 LetterTrie::~LetterTrie()
-  {
+{
     for (LetterTrieVector::iterator i = letters.begin();
          i != letters.end(); ++i)
-      {
+    {
         if (*i)
-          { 
-            delete *i;
-          }
-      }
-   }
-
-Encoder::Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols):
-        ascii_symbols(UCHAR_MAX,NO_SYMBOL)
         {
-            read_input_symbols(kt, number_of_input_symbols);
+            delete *i;
         }
+    }
+}
+
+Encoder::Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols) :
+    ascii_symbols(UCHAR_MAX,NO_SYMBOL)
+{
+    read_input_symbols(kt, number_of_input_symbols);
+}
 
 void Encoder::read_input_symbol(const char * s, const int s_num)
 {
-    if (strlen(s) == 0) { // ignore empty strings
+    if (strlen(s) == 0)   // ignore empty strings
+    {
         return;
     }
     if ((strlen(s) == 1) && (unsigned char)(*s) <= 127)
@@ -635,15 +688,15 @@ void Encoder::read_input_symbols(KeyTable * kt,
 
 TransitionTableIndex
 TransitionIndex::target() const
-  {
+{
     return first_transition_index;
-  }
+}
 
-bool 
-TransitionIndex::final(void) const
+bool
+TransitionIndex::final (void) const
 {
     return input_symbol == NO_SYMBOL &&
-        first_transition_index != NO_TABLE_INDEX;
+           first_transition_index != NO_TABLE_INDEX;
 }
 
 Weight
@@ -664,7 +717,7 @@ TransitionIndex::get_input(void) const
     return input_symbol;
 }
 
-TransitionTableIndex 
+TransitionTableIndex
 Transition::target(void) const
 {
     return target_index;
@@ -689,152 +742,175 @@ Transition::get_weight(void) const
 }
 
 bool
-Transition::final(void) const
+Transition::final (void) const
 {
     return input_symbol == NO_SYMBOL &&
-        output_symbol == NO_SYMBOL &&
-        target_index == 1;
+           output_symbol == NO_SYMBOL &&
+           target_index == 1;
 }
 
 IndexTable::IndexTable(FILE* f,
-                       TransitionTableIndex number_of_table_entries):
+                       TransitionTableIndex number_of_table_entries) :
     indices(NULL),
     size(number_of_table_entries)
-        {
-            read(f, number_of_table_entries);
-        }
-    
+{
+    read(f, number_of_table_entries);
+}
+
 IndexTable::IndexTable(char ** raw,
-                       TransitionTableIndex number_of_table_entries):
+                       TransitionTableIndex number_of_table_entries) :
     indices(NULL),
     size(number_of_table_entries)
-        {
-            read(raw, number_of_table_entries);
-        }
+{
+    read(raw, number_of_table_entries);
+}
 
 IndexTable::~IndexTable(void)
-        {
-            if (indices) {
-                free(indices);
-            }
-        }
+{
+    if (indices)
+    {
+        free(indices);
+    }
+}
 
 SymbolNumber
 IndexTable::input_symbol(TransitionTableIndex i) const
-        {
-            if (i < size) {
-                return *((SymbolNumber *)
-                         (indices + TransitionIndex::SIZE * i));
-            } else {
-                return NO_SYMBOL;
-            }
-        }
+{
+    if (i < size)
+    {
+        return *((SymbolNumber *)
+                 (indices + TransitionIndex::SIZE * i));
+    }
+    else
+    {
+        return NO_SYMBOL;
+    }
+}
 
 TransitionTableIndex
 IndexTable::target(TransitionTableIndex i) const
-  {
-      if (i < size) {
-          return *((TransitionTableIndex *) 
-                   (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
-      } else {
-          return NO_TABLE_INDEX;
-      }
-  }
+{
+    if (i < size)
+    {
+        return *((TransitionTableIndex *)
+                 (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+    }
+    else
+    {
+        return NO_TABLE_INDEX;
+    }
+}
 
 bool
-IndexTable::final(TransitionTableIndex i) const
-        {
-            return input_symbol(i) == NO_SYMBOL && target(i) != NO_TABLE_INDEX;
-        }
+IndexTable::final (TransitionTableIndex i) const
+{
+    return input_symbol(i) == NO_SYMBOL && target(i) != NO_TABLE_INDEX;
+}
 
 Weight
 IndexTable::final_weight(TransitionTableIndex i) const
-        {
-            if (i < size) {
-                return *((Weight *)
-                         (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
-            } else {
-                return INFINITE_WEIGHT;
-            }
-        }
+{
+    if (i < size)
+    {
+        return *((Weight *)
+                 (indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+    }
+    else
+    {
+        return INFINITE_WEIGHT;
+    }
+}
 
 TransitionTable::TransitionTable(FILE * f,
-                                 TransitionTableIndex transition_count):
+                                 TransitionTableIndex transition_count) :
     transitions(NULL),
     size(transition_count)
-        {
-            read(f, transition_count);
-        }
-  
+{
+    read(f, transition_count);
+}
+
 TransitionTable::TransitionTable(char ** raw,
-                    TransitionTableIndex transition_count):
+                                 TransitionTableIndex transition_count) :
     transitions(NULL),
     size(transition_count)
-        {
-            read(raw, transition_count);
-        }
+{
+    read(raw, transition_count);
+}
 
 TransitionTable::~TransitionTable(void)
-        {
-            if (transitions) {
-                free(transitions);
-            }
-        }
+{
+    if (transitions)
+    {
+        free(transitions);
+    }
+}
 
 SymbolNumber
 TransitionTable::input_symbol(TransitionTableIndex i) const
-        {
-            if (i < size) {
-                return *((SymbolNumber *)
-                         (transitions + Transition::SIZE * i));
-            } else {
-                return NO_SYMBOL;
-            }
-        }
+{
+    if (i < size)
+    {
+        return *((SymbolNumber *)
+                 (transitions + Transition::SIZE * i));
+    }
+    else
+    {
+        return NO_SYMBOL;
+    }
+}
 
 SymbolNumber
 TransitionTable::output_symbol(TransitionTableIndex i) const
-        {
-            if (i < size) {
-                return *((SymbolNumber *)
-                         (transitions + Transition::SIZE * i +
-                          sizeof(SymbolNumber)));
-            } else {
-                return NO_SYMBOL;
-            }
-        }
+{
+    if (i < size)
+    {
+        return *((SymbolNumber *)
+                 (transitions + Transition::SIZE * i +
+                  sizeof(SymbolNumber)));
+    }
+    else
+    {
+        return NO_SYMBOL;
+    }
+}
 
 TransitionTableIndex
 TransitionTable::target(TransitionTableIndex i) const
-        {
-            if (i < size) {
-                return *((TransitionTableIndex *)
-                         (transitions + Transition::SIZE * i +
-                          2*sizeof(SymbolNumber)));
-            } else {
-                return NO_TABLE_INDEX;
-            }
-        }
+{
+    if (i < size)
+    {
+        return *((TransitionTableIndex *)
+                 (transitions + Transition::SIZE * i +
+                  2*sizeof(SymbolNumber)));
+    }
+    else
+    {
+        return NO_TABLE_INDEX;
+    }
+}
 
 Weight
 TransitionTable::weight(TransitionTableIndex i) const
-        {
-            if (i < size) {
-            return *((Weight *)
-                     (transitions + Transition::SIZE * i +
-                      2*sizeof(SymbolNumber) + sizeof(TransitionTableIndex)));
-            } else {
-                return INFINITE_WEIGHT;
-            }
-        }
+{
+    if (i < size)
+    {
+        return *((Weight *)
+                 (transitions + Transition::SIZE * i +
+                  2*sizeof(SymbolNumber) + sizeof(TransitionTableIndex)));
+    }
+    else
+    {
+        return INFINITE_WEIGHT;
+    }
+}
 
 bool
-TransitionTable::final(TransitionTableIndex i) const
-        {
-            return input_symbol(i) == NO_SYMBOL &&
-                output_symbol(i) == NO_SYMBOL &&
-                target(i) == 1;
-        }
+TransitionTable::final (TransitionTableIndex i) const
+{
+    return input_symbol(i) == NO_SYMBOL &&
+           output_symbol(i) == NO_SYMBOL &&
+           target(i) == 1;
+}
 
 SymbolNumber Encoder::find_key(char ** p)
 {

@@ -34,12 +34,13 @@ typedef std::pair<std::string, std::string> StringPair;
 typedef std::pair<std::string, Weight> StringWeightPair;
 typedef std::vector<StringWeightPair> StringWeightVector;
 typedef std::pair<std::pair<std::string, std::string>, Weight>
-                                                        StringPairWeightPair;
+    StringPairWeightPair;
 typedef std::vector<TreeNode> TreeNodeVector;
 typedef std::map<std::string, Weight> StringWeightMap;
 
 //! Contains low-level processing stuff.
-struct STransition{
+struct STransition
+{
     TransitionTableIndex index; //!< index to transition
     SymbolNumber symbol; //!< symbol of transition
     Weight weight; //!< weight of transition
@@ -47,20 +48,22 @@ struct STransition{
     //!
     //! create transition without weight
     STransition(TransitionTableIndex i,
-                SymbolNumber s):
+                SymbolNumber s) :
         index(i),
         symbol(s),
         weight(0.0)
-        {}
+    {
+    }
 
     //! create transition with weight
     STransition(TransitionTableIndex i,
                 SymbolNumber s,
-                Weight w):
+                Weight w) :
         index(i),
         symbol(s),
         weight(w)
-        {}
+    {
+    }
 
 };
 //! @brief comparison for establishing order for priority queue for suggestions.
@@ -70,18 +73,19 @@ struct STransition{
 //! weight logic of tropical semiring that is present in most weighted
 //! finite-state spell-checking automata.
 class StringWeightComparison
-/* results are reversed by default because greater weights represent
-   worse results - to reverse the reversal, give a true argument*/
+    /* results are reversed by default because greater weights represent
+       worse results - to reverse the reversal, give a true argument*/
 
 {
     bool reverse;
 public:
     //!
     //! construct a result comparator with ascending or descending weight order
-    StringWeightComparison(bool reverse_result=false):
+    StringWeightComparison(bool reverse_result=false) :
         reverse(reverse_result)
-        {}
-    
+    {
+    }
+
     //!
     //! compare two string weight pairs for weights
     bool operator() (StringWeightPair lhs, StringWeightPair rhs);
@@ -97,10 +101,11 @@ class StringPairWeightComparison
 public:
     //!
     //! create result comparator with ascending or descending weight order
-    StringPairWeightComparison(bool reverse_result=false):
+    StringPairWeightComparison(bool reverse_result=false) :
         reverse(reverse_result)
-        {}
-    
+    {
+    }
+
     //!
     //! compare two analysis corrections for weights
     bool operator() (StringPairWeightPair lhs, StringPairWeightPair rhs);
@@ -119,7 +124,7 @@ typedef std::priority_queue<StringPairWeightPair,
                             std::vector<StringPairWeightPair>,
                             StringPairWeightComparison> AnalysisCorrectionQueue;
 
-struct WeightQueue: public std::list<Weight>
+struct WeightQueue : public std::list<Weight>
 {
     void push(Weight w); // add a new weight
     void pop(void); // delete the biggest weight
@@ -139,9 +144,9 @@ protected:
     Encoder encoder; //!< encoder to convert the strings
 
     static const TransitionTableIndex START_INDEX = 0; //!< position of first
-  
+
 public:
-    //! 
+    //!
     //! read transducer from file @a f
     Transducer(FILE * f);
     //!
@@ -160,7 +165,7 @@ public:
     //! whether it's final transition in this transducer
     bool final_transition(TransitionTableIndex i);
     //!
-    //! whether it's final index 
+    //! whether it's final index
     bool final_index(TransitionTableIndex i);
     //!
     //! get transducers symbol table mapping
@@ -190,7 +195,7 @@ public:
     //!
     //! follow epsilon transitions and falsg form index
     STransition take_epsilons_and_flags(const TransitionTableIndex i);
-    //! 
+    //!
     //! follow real transitions from index
     STransition take_non_epsilons(const TransitionTableIndex i,
                                   const SymbolNumber symbol) const;
@@ -201,7 +206,7 @@ public:
     //!
     //! get next epsilon inedx
     TransitionTableIndex next_e(const TransitionTableIndex i) const;
-    //! 
+    //!
     //! whether state has any transitions with @a symbol
     bool has_transitions(const TransitionTableIndex i,
                          const SymbolNumber symbol) const;
@@ -211,10 +216,10 @@ public:
     //!
     //! whether state has non-epsilons or non-flags
     bool has_non_epsilons_or_flags(const TransitionTableIndex i);
-    //! 
+    //!
     //! whether it's final
     bool is_final(const TransitionTableIndex i);
-    //! 
+    //!
     //! get final weight
     Weight final_weight(const TransitionTableIndex i) const;
     //!
@@ -231,7 +236,7 @@ public:
 //! Contains low-level processing stuff.
 struct TreeNode
 {
-//    SymbolVector input_string; //<! the current input vector
+    //    SymbolVector input_string; //<! the current input vector
     SymbolVector string; //!< the current output vector
     unsigned int input_state; //!< its input state
     TransitionTableIndex mutator_state; //!< state in error model
@@ -246,25 +251,27 @@ struct TreeNode
              TransitionTableIndex mutator,
              TransitionTableIndex lexicon,
              FlagDiacriticState state,
-             Weight w):
+             Weight w) :
         string(prev_string),
         input_state(i),
         mutator_state(mutator),
         lexicon_state(lexicon),
         flag_state(state),
         weight(w)
-        { }
+    {
+    }
 
-    //! 
+    //!
     //! construct empty node with a starting state for flags
-    TreeNode(FlagDiacriticState start_state): // starting state node
-    string(SymbolVector()),
-    input_state(0),
-    mutator_state(0),
-    lexicon_state(0),
-    flag_state(start_state),
-    weight(0.0)
-        { }
+    TreeNode(FlagDiacriticState start_state) : // starting state node
+        string(SymbolVector()),
+        input_state(0),
+        mutator_state(0),
+        lexicon_state(0),
+        flag_state(start_state),
+        weight(0.0)
+    {
+    }
 
     //!
     //! check if tree node is compatible with flag diacritc
@@ -283,11 +290,11 @@ struct TreeNode
 
     //!
     //! The update functions return updated copies of this state
-     TreeNode update(SymbolNumber output_symbol,
-                     unsigned int next_input,
-                     TransitionTableIndex next_mutator,
-                     TransitionTableIndex next_lexicon,
-                     Weight weight);
+    TreeNode update(SymbolNumber output_symbol,
+                    unsigned int next_input,
+                    TransitionTableIndex next_mutator,
+                    TransitionTableIndex next_lexicon,
+                    Weight weight);
 
     TreeNode update(SymbolNumber output_symbol,
                     TransitionTableIndex next_mutator,
@@ -306,15 +313,16 @@ int nByte_utf8(unsigned char c);
 
 //! May get raised if error model automaton has output characters that are not
 //! present in language model.
-class AlphabetTranslationException: public std::runtime_error
+class AlphabetTranslationException : public std::runtime_error
 { // "what" should hold the first untranslatable symbol
 public:
-    
+
     //!
     //! create alpabet exception with symbol as explanation
-    AlphabetTranslationException(const std::string what):
+    AlphabetTranslationException(const std::string what) :
         std::runtime_error(what)
-        { }
+    {
+    }
 };
 
 //! @brief Basic spell-checking automata pair unit.
@@ -343,7 +351,7 @@ public:
                              MaxWeightBeam, NbestBeam, MaxWeightNbestBeam } limiting;
     //! what mode we're in
     enum Mode { Check, Correct, Lookup } mode;
-    
+
     //!
     //! Create a speller object form error model and language automata.
     Speller(Transducer * mutator_ptr, Transducer * lexicon_ptr);
@@ -361,16 +369,16 @@ public:
     //! travers epsilons in language model
     void lexicon_epsilons(void);
     bool has_lexicon_epsilons(void) const
-        {
-            return lexicon->has_epsilons_or_flags(next_node.lexicon_state + 1);
-        }
+    {
+        return lexicon->has_epsilons_or_flags(next_node.lexicon_state + 1);
+    }
     //!
     //! traverse epsilons in error modle
     void mutator_epsilons(void);
     bool has_mutator_epsilons(void) const
-        {
-            return mutator->has_transitions(next_node.mutator_state + 1, 0);
-        }
+    {
+        return mutator->has_transitions(next_node.mutator_state + 1, 0);
+    }
     //!
     //! traverse along input
     void consume_input();
@@ -388,7 +396,7 @@ public:
     //! @brief suggest corrections for given string @a line.
     //
     //! The number of corrections given and stored at any given time
-    //! is limited by @a nbest if ≥ 0. 
+    //! is limited by @a nbest if ≥ 0.
     CorrectionQueue correct(char * line, int nbest = 0,
                             Weight maxweight = -1.0,
                             Weight beam = -1.0);
@@ -396,7 +404,7 @@ public:
     bool is_under_weight_limit(Weight w) const;
     void set_limiting_behaviour(int nbest, Weight maxweight, Weight beam);
     void adjust_weight_limits(int nbest, Weight beam);
-    
+
     //! @brief analyse given string @a line.
     //
     //! If language model is two-tape, give a list of analyses for string.
@@ -418,15 +426,17 @@ struct CacheContainer
     StringWeightVector results_len_1;
     bool empty;
 
-    CacheContainer(void): empty(true) {}
-    
+    CacheContainer(void) : empty(true)
+    {
+    }
+
     void clear(void)
-        {
-            nodes.clear();
-            results_len_0.clear();
-            results_len_1.clear();
-        }
-    
+    {
+        nodes.clear();
+        results_len_0.clear();
+        results_len_1.clear();
+    }
+
 };
 
 std::string stringify(KeyTable * key_table,
@@ -436,5 +446,5 @@ std::string stringify(KeyTable * key_table,
 
 // Some platforms lack strndup
 char* hfst_strndup(const char* s, size_t n);
-    
+
 #endif // HFST_OSPELL_OSPELL_H_
