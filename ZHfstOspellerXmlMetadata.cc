@@ -925,8 +925,9 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
     }
     this->parse_xml(doc);
 }
-#else
+#elif XML_ENABLED
 #error configure found no usable XML library
+#else
 void
 ZHfstOspellerXmlMetadata::read_xml(const char*, size_t)
 {
@@ -1021,5 +1022,3 @@ ZHfstOspellerXmlMetadata::debug_dump() const
 }
 
 }   // namespace hfst_ol
-
-

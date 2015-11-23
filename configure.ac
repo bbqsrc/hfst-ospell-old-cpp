@@ -62,6 +62,14 @@ AC_ARG_ENABLE([zhfst],
               [AS_HELP_STRING([--enable-zhfst],
                               [support zipped complex automaton sets @<:@default=check@:>@])],
               [enable_zhfst=$enableval], [enable_zhfst=check])
+AC_ARG_ENABLE([xml],
+              [AS_HELP_STRING([--enable-xml],
+                              [support XML metadata @<:@default=yes@:>@])],
+              [enable_xml=$enableval], [enable_xml=yes])
+AM_CONDITIONAL([XML], [test x$enable_xml != xno])
+AS_IF([test x$enable_xml != no], [
+  AC_DEFINE([XML_ENABLED], [1], [Enable XML related functionality])
+])
 AC_ARG_WITH([libxmlpp],
               [AS_HELP_STRING([--with-libxmlpp],
                               [support xml metadata for zipped automaton sets with libxml++-2.6 @<:@default=yes@:>@])],
@@ -108,20 +116,24 @@ AS_IF([test x$enable_zhfst != xno],
                    enable_zhfst=yes],[enable_zhfst=no])])])
 
 AM_CONDITIONAL([WANT_ARCHIVE], [test x$enable_zhfst != xno])
-AS_IF([test x$with_libxmlpp != xno],
-      [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0],
-                         [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])
-                          enable_xml=libxmlpp],
-                         [AC_MSG_ERROR([libxml++ failed])
-                          enable_xml=no])])
-AM_CONDITIONAL([WANT_LIBXMLPP], [test x$enable_xml = xlibxmlpp])
-AS_IF([test x$with_tinyxml2 != xno -a x$with_libxmlpp = xno],
-      [PKG_CHECK_MODULES([TINYXML2], [tinyxml2 >= 1.0.8],
-                         [AC_DEFINE([HAVE_TINYXML2], [1], [Use tinyxml])
-                          enable_xml=tinyxml2],
-                         [AC_MSG_ERROR([tinyxml missing])
-                          enable_xml=no])])
-AM_CONDITIONAL([WANT_TINYXML2], [test x$enable_xml = xtinyxml2])
+
+AS_IF([test x$enable_xml != xno], [
+  AS_IF([test x$with_libxmlpp != xno],
+        [PKG_CHECK_MODULES([LIBXMLPP], [libxml++-2.6 >= 2.10.0],
+                           [AC_DEFINE([HAVE_LIBXML], [1], [Use libxml++])
+                            xml_lib=libxmlpp],
+                           [AC_MSG_ERROR([libxml++ failed])
+                            xml_lib=no])])
+
+  AS_IF([test x$with_tinyxml2 != xno -a x$with_libxmlpp = xno],
+        [PKG_CHECK_MODULES([TINYXML2], [tinyxml2 >= 1.0.8],
+                           [AC_DEFINE([HAVE_TINYXML2], [1], [Use tinyxml])
+                            xml_lib=tinyxml2],
+                           [AC_MSG_ERROR([tinyxml missing])
+                            xml_lib=no])])
+])
+AM_CONDITIONAL([WANT_LIBXMLPP], [test x$xml_lib = xlibxmlpp])
+AM_CONDITIONAL([WANT_TINYXML2], [test x$xml_lib = xtinyxml2])
 
 # Find ICU in the new and old way
 PKG_CHECK_MODULES(ICU, [icu-uc >= 4], [], [
@@ -172,8 +184,11 @@ cat <<EOF
     * zhfst support: $enable_zhfst
     * extracting to: $with_extract
     * xml support: $enable_xml
+    * xml library: $xml_lib
     * hfst-ospell-office: $enable_hfst_ospell_office
     * conference demos: $enable_extra_demos
 EOF
 AS_IF([test x$with_libxmlpp != xno -a x$with_tinyxml2 != xno],
       [AC_MSG_WARN([You can only have one xml library (e.g., --with-tinyxml2 --without-libxmlpp)])])
+AS_IF([test x$with_xml != xno -a x$with_libxmlpp != xyes -a x$with_tinyxml2 != xyes],
+      [AC_MSG_WARN([You must have one xml library (e.g., --with-tinyxml2 --without-libxmlpp)])])
