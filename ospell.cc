@@ -1123,41 +1123,27 @@ CorrectionQueue Speller::correct(char * line, int nbest,
 
 void Speller::set_limiting_behaviour(int nbest, Weight maxweight, Weight beam)
 {
-    limiting = None;
+    char limiting_ = 0;
     limit = std::numeric_limits<Weight>::max();
     best_suggestion = std::numeric_limits<Weight>::max();
-    if (maxweight >= 0.0 && nbest > 0 && beam >= 0.0)
+
+    if (maxweight >= 0)
     {
-        limiting = MaxWeightNbestBeam;
         limit = maxweight;
+        limiting_ |= MaxWeight;
     }
-    else if (maxweight >= 0.0 && nbest > 0 && beam < 0.0)
+
+    if (nbest > 0)
     {
-        limiting = MaxWeightNbest;
-        limit = maxweight;
+        limiting_ |= Nbest;
     }
-    else if (maxweight >= 0.0 && beam >= 0.0 && nbest == 0)
+
+    if (beam >= 0.0)
     {
-        limiting = MaxWeightBeam;
-        limit = maxweight;
+        limiting_ |= Beam;
     }
-    else if (maxweight < 0.0 && nbest > 0 && beam >= 0.0)
-    {
-        limiting = NbestBeam;
-    }
-    else if (maxweight >= 0.0 && nbest == 0 && beam < 0.0)
-    {
-        limiting = MaxWeight;
-        limit = maxweight;
-    }
-    else if (maxweight < 0.0 && nbest > 0 && beam < 0.0)
-    {
-        limiting = Nbest;
-    }
-    else if (maxweight < 0.0 && nbest == 0 && beam >= 0.0)
-    {
-        limiting = Beam;
-    }
+
+    limiting = (LimitingBehaviour)limiting_;
 }
 
 void Speller::adjust_weight_limits(int nbest, Weight beam)
@@ -1362,4 +1348,3 @@ hfst_strndup(const char* s, size_t n)
     rv[n] = '\0';
     return rv;
 }
-

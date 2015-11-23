@@ -347,8 +347,16 @@ public:
     //!< A cache for the result of first symbols
     std::vector<CacheContainer> cache;
     //!< what kind of limiting behaviour we have
-    enum LimitingBehaviour { None, MaxWeight, Nbest, Beam, MaxWeightNbest,
-                             MaxWeightBeam, NbestBeam, MaxWeightNbestBeam } limiting;
+    enum LimitingBehaviour {
+        None = 0x0,
+        MaxWeight = 0x1,
+        Nbest = 0x2,
+        MaxWeightNbest = 0x3,
+        Beam = 0x4,
+        MaxWeightBeam = 0x5,
+        NbestBeam = 0x6,
+        MaxWeightNbestBeam = 0x7
+    } limiting;
     //! what mode we're in
     enum Mode { Check, Correct, Lookup } mode;
 

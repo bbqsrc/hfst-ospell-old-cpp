@@ -466,5 +466,3 @@ ZHfstTemporaryWritingError::ZHfstTemporaryWritingError(const std::string& messag
 }
 
 } // namespace hfst_ol
-
-
