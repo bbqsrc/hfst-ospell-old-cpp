@@ -55,8 +55,8 @@ AC_ARG_ENABLE([extra_demos],
 AM_CONDITIONAL([EXTRA_DEMOS], [test x$enable_extra_demos != xno])
 AC_ARG_ENABLE([hfst_ospell_office],
               [AS_HELP_STRING([--enable-hfst-ospell-office],
-                              [build hfst-ospell-office @<:@default=yes@:>@])],
-              [enable_hfst_ospell_ofiice=$enableval], [enable_hfst_ospell_office=yes])
+                              [build hfst-ospell-office @<:@default=no@:>@])],
+              [enable_hfst_ospell_office=$enableval], [enable_hfst_ospell_office=no])
 AM_CONDITIONAL([HFST_OSPELL_OFFICE], [test x$enable_hfst_ospell_office != xno])
 AC_ARG_ENABLE([zhfst],
               [AS_HELP_STRING([--enable-zhfst],
