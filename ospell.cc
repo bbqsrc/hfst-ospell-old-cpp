@@ -1020,7 +1020,7 @@ CorrectionQueue Speller::correct(char * line, int nbest,
                                          nbest_queue.size() > 0)))   // number of results
             {
                 correction_queue.push(StringWeightPair(it->first, it->second));
-                if (nbest != 0)
+                if (nbest > 0)
                 {
                     nbest_queue.pop();
                 }
@@ -1105,19 +1105,37 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     std::map<std::string, Weight>::iterator it;
     for (it = corrections.begin(); it != corrections.end(); ++it)
     {
-        if (it->second <= limit && // we're not over our weight limit and
-            (nbest == 0 || // we either don't have an nbest condition or
-             (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
-              correction_queue.size() < nbest &&
-              nbest_queue.size() > 0)))   // number of results
+      if (nbest == 0) {
+        if (it->second <= limit)
         {
-            correction_queue.push(StringWeightPair(it->first, it->second));
-            if (nbest != 0)
+            if (nbest == 0 ||// we either don't have an nbest condition or
+                (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
+                 correction_queue.size() < nbest &&
+                 nbest_queue.size() > 0))   // number of results
             {
-                nbest_queue.pop();
+                correction_queue.push(StringWeightPair(it->first, it->second));
+                if (nbest > 0)
+                {
+                    nbest_queue.pop();
+                }
             }
         }
+      } else {
+        correction_queue.push(StringWeightPair(it->first, it->second));
+      }
     }
+
+    if (nbest > 0) {
+      CorrectionQueue q;
+      int i = 0;
+      while (i++ < nbest) {
+        q.push(correction_queue.top());
+        correction_queue.pop();
+      }
+
+      return q;
+    }
+
     return correction_queue;
 }
 
