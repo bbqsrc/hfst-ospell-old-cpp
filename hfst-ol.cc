@@ -21,7 +21,7 @@ template <typename T>
 inline T hfst_deref(T* ptr)
 {
     T dest;
-    memcpy(&dest, ptr, sizeof(dest));
+    memcpy(&dest, (char*)ptr, sizeof(dest));
     return dest;
 }
 
@@ -933,4 +933,3 @@ SymbolNumber Encoder::find_key(char ** p)
 }
 
 } // namespace hfst_ol
-
