@@ -345,7 +345,7 @@ void Speller::queue_lexicon_arcs(SymbolNumber input_sym,
         {
             i_s.symbol = input[next_node.input_state];
         }
-        if (is_under_weight_limit(next_node.weight + i_s.weight + mutator_weight))
+        if (mode == Correct || is_under_weight_limit(next_node.weight + i_s.weight + mutator_weight))
         {
             node_queue.push_back(next_node.update(
                                      (mode == Correct) ? input_sym : i_s.symbol,
@@ -960,11 +960,6 @@ Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
         node_queue.pop_back();
 
         adjust_weight_limits(nbest, beam);
-        // if we can't get an acceptable result, never mind
-        if (next_node.weight > limit)
-        {
-            continue;
-        }
 
         if (next_node.input_state > 1)
         {
@@ -1119,7 +1114,11 @@ void Speller::set_limiting_behaviour(int nbest, Weight maxweight, Weight beam)
 
 void Speller::adjust_weight_limits(int nbest, Weight beam)
 {
-    if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest)
+    if (limiting == Nbest && nbest_queue.size() >= nbest)
+    {
+        limit = nbest_queue.get_highest();
+    }
+    else if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest)
     {
         limit = std::min(limit, nbest_queue.get_lowest());
     }
