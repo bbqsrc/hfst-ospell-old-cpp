@@ -73,31 +73,13 @@ StringPairWeightComparison::operator()(StringPairWeightPair lhs,
     }
 }
 
-void WeightQueue::push(Weight w)
-{
-    for (WeightQueue::iterator it = begin(); it != end(); ++it)
-    {
-        if (*it > w)
-        {
-            insert(it, w);
-            return;
-        }
-    }
-    push_back(w);
-}
-
-void WeightQueue::pop(void)
-{
-    pop_back();
-}
-
 Weight WeightQueue::get_lowest(void) const
 {
     if (size() == 0)
     {
         return std::numeric_limits<Weight>::max();
     }
-    return front();
+    return bottom();
 }
 
 Weight WeightQueue::get_highest(void) const
@@ -106,7 +88,7 @@ Weight WeightQueue::get_highest(void) const
     {
         return std::numeric_limits<Weight>::max();
     }
-    return back();
+    return top();
 }
 
 Transducer::Transducer(FILE* f) :
@@ -1020,10 +1002,6 @@ Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
                     if (nbest > 0)
                     {
                         nbest_queue.push(weight);
-                        if (nbest_queue.size() > nbest)
-                        {
-                            nbest_queue.pop();
-                        }
                     }
                 }
             }
@@ -1049,10 +1027,10 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     }
 
     set_limiting_behaviour(nbest, maxweight, beam);
-    nbest_queue = WeightQueue();
+    nbest_queue = WeightQueue(nbest);
 
     // The queue for our suggestions
-    CorrectionQueue correction_queue;
+    CorrectionQueue correction_queue(nbest);
 
     // A placeholding map, only one weight per correction
     SymbolNumber first_input = (input.size() == 0) ? 0 : input[0];
@@ -1074,10 +1052,6 @@ CorrectionQueue Speller::correct(char * line, int nbest,
             if (nbest > 0)
             {
                 nbest_queue.push(it->second);
-                if (nbest_queue.size() > nbest)
-                {
-                    nbest_queue.pop();
-                }
             }
         }
 
@@ -1086,16 +1060,9 @@ CorrectionQueue Speller::correct(char * line, int nbest,
             it != results->end(); ++it)
         {
             // Then collect the results
-            if (it->second <= limit && (nbest == 0 || // we either don't have an nbest condition or
-                                        (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
-                                         correction_queue.size() < nbest &&
-                                         nbest_queue.size() > 0)))   // number of results
+            if (it->second <= limit)
             {
-                correction_queue.push(StringWeightPair(it->first, it->second));
-                if (nbest > 0)
-                {
-                    nbest_queue.pop();
-                }
+                correction_queue.push_back(StringWeightPair(it->first, it->second));
             }
         }
         return correction_queue;
@@ -1114,35 +1081,10 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     for (std::map<std::string, Weight>::iterator it = corrections.begin();
          it != corrections.end(); ++it)
     {
-      if (nbest == 0) {
         if (it->second <= limit)
         {
-            if (nbest == 0 ||// we either don't have an nbest condition or
-                (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
-                 correction_queue.size() < nbest &&
-                 nbest_queue.size() > 0))   // number of results
-            {
-                correction_queue.push(StringWeightPair(it->first, it->second));
-                if (nbest > 0)
-                {
-                    nbest_queue.pop();
-                }
-            }
+            correction_queue.push_back(StringWeightPair(it->first, it->second));
         }
-      } else {
-        correction_queue.push(StringWeightPair(it->first, it->second));
-      }
-    }
-
-    if (nbest > 0) {
-      CorrectionQueue q;
-      int i = 0;
-      while (i++ < nbest) {
-        q.push(correction_queue.top());
-        correction_queue.pop();
-      }
-
-      return q;
     }
 
     return correction_queue;

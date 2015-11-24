@@ -97,6 +97,7 @@ public:
 //! @see StringWeightComparison.
 class StringPairWeightComparison
 {
+protected:
     bool reverse;
 public:
     //!
@@ -111,7 +112,45 @@ public:
     bool operator() (StringPairWeightPair lhs, StringPairWeightPair rhs);
 };
 
-typedef std::priority_queue<StringWeightPair,
+template<
+    class T,
+    class Container = std::vector<T>,
+    class Compare = std::less<typename Container::value_type>
+>
+class sized_priority_deque : public std::priority_queue<T, Container, Compare>
+{
+protected:
+    size_t max_size;
+public:
+    explicit sized_priority_deque(size_t ms) :
+        max_size(ms)
+    {
+    }
+    explicit sized_priority_deque() :
+        max_size(0)
+    {
+    }
+    T bottom(void) const { return this->c.back(); }
+    void push(const T& value)
+    {
+        std::priority_queue<T, Container, Compare>::push(value);
+        if (this->max_size > 0 && this->size() > max_size)
+        {
+            this->pop();
+        }
+    }
+
+    void push_back(const T& value)
+    {
+        std::priority_queue<T, Container, Compare>::push(value);
+        if (this->max_size > 0 && this->size() > max_size)
+        {
+            this->c.pop_back();
+        }
+    }
+};
+
+typedef sized_priority_deque<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> CorrectionQueue;
 typedef std::priority_queue<StringWeightPair,
@@ -124,10 +163,11 @@ typedef std::priority_queue<StringPairWeightPair,
                             std::vector<StringPairWeightPair>,
                             StringPairWeightComparison> AnalysisCorrectionQueue;
 
-struct WeightQueue : public std::list<Weight>
+//struct WeightQueue : public std::list<Weight>
+class WeightQueue : public sized_priority_deque<Weight>
 {
-    void push(Weight w); // add a new weight
-    void pop(void); // delete the biggest weight
+    using sized_priority_deque<Weight>::sized_priority_deque;
+public:
     Weight get_lowest(void) const;
     Weight get_highest(void) const;
 };
