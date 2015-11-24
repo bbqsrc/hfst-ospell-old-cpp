@@ -1096,7 +1096,7 @@ void Speller::set_limiting_behaviour(int nbest, Weight maxweight, Weight beam)
     limit = std::numeric_limits<Weight>::max();
     best_suggestion = std::numeric_limits<Weight>::max();
 
-    if (maxweight >= 0)
+    if (maxweight >= 0.0)
     {
         limit = maxweight;
         limiting_ |= MaxWeight;

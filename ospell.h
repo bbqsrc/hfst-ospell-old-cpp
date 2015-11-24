@@ -394,14 +394,14 @@ public:
     //!< what kind of limiting behaviour we have
     enum LimitingBehaviour
     {
-        None = (1u << 0),
-        MaxWeight = (1u << 1),
-        Nbest = (1u << 2),
-        MaxWeightNbest = (1u << 3),
-        Beam = (1u << 4),
-        MaxWeightBeam = (1u << 5),
-        NbestBeam = (1u << 6),
-        MaxWeightNbestBeam = (1u << 7)
+        None = 0,
+        MaxWeight = (1u << 0),
+        Nbest = (1u << 1),
+        Beam = (1u << 2),
+        MaxWeightNbest = MaxWeight | Nbest,
+        MaxWeightBeam = MaxWeight | Beam,
+        NbestBeam = Nbest | Beam,
+        MaxWeightNbestBeam = MaxWeight | Nbest | Beam
     } limiting;
     //! what mode we're in
     enum Mode { Check, Correct, Lookup } mode;
