@@ -66,6 +66,8 @@ public:
     //!        zhfst archive.
     void read_zhfst(const std::string& filename);
 
+    void set_temporary_dir(const std::string& tempdir);
+
     //! @brief  check if the given word is spelled correctly
     bool spell(const std::string& wordform);
     //! @brief construct an ordered set of corrections for misspelled
@@ -123,6 +125,8 @@ private:
     Transducer* current_hyphenator_;
     //! @brief the metadata of loaded speller
     ZHfstOspellerXmlMetadata metadata_;
+    //! @brief temporary directory for files
+    std::string tempdir_;
 };
 
 //! @brief Top-level exception for zhfst handling.

@@ -81,18 +81,20 @@ extract_to_mem(archive* ar, archive_entry* entry, size_t* n)
 
 #if ZHFST_EXTRACT_TO_TMPDIR
 static
-char*
-extract_to_tmp_dir(archive* ar)
+std::string
+extract_to_tmp_dir(archive* ar, const std::string& tempdir)
 {
-    char* rv = strdup("/tmp/zhfstospellXXXXXXXX");
-    int temp_fd = mkstemp(rv);
+    std::string rv;
+    rv = tempdir + std::string("/zhfstospellXXXXXXXX");
+    char* path = strdup(rv.c_str());
+    int temp_fd = mkstemp(path);
     int rr = archive_read_data_into_fd(ar, temp_fd);
     if ((rr != ARCHIVE_EOF) && (rr != ARCHIVE_OK))
     {
         throw ZHfstZipReadingError("Archive not EOF'd or OK'd");
     }
     close(temp_fd);
-    return rv;
+    return std::string(path);
 }
 #endif
 
@@ -106,7 +108,8 @@ ZHfstOspeller::ZHfstOspeller() :
     can_correct_(false),
     can_analyse_(true),
     current_speller_(0),
-    current_sugger_(0)
+    current_sugger_(0),
+    tempdir_("/tmp")
 {
 }
 
@@ -238,6 +241,12 @@ ZHfstOspeller::suggest_analyses(const string& wordform)
 }
 
 void
+ZHfstOspeller::set_temporary_dir(const string& tempdir)
+{
+    tempdir_ = tempdir;
+}
+
+void
 ZHfstOspeller::read_zhfst(const string& filename)
 {
 #if HAVE_LIBARCHIVE
@@ -268,7 +277,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
         if (strncmp(filename, "acceptor.", strlen("acceptor.")) == 0)
         {
 #if ZHFST_EXTRACT_TO_TMPDIR
-            char* temporary = extract_to_tmp_dir(ar);
+            std::string temporary = extract_to_tmp_dir(ar, tempdir_);
 #elif ZHFST_EXTRACT_TO_MEM
             size_t total_length = 0;
             char* full_data = extract_to_mem(ar, entry, &total_length);
@@ -289,7 +298,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             }
             char* descr = hfst_strndup(p, descr_len);
 #if ZHFST_EXTRACT_TO_TMPDIR
-            FILE* f = fopen(temporary, "r");
+            FILE* f = fopen(temporary.c_str(), "r");
             if (f == NULL)
             {
                 throw ZHfstTemporaryWritingError("reading acceptor back "
@@ -306,7 +315,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
         else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
         {
 #if ZHFST_EXTRACT_TO_TMPDIR
-            char* temporary = extract_to_tmp_dir(ar);
+            std::string temporary = extract_to_tmp_dir(ar, tempdir_);
 #elif ZHFST_EXTRACT_TO_MEM
             size_t total_length = 0;
             char* full_data = extract_to_mem(ar, entry, &total_length);
@@ -327,7 +336,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             }
             char* descr = hfst_strndup(p, descr_len);
 #if ZHFST_EXTRACT_TO_TMPDIR
-            FILE* f = fopen(temporary, "r");
+            FILE* f = fopen(temporary.c_str(), "r");
             if (NULL == f)
             {
                 throw ZHfstTemporaryWritingError("reading errmodel back "
@@ -344,7 +353,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
         else if (strcmp(filename, "index.xml") == 0)
         {
 #if ZHFST_EXTRACT_TO_TMPDIR
-            char* temporary = extract_to_tmp_dir(ar);
+            std::string temporary = extract_to_tmp_dir(ar, tempdir_);
             metadata_.read_xml(temporary);
 #elif ZHFST_EXTRACT_TO_MEM
             size_t xml_len = 0;
