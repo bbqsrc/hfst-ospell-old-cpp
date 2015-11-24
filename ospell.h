@@ -447,6 +447,16 @@ struct CacheContainer
         results_len_1.clear();
     }
 
+    inline StringWeightVector& get(char sz) {
+        if (sz == 0)
+        {
+            return results_len_0;
+        }
+        else
+        {
+            return results_len_1;
+        }
+    }
 };
 
 std::string stringify(KeyTable * key_table,

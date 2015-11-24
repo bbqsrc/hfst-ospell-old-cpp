@@ -1059,15 +1059,8 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     if (input.size() <= 1)
     {
         // get the cached results and we're done
-        StringWeightVector * results;
-        if (input.size() == 0)
-        {
-            results = &cache[first_input].results_len_0;
-        }
-        else
-        {
-            results = &cache[first_input].results_len_1;
-        }
+        StringWeightVector * results = &cache[first_input].get(input.size());
+
         for(StringWeightVector::const_iterator it = results->begin();
             it != results->end(); ++it)
         {
