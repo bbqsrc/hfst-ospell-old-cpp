@@ -269,8 +269,8 @@ void Speller::lexicon_epsilons(void)
             if (lexicon->transitions.input_symbol(next) == 0)
             {
                 node_queue.push_back(next_node.update_lexicon((mode == Correct) ? 0 : i_s.symbol,
-                                                         i_s.index,
-                                                         i_s.weight));
+                                                              i_s.index,
+                                                              i_s.weight));
             }
             else
             {
@@ -280,8 +280,8 @@ void Speller::lexicon_epsilons(void)
                             lexicon->transitions.input_symbol(next))))
                 {
                     node_queue.push_back(next_node.update_lexicon(0,
-                                                             i_s.index,
-                                                             i_s.weight));
+                                                                  i_s.index,
+                                                                  i_s.weight));
                     next_node.flag_state = old_flags;
                 }
             }
@@ -348,11 +348,11 @@ void Speller::queue_lexicon_arcs(SymbolNumber input_sym,
         if (is_under_weight_limit(next_node.weight + i_s.weight + mutator_weight))
         {
             node_queue.push_back(next_node.update(
-                                (mode == Correct) ? input_sym : i_s.symbol,
-                                next_node.input_state + input_increment,
-                                mutator_state,
-                                i_s.index,
-                                i_s.weight + mutator_weight));
+                                     (mode == Correct) ? input_sym : i_s.symbol,
+                                     next_node.input_state + input_increment,
+                                     mutator_state,
+                                     i_s.index,
+                                     i_s.weight + mutator_weight));
         }
         ++next;
         i_s = lexicon->take_non_epsilons(next, input_sym);
@@ -376,7 +376,7 @@ void Speller::mutator_epsilons(void)
                     next_node.weight + mutator_i_s.weight))
             {
                 node_queue.push_back(next_node.update_mutator(mutator_i_s.index,
-                                                         mutator_i_s.weight));
+                                                              mutator_i_s.weight));
             }
             ++next_m;
             mutator_i_s = mutator->take_epsilons(next_m);
@@ -476,9 +476,9 @@ void Speller::queue_mutator_arcs(SymbolNumber input_sym)
                     next_node.weight + mutator_i_s.weight))
             {
                 node_queue.push_back(next_node.update(0, next_node.input_state + 1,
-                                                 mutator_i_s.index,
-                                                 next_node.lexicon_state,
-                                                 mutator_i_s.weight));
+                                                      mutator_i_s.index,
+                                                      next_node.lexicon_state,
+                                                      mutator_i_s.weight));
             }
             ++next_m;
             mutator_i_s = mutator->take_non_epsilons(next_m, input_sym);
@@ -587,8 +587,8 @@ AnalysisQueue Transducer::lookup(char * line)
                 if (transitions.input_symbol(next_index) == 0)
                 {
                     node_queue.push_back(next_node.update_lexicon(i_s.symbol,
-                                                             i_s.index,
-                                                             i_s.weight));
+                                                                  i_s.index,
+                                                                  i_s.weight));
                     // Not a true epsilon but a flag diacritic
                 }
                 else
@@ -599,8 +599,8 @@ AnalysisQueue Transducer::lookup(char * line)
                                 transitions.input_symbol(next_index))))
                     {
                         node_queue.push_back(next_node.update_lexicon(i_s.symbol,
-                                                                 i_s.index,
-                                                                 i_s.weight));
+                                                                      i_s.index,
+                                                                      i_s.weight));
                         next_node.flag_state = old_flags;
                     }
                 }
@@ -624,11 +624,11 @@ AnalysisQueue Transducer::lookup(char * line)
             while (i_s.symbol != NO_SYMBOL)
             {
                 node_queue.push_back(next_node.update(
-                                    i_s.symbol,
-                                    input_state + 1,
-                                    next_node.mutator_state,
-                                    i_s.index,
-                                    i_s.weight));
+                                         i_s.symbol,
+                                         input_state + 1,
+                                         next_node.mutator_state,
+                                         i_s.index,
+                                         i_s.weight));
 
                 ++next_index;
                 i_s = take_non_epsilons(next_index, input[input_state]);

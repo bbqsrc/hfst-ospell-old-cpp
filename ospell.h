@@ -116,7 +116,7 @@ template<
     class T,
     class Container = std::vector<T>,
     class Compare = std::less<typename Container::value_type>
->
+    >
 class sized_priority_deque : public std::priority_queue<T, Container, Compare>
 {
 protected:
@@ -130,7 +130,10 @@ public:
         max_size(0)
     {
     }
-    T bottom(void) const { return this->c.back(); }
+    T bottom(void) const
+    {
+        return this->c.back();
+    }
     void push(const T& value)
     {
         std::priority_queue<T, Container, Compare>::push(value);
@@ -151,8 +154,8 @@ public:
 };
 
 typedef sized_priority_deque<StringWeightPair,
-                            std::vector<StringWeightPair>,
-                            StringWeightComparison> CorrectionQueue;
+                             std::vector<StringWeightPair>,
+                             StringWeightComparison> CorrectionQueue;
 typedef std::priority_queue<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> AnalysisQueue;
@@ -389,7 +392,8 @@ public:
     //!< A cache for the result of first symbols
     std::vector<CacheContainer> cache;
     //!< what kind of limiting behaviour we have
-    enum LimitingBehaviour {
+    enum LimitingBehaviour
+    {
         None = (1u << 0),
         MaxWeight = (1u << 1),
         Nbest = (1u << 2),
@@ -487,7 +491,8 @@ struct CacheContainer
         results_len_1.clear();
     }
 
-    inline StringWeightVector& get(char sz) {
+    inline StringWeightVector& get(char sz)
+    {
         if (sz == 0)
         {
             return results_len_0;
