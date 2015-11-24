@@ -1112,8 +1112,8 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     std::map<std::string, Weight> corrections = generate_correction_map(nbest, maxweight, beam);
 
     adjust_weight_limits(nbest, beam);
-    std::map<std::string, Weight>::iterator it;
-    for (it = corrections.begin(); it != corrections.end(); ++it)
+    for (std::map<std::string, Weight>::iterator it = corrections.begin();
+         it != corrections.end(); ++it)
     {
       if (nbest == 0) {
         if (it->second <= limit)
