@@ -26,11 +26,14 @@ endif # EXTRA_DEMOS
 
 if HFST_OSPELL_OFFICE
 MAYBE_HFST_OSPELL_OFFICE=hfst-ospell-office
-endif # HFST_OSPELL_OFFICE 
+endif # HFST_OSPELL_OFFICE
 
+if HFST_OSPELL_BIN
 bin_PROGRAMS=hfst-ospell $(MAYBE_HFST_OSPELL_OFFICE) $(CONFERENCE_DEMOS)
-lib_LTLIBRARIES=libhfstospell.la
 man1_MANS=hfst-ospell.1
+endif
+
+lib_LTLIBRARIES=libhfstospell.la
 
 PKG_LIBS=
 PKG_CXXFLAGS=
@@ -58,10 +61,15 @@ libhfstospell_la_LDFLAGS=-no-undefined -version-info 4:0:0 \
 						 $(PKG_LIBS)
 
 # link sample program against library here
+
+if HFST_OSPELL_BIN
+
 hfst_ospell_SOURCES=main.cc
 hfst_ospell_LDADD=libhfstospell.la
 hfst_ospell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 					 $(PKG_CXXFLAGS)
+
+endif
 
 if HFST_OSPELL_OFFICE
 

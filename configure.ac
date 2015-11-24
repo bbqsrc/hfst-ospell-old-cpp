@@ -66,10 +66,14 @@ AC_ARG_ENABLE([xml],
               [AS_HELP_STRING([--enable-xml],
                               [support XML metadata @<:@default=yes@:>@])],
               [enable_xml=$enableval], [enable_xml=yes])
-AM_CONDITIONAL([XML], [test x$enable_xml != xno])
 AS_IF([test x$enable_xml != xno], [
   AC_DEFINE([XML_ENABLED], [1], [Enable XML related functionality])
 ])
+AC_ARG_ENABLE([tool],
+              [AS_HELP_STRING([--enable-tool],
+                              [build toy command line tester @<:@default=yes@:>@])],
+              [enable_ospell_bin=$enableval], [enable_ospell_bin=yes])
+AM_CONDITIONAL([HFST_OSPELL_BIN], [test x$enable_ospell_bin != xno])
 AC_ARG_WITH([libxmlpp],
               [AS_HELP_STRING([--with-libxmlpp],
                               [support xml metadata for zipped automaton sets with libxml++-2.6 @<:@default=yes@:>@])],
@@ -185,6 +189,7 @@ cat <<EOF
     * extracting to: $with_extract
     * xml support: $enable_xml
     * xml library: $xml_lib
+    * toy command line tool: $enable_ospell_bin
     * hfst-ospell-office: $enable_hfst_ospell_office
     * conference demos: $enable_extra_demos
 EOF
