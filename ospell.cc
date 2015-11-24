@@ -247,7 +247,7 @@ Speller::Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr) :
     mutator(mutator_ptr),
     lexicon(lexicon_ptr),
     input(),
-    queue(TreeNodeQueue()),
+    node_queue(TreeNodeQueue()),
     next_node(FlagDiacriticState(get_state_size(), 0)),
     limit(std::numeric_limits<Weight>::max()),
     alphabet_translator(SymbolVector()),
@@ -286,7 +286,7 @@ void Speller::lexicon_epsilons(void)
         {
             if (lexicon->transitions.input_symbol(next) == 0)
             {
-                queue.push_back(next_node.update_lexicon((mode == Correct) ? 0 : i_s.symbol,
+                node_queue.push_back(next_node.update_lexicon((mode == Correct) ? 0 : i_s.symbol,
                                                          i_s.index,
                                                          i_s.weight));
             }
@@ -297,7 +297,7 @@ void Speller::lexicon_epsilons(void)
                         operations->operator[](
                             lexicon->transitions.input_symbol(next))))
                 {
-                    queue.push_back(next_node.update_lexicon(0,
+                    node_queue.push_back(next_node.update_lexicon(0,
                                                              i_s.index,
                                                              i_s.weight));
                     next_node.flag_state = old_flags;
@@ -365,7 +365,7 @@ void Speller::queue_lexicon_arcs(SymbolNumber input_sym,
         }
         if (is_under_weight_limit(next_node.weight + i_s.weight + mutator_weight))
         {
-            queue.push_back(next_node.update(
+            node_queue.push_back(next_node.update(
                                 (mode == Correct) ? input_sym : i_s.symbol,
                                 next_node.input_state + input_increment,
                                 mutator_state,
@@ -393,7 +393,7 @@ void Speller::mutator_epsilons(void)
             if (is_under_weight_limit(
                     next_node.weight + mutator_i_s.weight))
             {
-                queue.push_back(next_node.update_mutator(mutator_i_s.index,
+                node_queue.push_back(next_node.update_mutator(mutator_i_s.index,
                                                          mutator_i_s.weight));
             }
             ++next_m;
@@ -493,7 +493,7 @@ void Speller::queue_mutator_arcs(SymbolNumber input_sym)
             if (is_under_weight_limit(
                     next_node.weight + mutator_i_s.weight))
             {
-                queue.push_back(next_node.update(0, next_node.input_state + 1,
+                node_queue.push_back(next_node.update(0, next_node.input_state + 1,
                                                  mutator_i_s.index,
                                                  next_node.lexicon_state,
                                                  mutator_i_s.weight));
@@ -565,18 +565,18 @@ AnalysisQueue Transducer::lookup(char * line)
     std::map<std::string, Weight> outputs;
     AnalysisQueue analyses;
     SymbolVector input;
-    TreeNodeQueue queue;
+    TreeNodeQueue node_queue;
     if (!initialize_input_vector(input, &encoder, line))
     {
         return analyses;
     }
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-    queue.assign(1, start_node);
+    node_queue.assign(1, start_node);
 
-    while (queue.size() > 0)
+    while (node_queue.size() > 0)
     {
-        TreeNode next_node = queue.back();
-        queue.pop_back();
+        TreeNode next_node = node_queue.back();
+        node_queue.pop_back();
 
         // Final states
         if (next_node.input_state == input.size() &&
@@ -604,7 +604,7 @@ AnalysisQueue Transducer::lookup(char * line)
             {
                 if (transitions.input_symbol(next_index) == 0)
                 {
-                    queue.push_back(next_node.update_lexicon(i_s.symbol,
+                    node_queue.push_back(next_node.update_lexicon(i_s.symbol,
                                                              i_s.index,
                                                              i_s.weight));
                     // Not a true epsilon but a flag diacritic
@@ -616,7 +616,7 @@ AnalysisQueue Transducer::lookup(char * line)
                             get_operations()->operator[](
                                 transitions.input_symbol(next_index))))
                     {
-                        queue.push_back(next_node.update_lexicon(i_s.symbol,
+                        node_queue.push_back(next_node.update_lexicon(i_s.symbol,
                                                                  i_s.index,
                                                                  i_s.weight));
                         next_node.flag_state = old_flags;
@@ -641,7 +641,7 @@ AnalysisQueue Transducer::lookup(char * line)
 
             while (i_s.symbol != NO_SYMBOL)
             {
-                queue.push_back(next_node.update(
+                node_queue.push_back(next_node.update(
                                     i_s.symbol,
                                     input_state + 1,
                                     next_node.mutator_state,
@@ -871,11 +871,11 @@ AnalysisQueue Speller::analyse(char * line, int nbest)
     std::map<std::string, Weight> outputs;
     AnalysisQueue analyses;
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-    queue.assign(1, start_node);
-    while (queue.size() > 0)
+    node_queue.assign(1, start_node);
+    while (node_queue.size() > 0)
     {
-        next_node = queue.back();
-        queue.pop_back();
+        next_node = node_queue.back();
+        node_queue.pop_back();
         // Final states
         if (next_node.input_state == input.size() &&
             lexicon->is_final(next_node.lexicon_state))
@@ -907,15 +907,15 @@ AnalysisQueue Speller::analyse(char * line, int nbest)
 void Speller::build_cache(SymbolNumber first_sym)
 {
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-    queue.assign(1, start_node);
+    node_queue.assign(1, start_node);
     limit = std::numeric_limits<Weight>::max();
     // A placeholding map, only one weight per correction
     StringWeightMap corrections_len_0;
     StringWeightMap corrections_len_1;
-    while (queue.size() > 0)
+    while (node_queue.size() > 0)
     {
-        next_node = queue.back();
-        queue.pop_back();
+        next_node = node_queue.back();
+        node_queue.pop_back();
         lexicon_epsilons();
         mutator_epsilons();
         if (mutator->is_final(next_node.mutator_state) &&
@@ -968,14 +968,14 @@ Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
 {
     std::map<std::string, Weight> corrections;
 
-    while (queue.size() > 0)
+    while (node_queue.size() > 0)
     {
         /*
            For depth-first searching, we save the back node now, remove it
            from the queue and add new nodes to the search at the back.
          */
-        next_node = queue.back();
-        queue.pop_back();
+        next_node = node_queue.back();
+        node_queue.pop_back();
         adjust_weight_limits(nbest, beam);
         // if we can't get an acceptable result, never mind
         if (next_node.weight > limit)
@@ -1104,7 +1104,7 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     else
     {
         // populate the tree node queue
-        queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
+        node_queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
     }
     // TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     // queue.assign(1, start_node);
@@ -1226,13 +1226,13 @@ bool Speller::check(char * line)
         return false;
     }
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-    queue.assign(1, start_node);
+    node_queue.assign(1, start_node);
     limit = std::numeric_limits<Weight>::max();
 
-    while (queue.size() > 0)
+    while (node_queue.size() > 0)
     {
-        next_node = queue.back();
-        queue.pop_back();
+        next_node = node_queue.back();
+        node_queue.pop_back();
         if (next_node.input_state == input.size() &&
             lexicon->is_final(next_node.lexicon_state))
         {

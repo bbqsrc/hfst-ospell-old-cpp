@@ -339,7 +339,7 @@ public:
     Transducer * mutator; //!< error model
     Transducer * lexicon; //!< languag model
     SymbolVector input; //!< current input
-    TreeNodeQueue queue; //!< current traversal fifo stack
+    TreeNodeQueue node_queue; //!< current traversal fifo stack
     TreeNode next_node;  //!< current next node
     Weight limit; //!< current limit for weights
     Weight best_suggestion; //!< best suggestion so far
