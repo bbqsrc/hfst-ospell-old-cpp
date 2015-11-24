@@ -1041,21 +1041,26 @@ CorrectionQueue Speller::correct(char * line, int nbest,
                                  Weight maxweight, Weight beam)
 {
     mode = Correct;
+
     // if input initialization fails, return empty correction queue
     if (!init_input(line))
     {
         return CorrectionQueue();
     }
+
     set_limiting_behaviour(nbest, maxweight, beam);
     nbest_queue = WeightQueue();
+
     // The queue for our suggestions
     CorrectionQueue correction_queue;
+
     // A placeholding map, only one weight per correction
     SymbolNumber first_input = (input.size() == 0) ? 0 : input[0];
     if (cache[first_input].empty)
     {
         build_cache(first_input);
     }
+
     if (input.size() <= 1)
     {
         // get the cached results and we're done
@@ -1075,11 +1080,12 @@ CorrectionQueue Speller::correct(char * line, int nbest,
                 }
             }
         }
+
         adjust_weight_limits(nbest, beam);
         for(StringWeightVector::const_iterator it = results->begin();
-            // Then collect the results
             it != results->end(); ++it)
         {
+            // Then collect the results
             if (it->second <= limit && (nbest == 0 || // we either don't have an nbest condition or
                                         (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
                                          correction_queue.size() < nbest &&
