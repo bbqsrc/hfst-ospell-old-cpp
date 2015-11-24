@@ -333,6 +333,8 @@ public:
 //! @see ZHfstOspeller for high level access.
 class Speller
 {
+private:
+    std::map<std::string, Weight> generate_correction_map(int nbest, Weight maxweight, Weight beam);
 public:
     Transducer * mutator; //!< error model
     Transducer * lexicon; //!< languag model
@@ -348,14 +350,14 @@ public:
     std::vector<CacheContainer> cache;
     //!< what kind of limiting behaviour we have
     enum LimitingBehaviour {
-        None = 0x0,
-        MaxWeight = 0x1,
-        Nbest = 0x2,
-        MaxWeightNbest = 0x3,
-        Beam = 0x4,
-        MaxWeightBeam = 0x5,
-        NbestBeam = 0x6,
-        MaxWeightNbestBeam = 0x7
+        None = (1u << 0),
+        MaxWeight = (1u << 1),
+        Nbest = (1u << 2),
+        MaxWeightNbest = (1u << 3),
+        Beam = (1u << 4),
+        MaxWeightBeam = (1u << 5),
+        NbestBeam = (1u << 6),
+        MaxWeightNbestBeam = (1u << 7)
     } limiting;
     //! what mode we're in
     enum Mode { Check, Correct, Lookup } mode;

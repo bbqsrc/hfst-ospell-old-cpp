@@ -963,78 +963,10 @@ void Speller::build_cache(SymbolNumber first_sym)
     cache[first_sym].empty = false;
 }
 
-CorrectionQueue Speller::correct(char * line, int nbest,
-                                 Weight maxweight, Weight beam)
+std::map<std::string, Weight>
+Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
 {
-    mode = Correct;
-    // if input initialization fails, return empty correction queue
-    if (!init_input(line))
-    {
-        return CorrectionQueue();
-    }
-    set_limiting_behaviour(nbest, maxweight, beam);
-    nbest_queue = WeightQueue();
-    // The queue for our suggestions
-    CorrectionQueue correction_queue;
-    // A placeholding map, only one weight per correction
     std::map<std::string, Weight> corrections;
-    SymbolNumber first_input = (input.size() == 0) ? 0 : input[0];
-    if (cache[first_input].empty)
-    {
-        build_cache(first_input);
-    }
-    if (input.size() <= 1)
-    {
-        // get the cached results and we're done
-        StringWeightVector * results;
-        if (input.size() == 0)
-        {
-            results = &cache[first_input].results_len_0;
-        }
-        else
-        {
-            results = &cache[first_input].results_len_1;
-        }
-        for(StringWeightVector::const_iterator it = results->begin();
-            // First get the correct weight limit
-            it != results->end(); ++it)
-        {
-            best_suggestion = std::min(best_suggestion, it->second);
-            if (nbest > 0)
-            {
-                nbest_queue.push(it->second);
-                if (nbest_queue.size() > nbest)
-                {
-                    nbest_queue.pop();
-                }
-            }
-        }
-        adjust_weight_limits(nbest, beam);
-        for(StringWeightVector::const_iterator it = results->begin();
-            // Then collect the results
-            it != results->end(); ++it)
-        {
-            if (it->second <= limit && (nbest == 0 || // we either don't have an nbest condition or
-                                        (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
-                                         correction_queue.size() < nbest &&
-                                         nbest_queue.size() > 0)))   // number of results
-            {
-                correction_queue.push(StringWeightPair(it->first, it->second));
-                if (nbest > 0)
-                {
-                    nbest_queue.pop();
-                }
-            }
-        }
-        return correction_queue;
-    }
-    else
-    {
-        // populate the tree node queue
-        queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
-    }
-    // TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-    // queue.assign(1, start_node);
 
     while (queue.size() > 0)
     {
@@ -1101,6 +1033,84 @@ CorrectionQueue Speller::correct(char * line, int nbest,
             consume_input();
         }
     }
+
+    return corrections;
+}
+
+CorrectionQueue Speller::correct(char * line, int nbest,
+                                 Weight maxweight, Weight beam)
+{
+    mode = Correct;
+    // if input initialization fails, return empty correction queue
+    if (!init_input(line))
+    {
+        return CorrectionQueue();
+    }
+    set_limiting_behaviour(nbest, maxweight, beam);
+    nbest_queue = WeightQueue();
+    // The queue for our suggestions
+    CorrectionQueue correction_queue;
+    // A placeholding map, only one weight per correction
+    SymbolNumber first_input = (input.size() == 0) ? 0 : input[0];
+    if (cache[first_input].empty)
+    {
+        build_cache(first_input);
+    }
+    if (input.size() <= 1)
+    {
+        // get the cached results and we're done
+        StringWeightVector * results;
+        if (input.size() == 0)
+        {
+            results = &cache[first_input].results_len_0;
+        }
+        else
+        {
+            results = &cache[first_input].results_len_1;
+        }
+        for(StringWeightVector::const_iterator it = results->begin();
+            it != results->end(); ++it)
+        {
+            // First get the correct weight limit
+            best_suggestion = std::min(best_suggestion, it->second);
+            if (nbest > 0)
+            {
+                nbest_queue.push(it->second);
+                if (nbest_queue.size() > nbest)
+                {
+                    nbest_queue.pop();
+                }
+            }
+        }
+        adjust_weight_limits(nbest, beam);
+        for(StringWeightVector::const_iterator it = results->begin();
+            // Then collect the results
+            it != results->end(); ++it)
+        {
+            if (it->second <= limit && (nbest == 0 || // we either don't have an nbest condition or
+                                        (it->second <= nbest_queue.get_highest() && // we're below the worst nbest weight and
+                                         correction_queue.size() < nbest &&
+                                         nbest_queue.size() > 0)))   // number of results
+            {
+                correction_queue.push(StringWeightPair(it->first, it->second));
+                if (nbest > 0)
+                {
+                    nbest_queue.pop();
+                }
+            }
+        }
+        return correction_queue;
+    }
+    else
+    {
+        // populate the tree node queue
+        queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
+    }
+    // TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    // queue.assign(1, start_node);
+
+    std::map<std::string, Weight> corrections = generate_correction_map(nbest, maxweight, beam);
+
     adjust_weight_limits(nbest, beam);
     std::map<std::string, Weight>::iterator it;
     for (it = corrections.begin(); it != corrections.end(); ++it)
