@@ -958,29 +958,26 @@ Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
          */
         next_node = node_queue.back();
         node_queue.pop_back();
+
         adjust_weight_limits(nbest, beam);
         // if we can't get an acceptable result, never mind
         if (next_node.weight > limit)
         {
             continue;
         }
+
         if (next_node.input_state > 1)
         {
             // Early epsilons were handled during the caching stage
             lexicon_epsilons();
             mutator_epsilons();
         }
+
         if (next_node.input_state == input.size())
         {
             /* if our transducers are in final states
              * we generate the correction
              */
-            if (!mutator->is_final(next_node.mutator_state))
-            {
-            }
-            if (!lexicon->is_final(next_node.lexicon_state))
-            {
-            }
             if (mutator->is_final(next_node.mutator_state) &&
                 lexicon->is_final(next_node.lexicon_state))
             {
@@ -991,9 +988,9 @@ Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
                 {
                     continue;
                 }
+
                 std::string string = stringify(lexicon->get_key_table(), next_node.string);
-                /* if the correction is novel or better than before, insert it
-                 */
+                /* if the correction is novel or better than before, insert it */
                 if (corrections.count(string) == 0 ||
                     corrections[string] > weight)
                 {
@@ -1015,6 +1012,38 @@ Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
     return corrections;
 }
 
+
+CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int nbest, Weight beam)
+{
+    CorrectionQueue correction_queue(nbest);
+
+    // get the cached results and we're done
+    StringWeightVector * results = &cache[first_input].get(input.size());
+
+    for(StringWeightVector::const_iterator it = results->begin();
+        it != results->end(); ++it)
+    {
+        // First get the correct weight limit
+        best_suggestion = std::min(best_suggestion, it->second);
+        if (nbest > 0)
+        {
+            nbest_queue.push(it->second);
+        }
+    }
+
+    adjust_weight_limits(nbest, beam);
+    for(StringWeightVector::const_iterator it = results->begin();
+        it != results->end(); ++it)
+    {
+        // Then collect the results
+        if (it->second <= limit)
+        {
+            correction_queue.push_back(StringWeightPair(it->first, it->second));
+        }
+    }
+    return correction_queue;
+}
+
 CorrectionQueue Speller::correct(char * line, int nbest,
                                  Weight maxweight, Weight beam)
 {
@@ -1029,9 +1058,6 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     set_limiting_behaviour(nbest, maxweight, beam);
     nbest_queue = WeightQueue(nbest);
 
-    // The queue for our suggestions
-    CorrectionQueue correction_queue(nbest);
-
     // A placeholding map, only one weight per correction
     SymbolNumber first_input = (input.size() == 0) ? 0 : input[0];
     if (cache[first_input].empty)
@@ -1041,37 +1067,13 @@ CorrectionQueue Speller::correct(char * line, int nbest,
 
     if (input.size() <= 1)
     {
-        // get the cached results and we're done
-        StringWeightVector * results = &cache[first_input].get(input.size());
-
-        for(StringWeightVector::const_iterator it = results->begin();
-            it != results->end(); ++it)
-        {
-            // First get the correct weight limit
-            best_suggestion = std::min(best_suggestion, it->second);
-            if (nbest > 0)
-            {
-                nbest_queue.push(it->second);
-            }
-        }
-
-        adjust_weight_limits(nbest, beam);
-        for(StringWeightVector::const_iterator it = results->begin();
-            it != results->end(); ++it)
-        {
-            // Then collect the results
-            if (it->second <= limit)
-            {
-                correction_queue.push_back(StringWeightPair(it->first, it->second));
-            }
-        }
-        return correction_queue;
+        return handle_input_size_lt_1(first_input, nbest, beam);
     }
-    else
-    {
-        // populate the tree node queue
-        node_queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
-    }
+
+    // The queue for our suggestions
+    CorrectionQueue correction_queue(nbest);
+
+    node_queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
     // TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     // queue.assign(1, start_node);
 
