@@ -13,15 +13,17 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-#if HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include "config.h"
 
 // C
 #if HAVE_LIBARCHIVE
 #  include <archive.h>
 #  include <archive_entry.h>
 #endif
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+
 // C++
 #if HAVE_LIBXML
 #  include <libxml++/libxml++.h>
@@ -247,7 +249,7 @@ ZHfstOspeller::set_temporary_dir(const string& tempdir)
 }
 
 Transducer*
-ZHfstOspeller::load_errmodel(struct archive* ar, char* filename)
+ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, char* filename)
 {
 #if ZHFST_EXTRACT_TO_TMPDIR
     std::string temporary = extract_to_tmp_dir(ar, tempdir_);
@@ -272,13 +274,27 @@ ZHfstOspeller::load_errmodel(struct archive* ar, char* filename)
     char* descr = hfst_strndup(p, descr_len);
     Transducer* trans;
 #if ZHFST_EXTRACT_TO_TMPDIR
-    FILE* f = fopen(temporary.c_str(), "r");
-    if (NULL == f)
+    int fd = open(temporary.c_str(), O_RDONLY);
+
+    if (fd == -1)
     {
         throw ZHfstTemporaryWritingError("reading errmodel back "
                                          "from temp file");
     }
-    trans = new Transducer(f);
+
+    struct stat statbuf;
+
+    if (stat(temporary.c_str(), &statbuf) == -1) {
+        /* check the value of errno */
+        exit(1);
+    }
+
+    char* ptr = (char*)mmap(NULL, statbuf.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+    if (ptr == MAP_FAILED) {
+        exit(errno);
+    }
+
+    trans = new Transducer(ptr);
 #elif ZHFST_EXTRACT_TO_MEM
     trans = new Transducer(full_data);
     delete[] full_data;
@@ -290,7 +306,7 @@ ZHfstOspeller::load_errmodel(struct archive* ar, char* filename)
 }
 
 Transducer*
-ZHfstOspeller::load_acceptor(struct archive* ar, char* filename)
+ZHfstOspeller::load_acceptor(struct archive* ar, struct archive_entry* entry, char* filename)
 {
 #if ZHFST_EXTRACT_TO_TMPDIR
     std::string temporary = extract_to_tmp_dir(ar, tempdir_);
@@ -315,13 +331,27 @@ ZHfstOspeller::load_acceptor(struct archive* ar, char* filename)
     char* descr = hfst_strndup(p, descr_len);
     Transducer* trans;
 #if ZHFST_EXTRACT_TO_TMPDIR
-    FILE* f = fopen(temporary.c_str(), "r");
-    if (f == NULL)
+    int fd = open(temporary.c_str(), O_RDONLY);
+
+    if (fd == -1)
     {
         throw ZHfstTemporaryWritingError("reading acceptor back "
                                          "from temp file");
     }
-    trans = new Transducer(f);
+
+    struct stat statbuf;
+
+    if (stat(temporary.c_str(), &statbuf) == -1) {
+        /* check the value of errno */
+        exit(1);
+    }
+
+    char* ptr = (char*)mmap(NULL, statbuf.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+    if (ptr == MAP_FAILED) {
+        exit(errno);
+    }
+
+    trans = new Transducer(ptr);
 #elif ZHFST_EXTRACT_TO_MEM
     trans = new Transducer(full_data);
     delete[] full_data;
@@ -363,11 +393,11 @@ ZHfstOspeller::read_zhfst(const string& filename)
         char* filename = strdup(archive_entry_pathname(entry));
         if (strncmp(filename, "acceptor.", strlen("acceptor.")) == 0)
         {
-            trans = load_acceptor(ar, filename);
+            trans = load_acceptor(ar, entry, filename);
         }
         else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
         {
-            trans = load_errmodel(ar, filename);
+            trans = load_errmodel(ar, entry, filename);
         }
         else if (strcmp(filename, "index.xml") == 0)
         {

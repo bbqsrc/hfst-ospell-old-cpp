@@ -15,6 +15,9 @@
 #if HAVE_CONFIG_H
 #  include <config.h>
 #endif
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 #include "ospell.h"
 
@@ -91,16 +94,6 @@ Weight WeightQueue::get_highest(void) const
     return top();
 }
 
-Transducer::Transducer(FILE* f) :
-    header(TransducerHeader(f)),
-    alphabet(TransducerAlphabet(f, header.symbol_count())),
-    keys(alphabet.get_key_table()),
-    encoder(keys,header.input_symbol_count()),
-    indices(f,header.index_table_size()),
-    transitions(f,header.target_table_size())
-{
-}
-
 Transducer::Transducer(char* raw) :
     header(TransducerHeader(&raw)),
     alphabet(TransducerAlphabet(&raw, header.symbol_count())),
@@ -109,6 +102,30 @@ Transducer::Transducer(char* raw) :
     indices(&raw,header.index_table_size()),
     transitions(&raw,header.target_table_size())
 {
+}
+
+Transducer
+Transducer::from_file(std::string &filename)
+{
+    int fd = open(filename.c_str(), O_RDONLY);
+
+    if (fd == -1)
+    {
+        HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be read.\n");
+    }
+
+    struct stat statbuf;
+
+    if (stat(filename.c_str(), &statbuf) == -1) {
+        HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be read.\n");
+    }
+
+    char* ptr = (char*)mmap(NULL, statbuf.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+    if (ptr == MAP_FAILED) {
+        HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be mmapped.\n");
+    }
+
+    return Transducer(ptr);
 }
 
 TreeNode TreeNode::update_lexicon(SymbolNumber symbol,

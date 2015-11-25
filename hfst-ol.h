@@ -97,15 +97,17 @@ private:
     bool has_input_epsilon_transitions;
     bool has_input_epsilon_cycles;
     bool has_unweighted_input_epsilon_cycles;
-    void read_property(bool &property, FILE * f);
+    //void read_property(bool &property, FILE * f);
     void read_property(bool &property, char ** raw);
-    void skip_hfst3_header(FILE * f);
+    //void skip_hfst3_header(FILE * f);
     void skip_hfst3_header(char ** f);
 
 public:
     //!
     //! @brief read header from file @a f
+    /*
     TransducerHeader(FILE * f);
+    */
 
     //!
     //! read header from raw memory data @a raw
@@ -182,13 +184,15 @@ private:
     StringSymbolMap string_to_symbol;
     void process_symbol(char * line);
 
-    void read(FILE * f, SymbolNumber number_of_symbols);
+    //void read(FILE * f, SymbolNumber number_of_symbols);
     void read(char ** raw, SymbolNumber number_of_symbols);
 
 public:
     //!
     //! read alphabets from file @a f
+    /*
     TransducerAlphabet(FILE *f, SymbolNumber number_of_symbols);
+    */
     //!
     //! read alphabes from raw data @a raw
     TransducerAlphabet(char ** raw, SymbolNumber number_of_symbols);
@@ -370,8 +374,10 @@ class IndexTable
 private:
     char * indices;
 
+    /*
     void read(FILE * f,
               TransitionTableIndex number_of_table_entries);
+    */
     void read(char ** raw,
               TransitionTableIndex number_of_table_entries);
     TransitionTableIndex size;
@@ -379,8 +385,10 @@ private:
 public:
     //!
     //! read index table from file @a f.
+    /*
     IndexTable(FILE * f,
                TransitionTableIndex number_of_table_entries);
+    */
     //!
     //! read index table from raw data @a raw.
     IndexTable(char ** raw,
@@ -412,8 +420,10 @@ protected:
 
     //!
     //! read known amount of transitions from file @a f
+    /*
     void read(FILE * f,
               TransitionTableIndex number_of_table_entries);
+    */
     //! read known amount of transitions from raw dara @a data
     void read(char ** raw,
               TransitionTableIndex number_of_table_entries);
@@ -421,8 +431,10 @@ protected:
 public:
     //!
     //! read transition table from file @a f
+    /*
     TransitionTable(FILE * f,
                     TransitionTableIndex transition_count);
+    */
     //!
     //! read transition table from raw data @a raw
     TransitionTable(char ** raw,

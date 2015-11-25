@@ -585,10 +585,9 @@ int main(int argc, char **argv)
             print_short_help();
             return EXIT_FAILURE;
         }
-        FILE * err_file = fopen(error_model_filename.c_str(), "r");
-        FILE * lex_file = fopen(lexicon_filename.c_str(), "r");
-        hfst_ol::Transducer err(err_file);
-        hfst_ol::Transducer lex(lex_file);
+
+        Transducer err = hfst_ol::Transducer::from_file(error_model_filename);
+        Transducer lex = hfst_ol::Transducer::from_file(lexicon_filename);
         hfst_ol::Speller * s = new hfst_ol::Speller(&err, &lex);
         return legacy_spell(s);
     }

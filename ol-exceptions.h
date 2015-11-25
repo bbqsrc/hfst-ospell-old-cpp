@@ -83,5 +83,7 @@ HFST_EXCEPTION_CHILD_DECLARATION(TransitionTableReadingException);
 HFST_EXCEPTION_CHILD_DECLARATION(UnweightedSpellerException);
 
 HFST_EXCEPTION_CHILD_DECLARATION(TransducerTypeException);
+
+HFST_EXCEPTION_CHILD_DECLARATION(TransducerReadError);
 } // namespace
 #endif // _OL_EXCEPTIONS_H

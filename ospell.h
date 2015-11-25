@@ -191,7 +191,8 @@ protected:
 public:
     //!
     //! read transducer from file @a f
-    Transducer(FILE * f);
+    //Transducer(FILE * f);
+    static Transducer from_file(std::string& filename);
     //!
     //! read transducer from raw dara @a data
     Transducer(char * raw);
