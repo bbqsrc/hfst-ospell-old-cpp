@@ -90,6 +90,9 @@ public:
     //! @brief create string representation of the speller for
     //!        programmer to debug
     std::string metadata_dump() const;
+
+    Transducer* load_acceptor(struct archive* ar, char* filename);
+    Transducer* load_errmodel(struct archive* ar, char* filename);
 private:
     //! @brief file or path where the speller came from
     std::string filename_;

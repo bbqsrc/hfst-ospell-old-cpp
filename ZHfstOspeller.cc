@@ -246,6 +246,92 @@ ZHfstOspeller::set_temporary_dir(const string& tempdir)
     tempdir_ = tempdir;
 }
 
+Transducer*
+ZHfstOspeller::load_errmodel(struct archive* ar, char* filename)
+{
+#if ZHFST_EXTRACT_TO_TMPDIR
+    std::string temporary = extract_to_tmp_dir(ar, tempdir_);
+#elif ZHFST_EXTRACT_TO_MEM
+    size_t total_length = 0;
+    char* full_data = extract_to_mem(ar, entry, &total_length);
+#endif
+    const char* p = filename;
+    p += strlen("errmodel.");
+    size_t descr_len = 0;
+    for (const char* q = p; *q != '\0'; q++)
+    {
+        if (*q == '.')
+        {
+            break;
+        }
+        else
+        {
+            descr_len++;
+        }
+    }
+    char* descr = hfst_strndup(p, descr_len);
+    Transducer* trans;
+#if ZHFST_EXTRACT_TO_TMPDIR
+    FILE* f = fopen(temporary.c_str(), "r");
+    if (NULL == f)
+    {
+        throw ZHfstTemporaryWritingError("reading errmodel back "
+                                         "from temp file");
+    }
+    trans = new Transducer(f);
+#elif ZHFST_EXTRACT_TO_MEM
+    trans = new Transducer(full_data);
+    delete[] full_data;
+#endif
+    errmodels_[descr] = trans;
+    free(descr);
+
+    return trans;
+}
+
+Transducer*
+ZHfstOspeller::load_acceptor(struct archive* ar, char* filename)
+{
+#if ZHFST_EXTRACT_TO_TMPDIR
+    std::string temporary = extract_to_tmp_dir(ar, tempdir_);
+#elif ZHFST_EXTRACT_TO_MEM
+    size_t total_length = 0;
+    char* full_data = extract_to_mem(ar, entry, &total_length);
+#endif
+    char* p = filename;
+    p += strlen("acceptor.");
+    size_t descr_len = 0;
+    for (const char* q = p; *q != '\0'; q++)
+    {
+        if (*q == '.')
+        {
+            break;
+        }
+        else
+        {
+            descr_len++;
+        }
+    }
+    char* descr = hfst_strndup(p, descr_len);
+    Transducer* trans;
+#if ZHFST_EXTRACT_TO_TMPDIR
+    FILE* f = fopen(temporary.c_str(), "r");
+    if (f == NULL)
+    {
+        throw ZHfstTemporaryWritingError("reading acceptor back "
+                                         "from temp file");
+    }
+    trans = new Transducer(f);
+#elif ZHFST_EXTRACT_TO_MEM
+    trans = new Transducer(full_data);
+    delete[] full_data;
+#endif
+    acceptors_[descr] = trans;
+    free(descr);
+
+    return trans;
+}
+
 void
 ZHfstOspeller::read_zhfst(const string& filename)
 {
@@ -269,6 +355,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
          rr != ARCHIVE_EOF;
          rr = archive_read_next_header(ar, &entry))
     {
+        Transducer* trans;
         if (rr != ARCHIVE_OK)
         {
             throw ZHfstZipReadingError("Archive not OK");
@@ -276,92 +363,23 @@ ZHfstOspeller::read_zhfst(const string& filename)
         char* filename = strdup(archive_entry_pathname(entry));
         if (strncmp(filename, "acceptor.", strlen("acceptor.")) == 0)
         {
-#if ZHFST_EXTRACT_TO_TMPDIR
-            std::string temporary = extract_to_tmp_dir(ar, tempdir_);
-#elif ZHFST_EXTRACT_TO_MEM
-            size_t total_length = 0;
-            char* full_data = extract_to_mem(ar, entry, &total_length);
-#endif
-            char* p = filename;
-            p += strlen("acceptor.");
-            size_t descr_len = 0;
-            for (const char* q = p; *q != '\0'; q++)
-            {
-                if (*q == '.')
-                {
-                    break;
-                }
-                else
-                {
-                    descr_len++;
-                }
-            }
-            char* descr = hfst_strndup(p, descr_len);
-#if ZHFST_EXTRACT_TO_TMPDIR
-            FILE* f = fopen(temporary.c_str(), "r");
-            if (f == NULL)
-            {
-                throw ZHfstTemporaryWritingError("reading acceptor back "
-                                                 "from temp file");
-            }
-            Transducer* trans = new Transducer(f);
-#elif ZHFST_EXTRACT_TO_MEM
-            Transducer* trans = new Transducer(full_data);
-            delete[] full_data;
-#endif
-            acceptors_[descr] = trans;
-            free(descr);
+            trans = load_acceptor(ar, filename);
         }
         else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
         {
-#if ZHFST_EXTRACT_TO_TMPDIR
-            std::string temporary = extract_to_tmp_dir(ar, tempdir_);
-#elif ZHFST_EXTRACT_TO_MEM
-            size_t total_length = 0;
-            char* full_data = extract_to_mem(ar, entry, &total_length);
-#endif
-            const char* p = filename;
-            p += strlen("errmodel.");
-            size_t descr_len = 0;
-            for (const char* q = p; *q != '\0'; q++)
-            {
-                if (*q == '.')
-                {
-                    break;
-                }
-                else
-                {
-                    descr_len++;
-                }
-            }
-            char* descr = hfst_strndup(p, descr_len);
-#if ZHFST_EXTRACT_TO_TMPDIR
-            FILE* f = fopen(temporary.c_str(), "r");
-            if (NULL == f)
-            {
-                throw ZHfstTemporaryWritingError("reading errmodel back "
-                                                 "from temp file");
-            }
-            Transducer* trans = new Transducer(f);
-#elif ZHFST_EXTRACT_TO_MEM
-            Transducer* trans = new Transducer(full_data);
-            delete[] full_data;
-#endif
-            errmodels_[descr] = trans;
-            free(descr);
-        }   // if acceptor or errmodel
+            trans = load_errmodel(ar, filename);
+        }
         else if (strcmp(filename, "index.xml") == 0)
         {
-#if ZHFST_EXTRACT_TO_TMPDIR
+        #if ZHFST_EXTRACT_TO_TMPDIR
             std::string temporary = extract_to_tmp_dir(ar, tempdir_);
             metadata_.read_xml(temporary);
-#elif ZHFST_EXTRACT_TO_MEM
+        #elif ZHFST_EXTRACT_TO_MEM
             size_t xml_len = 0;
             char* full_data = extract_to_mem(ar, entry, &xml_len);
             metadata_.read_xml(full_data, xml_len);
             delete[] full_data;
-#endif
-
+        #endif
         }
         else
         {
