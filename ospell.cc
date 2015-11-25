@@ -125,6 +125,10 @@ Transducer::from_file(std::string &filename)
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be mmapped.\n");
     }
 
+    #if __APPLE__
+    madvise(ptr, statbuf.st_size, MADV_WILLNEED | MADV_SEQUENTIAL);
+    #endif
+
     return Transducer(ptr);
 }
 
@@ -900,8 +904,6 @@ AnalysisQueue Speller::analyse(char * line, int nbest)
     }
     return analyses;
 }
-
-
 
 void Speller::build_cache(SymbolNumber first_sym)
 {

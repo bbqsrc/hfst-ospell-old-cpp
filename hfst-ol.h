@@ -372,7 +372,7 @@ public:
 class IndexTable
 {
 private:
-    char * indices;
+    const char * indices;
 
     /*
     void read(FILE * f,
@@ -416,7 +416,7 @@ class TransitionTable
 protected:
     //!
     //! raw transition data
-    char * transitions;
+    const char * transitions;
 
     //!
     //! read known amount of transitions from file @a f
