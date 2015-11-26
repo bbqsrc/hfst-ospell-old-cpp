@@ -118,7 +118,23 @@ template<
     class Container = std::vector<T>,
     class Compare = std::less<typename Container::value_type>
     >
-class sized_priority_deque : public std::priority_queue<T, Container, Compare>
+class priority_queue : public std::priority_queue<T, Container, Compare>
+{
+public:
+    Container clone_container()
+    {
+        Container container(this->c);
+        std::sort(container.rbegin(), container.rend(), this->comp);
+        return container;
+    }
+};
+
+template<
+    class T,
+    class Container = std::vector<T>,
+    class Compare = std::less<typename Container::value_type>
+    >
+class sized_priority_deque : public priority_queue<T, Container, Compare>
 {
 protected:
     size_t max_size;
@@ -143,7 +159,6 @@ public:
             this->pop();
         }
     }
-
     void push_back(const T& value)
     {
         std::priority_queue<T, Container, Compare>::push(value);
@@ -154,24 +169,33 @@ public:
     }
 };
 
-typedef sized_priority_deque<StringWeightPair,
-                             std::vector<StringWeightPair>,
-                             StringWeightComparison> CorrectionQueue;
-typedef std::priority_queue<StringWeightPair,
+typedef priority_queue<StringWeightPair,
+                            std::vector<StringWeightPair>,
+                            StringWeightComparison> CorrectionQueue;
+typedef priority_queue<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> AnalysisQueue;
-typedef std::priority_queue<StringWeightPair,
+typedef priority_queue<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> HyphenationQueue;
-typedef std::priority_queue<StringPairWeightPair,
+typedef priority_queue<StringPairWeightPair,
                             std::vector<StringPairWeightPair>,
                             StringPairWeightComparison> AnalysisCorrectionQueue;
 
-//struct WeightQueue : public std::list<Weight>
-class WeightQueue : public sized_priority_deque<Weight>
+class WeightQueue : public std::list<Weight>
 {
-    using sized_priority_deque<Weight>::sized_priority_deque;
+private:
+    size_t max_size;
+    void prune();
 public:
+    WeightQueue() : max_size(0)
+    {
+    }
+    WeightQueue(size_t sz) : max_size(sz)
+    {
+    }
+    void push(Weight w); // add a new weight
+    void pop(void); // delete the biggest weight
     Weight get_lowest(void) const;
     Weight get_highest(void) const;
 };

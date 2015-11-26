@@ -15,6 +15,7 @@
 #if HAVE_CONFIG_H
 #  include <config.h>
 #endif
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -76,13 +77,41 @@ StringPairWeightComparison::operator()(StringPairWeightPair lhs,
     }
 }
 
+void WeightQueue::prune()
+{
+    if (max_size > 0 && size() > max_size) {
+        pop_back();
+    }
+}
+
+void WeightQueue::push(Weight w)
+{
+    for (WeightQueue::iterator it = begin(); it != end(); ++it)
+    {
+        if (*it > w)
+        {
+            insert(it, w);
+            prune();
+            return;
+        }
+    }
+
+    push_back(w);
+    prune();
+}
+
+void WeightQueue::pop(void)
+{
+    pop_back();
+}
+
 Weight WeightQueue::get_lowest(void) const
 {
     if (size() == 0)
     {
         return std::numeric_limits<Weight>::max();
     }
-    return bottom();
+    return front();
 }
 
 Weight WeightQueue::get_highest(void) const
@@ -91,7 +120,7 @@ Weight WeightQueue::get_highest(void) const
     {
         return std::numeric_limits<Weight>::max();
     }
-    return top();
+    return back();
 }
 
 Transducer::Transducer(int8_t* raw) :
@@ -1029,7 +1058,7 @@ Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
 
 CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_t nbest, Weight beam)
 {
-    CorrectionQueue correction_queue(nbest);
+    CorrectionQueue correction_queue;
 
     // get the cached results and we're done
     StringWeightVector * results = &cache[first_input].get(input.size());
@@ -1052,7 +1081,7 @@ CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_
         // Then collect the results
         if (it->second <= limit)
         {
-            correction_queue.push_back(StringWeightPair(it->first, it->second));
+            correction_queue.push(StringWeightPair(it->first, it->second));
         }
     }
     return correction_queue;
@@ -1068,8 +1097,6 @@ CorrectionQueue Speller::correct(int8_t * line, int32_t nbest,
     {
         return CorrectionQueue();
     }
-
-    set_limiting_behaviour(nbest, maxweight, beam);
     nbest_queue = WeightQueue(nbest);
 
     // A placeholding map, only one weight per correction
@@ -1079,13 +1106,15 @@ CorrectionQueue Speller::correct(int8_t * line, int32_t nbest,
         build_cache(first_input);
     }
 
+    set_limiting_behaviour(nbest, maxweight, beam);
+
     if (input.size() <= 1)
     {
         return handle_input_size_lt_1(first_input, nbest, beam);
     }
 
     // The queue for our suggestions
-    CorrectionQueue correction_queue(nbest);
+    CorrectionQueue correction_queue;
 
     node_queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
     // TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
@@ -1099,7 +1128,7 @@ CorrectionQueue Speller::correct(int8_t * line, int32_t nbest,
     {
         if (it->second <= limit)
         {
-            correction_queue.push_back(StringWeightPair(it->first, it->second));
+            correction_queue.push(StringWeightPair(it->first, it->second));
         }
     }
 
@@ -1139,7 +1168,7 @@ void Speller::adjust_weight_limits(int32_t nbest, Weight beam)
     }
     else if (limiting == MaxWeightNbest && nbest_queue.size() >= nbest)
     {
-        limit = std::min(limit, nbest_queue.get_lowest());
+        limit = std::min(limit, nbest_queue.get_highest());
     }
     else if (limiting == Beam && best_suggestion < std::numeric_limits<Weight>::max())
     {
@@ -1151,7 +1180,7 @@ void Speller::adjust_weight_limits(int32_t nbest, Weight beam)
         {
             if (nbest_queue.size() >= nbest)
             {
-                limit = std::min(best_suggestion + beam, nbest_queue.get_lowest());
+                limit = std::min(best_suggestion + beam, nbest_queue.get_highest());
             }
             else
             {
@@ -1174,7 +1203,7 @@ void Speller::adjust_weight_limits(int32_t nbest, Weight beam)
         }
         if (nbest_queue.size() >= nbest)
         {
-            limit = std::min(limit, nbest_queue.get_lowest());
+            limit = std::min(limit, nbest_queue.get_highest());
         }
     }
 }
