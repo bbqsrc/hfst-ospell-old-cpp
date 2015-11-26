@@ -350,16 +350,17 @@ void IndexTable::read(int8_t ** raw,
                       TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
-    #if ZHFST_EXTRACT_TO_MEM
-    indices = (int8_t*)(malloc(table_size));
-    memcpy((void *) indices, (const void *) *raw, table_size);
-    #else
-    indices = *raw;
 
-    #if __APPLE__
-    madvise(raw, sizeof(table_size), MADV_WILLNEED);
+    #if ZHFST_EXTRACT_TO_MEM
+        indices = (int8_t*)(malloc(table_size));
+        memcpy((void *) indices, (const void *) *raw, table_size);
+    #else
+        #if __APPLE__
+        madvise(raw, sizeof(table_size), MADV_WILLNEED | MADV_RANDOM);
+        #endif
+        indices = *raw;
     #endif
-    #endif
+    
     (*raw) += table_size;
 }
 
@@ -367,16 +368,17 @@ void TransitionTable::read(int8_t ** raw,
                            TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*Transition::SIZE;
-    #if ZHFST_EXTRACT_TO_MEM
-    transitions = (int8_t*)(malloc(table_size));
-    memcpy((void *) transitions, (const void *) *raw, table_size);
-    #else
-    transitions = *raw;
 
-    #if __APPLE__
-    madvise(raw, sizeof(table_size), MADV_WILLNEED);
+    #if ZHFST_EXTRACT_TO_MEM
+        transitions = (int8_t*)(malloc(table_size));
+        memcpy((void *) transitions, (const void *) *raw, table_size);
+    #else
+        #if __APPLE__
+        madvise(raw, sizeof(table_size), MADV_WILLNEED | MADV_RANDOM);
+        #endif
+        transitions = *raw;
     #endif
-    #endif
+
     (*raw) += table_size;
 }
 
