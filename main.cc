@@ -33,6 +33,7 @@
 #endif
 
 #include <cstdarg>
+#include <cstdint>
 #include <stdio.h>
 #include <errno.h>
 
@@ -46,7 +47,7 @@ using hfst_ol::Transducer;
 static bool quiet = false;
 static bool verbose = false;
 static bool analyse = false;
-static unsigned long suggs = 0;
+static uint64_t suggs = 0;
 static hfst_ol::Weight max_weight = -1.0;
 static hfst_ol::Weight beam = -1.0;
 static std::string error_model_filename = "";

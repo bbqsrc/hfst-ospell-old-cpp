@@ -32,6 +32,7 @@
 #  include <config.h>
 #endif
 
+#include <cstdint>
 #include <map>
 
 #include "ospell.h"
@@ -57,7 +58,7 @@ public:
     void inject_speller(Speller * s);
     //! @brief set upper limit to priority queue when performing
     //         suggestions or analyses.
-    void set_queue_limit(unsigned long limit);
+    void set_queue_limit(uint64_t limit);
     //! @brief set upper limit for weights
     void set_weight_limit(Weight limit);
     //! @brief set search beam
@@ -97,7 +98,7 @@ private:
     //! @brief file or path where the speller came from
     std::string filename_;
     //! @brief upper bound for suggestions generated and given
-    unsigned long suggestions_maximum_;
+    uint64_t suggestions_maximum_;
     //! @brief upper bound for suggestion weight generated and given
     Weight maximum_weight_;
     //! @brief upper bound for search beam around best candidate

@@ -20,6 +20,7 @@
 #  include <config.h>
 #endif
 
+#include <cstdint>
 #include <map>
 
 using std::map;
@@ -107,7 +108,7 @@ public:
     //!
     //! Depending on the XML library compiled in, the data length may
     //! be omitted and the buffer may be overflown.
-    void read_xml(const char* data, size_t data_length);
+    void read_xml(const int8_t* data, size_t data_length);
     //! @brief create a programmer readable dump of XML metadata.
     //!
     //! shows linear serialisation of all header data in random order.

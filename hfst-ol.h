@@ -27,6 +27,7 @@
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <cstring>
 #include <set>
@@ -35,12 +36,12 @@
 
 namespace hfst_ol {
 
-typedef unsigned short SymbolNumber;
-typedef unsigned int TransitionTableIndex;
+typedef uint16_t SymbolNumber;
+typedef uint32_t TransitionTableIndex;
 typedef std::vector<SymbolNumber> SymbolVector;
 typedef std::vector<std::string> KeyTable;
 typedef std::map<std::string, SymbolNumber> StringSymbolMap;
-typedef short ValueNumber;
+typedef int16_t ValueNumber;
 typedef float Weight;
 
 // Forward declarations to typedef some more containers
@@ -56,7 +57,7 @@ typedef std::map<SymbolNumber, FlagDiacriticOperation> OperationMap;
 const SymbolNumber NO_SYMBOL = USHRT_MAX;
 const TransitionTableIndex NO_TABLE_INDEX = UINT_MAX;
 const Weight INFINITE_WEIGHT = static_cast<float>(NO_TABLE_INDEX);
-const unsigned int MAX_SYMBOL_BYTES = 1000;
+const uint32_t MAX_SYMBOL_BYTES = 1000;
 
 // This is 2^31, hopefully equal to UINT_MAX/2 rounded up.
 // For some profound reason it can't be replaced with (UINT_MAX+1)/2.
@@ -72,7 +73,7 @@ enum HeaderFlag {Weighted, Deterministic, Input_deterministic, Minimized,
                  Has_unweighted_input_epsilon_cycles};
 
 // Utility function for dealing with raw memory
-void skip_c_string(char ** raw);
+void skip_c_string(int8_t ** raw);
 
 //! Internal class for Transducer processing.
 
@@ -98,9 +99,9 @@ private:
     bool has_input_epsilon_cycles;
     bool has_unweighted_input_epsilon_cycles;
     //void read_property(bool &property, FILE * f);
-    void read_property(bool &property, char ** raw);
+    void read_property(bool &property, int8_t ** raw);
     //void skip_hfst3_header(FILE * f);
-    void skip_hfst3_header(char ** f);
+    void skip_hfst3_header(int8_t ** f);
 
 public:
     //!
@@ -111,7 +112,7 @@ public:
 
     //!
     //! read header from raw memory data @a raw
-    TransducerHeader(char ** raw);
+    TransducerHeader(int8_t ** raw);
     //!
     //! count symbols
     SymbolNumber symbol_count(void);
@@ -182,10 +183,10 @@ private:
     SymbolNumber flag_state_size;
     SymbolNumber orig_symbol_count;
     StringSymbolMap string_to_symbol;
-    void process_symbol(char * line);
+    void process_symbol(int8_t * line);
 
     //void read(FILE * f, SymbolNumber number_of_symbols);
-    void read(char ** raw, SymbolNumber number_of_symbols);
+    void read(int8_t ** raw, SymbolNumber number_of_symbols);
 
 public:
     //!
@@ -195,10 +196,10 @@ public:
     */
     //!
     //! read alphabes from raw data @a raw
-    TransducerAlphabet(char ** raw, SymbolNumber number_of_symbols);
+    TransducerAlphabet(int8_t ** raw, SymbolNumber number_of_symbols);
 
     void add_symbol(std::string & sym);
-    void add_symbol(char * sym);
+    void add_symbol(int8_t * sym);
     //!
     //! get alphabet's keytable mapping
     KeyTable * get_key_table(void);
@@ -246,7 +247,7 @@ public:
     void add_string(const char * p,SymbolNumber symbol_key);
     //!
     //! find a key for string or add it
-    SymbolNumber find_key(char ** p);
+    SymbolNumber find_key(int8_t ** p);
     ~LetterTrie();
 };
 
@@ -265,9 +266,9 @@ public:
     //!
     //! create encoder from keytable
     Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols);
-    SymbolNumber find_key(char ** p);
-    void read_input_symbol(const char * s, const int s_num);
-    void read_input_symbol(std::string const & s, const int s_num);
+    SymbolNumber find_key(int8_t ** p);
+    void read_input_symbol(const char * s, const int32_t s_num);
+    void read_input_symbol(std::string const & s, const int32_t s_num);
 };
 
 typedef std::vector<ValueNumber> FlagDiacriticState;
@@ -372,13 +373,13 @@ public:
 class IndexTable
 {
 private:
-    const char * indices;
+    const int8_t* indices;
 
     /*
     void read(FILE * f,
               TransitionTableIndex number_of_table_entries);
     */
-    void read(char ** raw,
+    void read(int8_t ** raw,
               TransitionTableIndex number_of_table_entries);
     TransitionTableIndex size;
 
@@ -391,7 +392,7 @@ public:
     */
     //!
     //! read index table from raw data @a raw.
-    IndexTable(char ** raw,
+    IndexTable(int8_t ** raw,
                TransitionTableIndex number_of_table_entries);
     ~IndexTable(void);
     //!
@@ -416,7 +417,7 @@ class TransitionTable
 protected:
     //!
     //! raw transition data
-    const char * transitions;
+    const int8_t* transitions;
 
     //!
     //! read known amount of transitions from file @a f
@@ -425,7 +426,7 @@ protected:
               TransitionTableIndex number_of_table_entries);
     */
     //! read known amount of transitions from raw dara @a data
-    void read(char ** raw,
+    void read(int8_t ** raw,
               TransitionTableIndex number_of_table_entries);
     TransitionTableIndex size;
 public:
@@ -437,7 +438,7 @@ public:
     */
     //!
     //! read transition table from raw data @a raw
-    TransitionTable(char ** raw,
+    TransitionTable(int8_t ** raw,
                     TransitionTableIndex transition_count);
 
     ~TransitionTable(void);

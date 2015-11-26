@@ -23,7 +23,7 @@
 
 namespace hfst_ol {
 
-int nByte_utf8(unsigned char c)
+int32_t nByte_utf8(uint8_t c)
 {
     /* utility function to determine how many bytes to peel off as
        a utf-8 character for representing as unknown symbol */
@@ -94,7 +94,7 @@ Weight WeightQueue::get_highest(void) const
     return top();
 }
 
-Transducer::Transducer(char* raw) :
+Transducer::Transducer(int8_t* raw) :
     header(TransducerHeader(&raw)),
     alphabet(TransducerAlphabet(&raw, header.symbol_count())),
     keys(alphabet.get_key_table()),
@@ -107,7 +107,7 @@ Transducer::Transducer(char* raw) :
 Transducer
 Transducer::from_file(std::string &filename)
 {
-    int fd = open(filename.c_str(), O_RDONLY);
+    int32_t fd = open(filename.c_str(), O_RDONLY);
 
     if (fd == -1)
     {
@@ -120,7 +120,7 @@ Transducer::from_file(std::string &filename)
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be read.\n");
     }
 
-    char* ptr = (char*)mmap(NULL, statbuf.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+    int8_t* ptr = (int8_t*)mmap(NULL, statbuf.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
     if (ptr == MAP_FAILED) {
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be mmapped.\n");
     }
@@ -161,7 +161,7 @@ TreeNode TreeNode::update_mutator(TransitionTableIndex next_mutator,
 }
 
 TreeNode TreeNode::update(SymbolNumber symbol,
-                          unsigned int next_input,
+                          uint32_t next_input,
                           TransitionTableIndex next_mutator,
                           TransitionTableIndex next_lexicon,
                           Weight weight)
@@ -314,7 +314,7 @@ void Speller::lexicon_epsilons(void)
 
 void Speller::lexicon_consume(void)
 {
-    unsigned int input_state = next_node.input_state;
+    uint32_t input_state = next_node.input_state;
     if (input_state >= input.size())
     {
         // no more input
@@ -353,9 +353,9 @@ void Speller::lexicon_consume(void)
 }
 
 void Speller::queue_lexicon_arcs(SymbolNumber input_sym,
-                                 unsigned int mutator_state,
+                                 uint32_t mutator_state,
                                  Weight mutator_weight,
-                                 int input_increment)
+                                 int32_t input_increment)
 {
     TransitionTableIndex next = lexicon->next(next_node.lexicon_state,
                                               input_sym);
@@ -543,12 +543,12 @@ void Speller::queue_mutator_arcs(SymbolNumber input_sym)
 
 bool Transducer::initialize_input_vector(SymbolVector & input_vector,
                                          Encoder * encoder,
-                                         char * line)
+                                         int8_t * line)
 {
     input_vector.clear();
     SymbolNumber k = NO_SYMBOL;
-    char ** inpointer = &line;
-    char * oldpointer;
+    int8_t ** inpointer = &line;
+    int8_t * oldpointer;
     while (**inpointer != '\0')
     {
         oldpointer = *inpointer;
@@ -563,7 +563,7 @@ bool Transducer::initialize_input_vector(SymbolVector & input_vector,
     return true;
 }
 
-AnalysisQueue Transducer::lookup(char * line)
+AnalysisQueue Transducer::lookup(int8_t * line)
 {
     std::map<std::string, Weight> outputs;
     AnalysisQueue analyses;
@@ -631,7 +631,7 @@ AnalysisQueue Transducer::lookup(char * line)
         }
 
         // input consumption loop
-        unsigned int input_state = next_node.input_state;
+        uint32_t input_state = next_node.input_state;
         if (input_state < input.size() &&
             has_transitions(
                 next_node.lexicon_state + 1, input[input_state]))
@@ -686,7 +686,7 @@ Transducer::get_key_table()
 }
 
 SymbolNumber
-Transducer::find_next_key(char** p)
+Transducer::find_next_key(int8_t** p)
 {
     return encoder.find_key(p);
 }
@@ -697,7 +697,7 @@ Transducer::get_encoder()
     return &encoder;
 }
 
-unsigned int
+uint32_t
 Transducer::get_state_size()
 {
     return alphabet.get_state_size();
@@ -864,7 +864,7 @@ Transducer::is_weighted(void)
 }
 
 
-AnalysisQueue Speller::analyse(char * line, int nbest)
+AnalysisQueue Speller::analyse(int8_t * line, int32_t nbest)
 {
     mode = Lookup;
     if (!init_input(line))
@@ -965,7 +965,7 @@ void Speller::build_cache(SymbolNumber first_sym)
 }
 
 std::map<std::string, Weight>
-Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
+Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
 {
     std::map<std::string, Weight> corrections;
 
@@ -1027,7 +1027,7 @@ Speller::generate_correction_map(int nbest, Weight maxweight, Weight beam)
 }
 
 
-CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int nbest, Weight beam)
+CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_t nbest, Weight beam)
 {
     CorrectionQueue correction_queue(nbest);
 
@@ -1058,7 +1058,7 @@ CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int nb
     return correction_queue;
 }
 
-CorrectionQueue Speller::correct(char * line, int nbest,
+CorrectionQueue Speller::correct(int8_t * line, int32_t nbest,
                                  Weight maxweight, Weight beam)
 {
     mode = Correct;
@@ -1106,9 +1106,9 @@ CorrectionQueue Speller::correct(char * line, int nbest,
     return correction_queue;
 }
 
-void Speller::set_limiting_behaviour(int nbest, Weight maxweight, Weight beam)
+void Speller::set_limiting_behaviour(int32_t nbest, Weight maxweight, Weight beam)
 {
-    char limiting_ = 0;
+    int8_t limiting_ = 0;
     limit = std::numeric_limits<Weight>::max();
     best_suggestion = std::numeric_limits<Weight>::max();
 
@@ -1131,7 +1131,7 @@ void Speller::set_limiting_behaviour(int nbest, Weight maxweight, Weight beam)
     limiting = (LimitingBehaviour)limiting_;
 }
 
-void Speller::adjust_weight_limits(int nbest, Weight beam)
+void Speller::adjust_weight_limits(int32_t nbest, Weight beam)
 {
     if (limiting == Nbest && nbest_queue.size() >= nbest)
     {
@@ -1179,7 +1179,7 @@ void Speller::adjust_weight_limits(int nbest, Weight beam)
     }
 }
 
-bool Speller::check(char * line)
+bool Speller::check(int8_t * line)
 {
     mode = Check;
     if (!init_input(line))
@@ -1248,7 +1248,7 @@ void Speller::build_alphabet_translator(void)
     }
 }
 
-bool Speller::init_input(char * line)
+bool Speller::init_input(int8_t * line)
 {
     // Initialize the symbol vector to the tokenization given by encoder.
     // In the case of tokenization failure, valid utf-8 characters
@@ -1257,8 +1257,8 @@ bool Speller::init_input(char * line)
     // empty vector; there is no end marker.
     input.clear();
     SymbolNumber k = NO_SYMBOL;
-    char ** inpointer = &line;
-    char * oldpointer;
+    int8_t ** inpointer = &line;
+    int8_t * oldpointer;
 
     while (**inpointer != '\0')
     {
@@ -1266,7 +1266,7 @@ bool Speller::init_input(char * line)
         k = mutator->get_encoder()->find_key(inpointer);
         if (k == NO_SYMBOL)   // no tokenization from alphabet
         {
-            int bytes_to_tokenize = nByte_utf8(static_cast<unsigned char>(*oldpointer));
+            int32_t bytes_to_tokenize = nByte_utf8(static_cast<uint8_t>(*oldpointer));
             if (bytes_to_tokenize == 0)
             {
                 return false; // can't parse utf-8 character, admit failure

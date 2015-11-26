@@ -45,13 +45,13 @@ namespace hfst_ol
 #if HAVE_LIBARCHIVE
 #if ZHFST_EXTRACT_TO_MEM
 static
-char*
+int8_t*
 extract_to_mem(archive* ar, archive_entry* entry, size_t* n)
 {
     size_t full_length = 0;
     const struct stat* st = archive_entry_stat(entry);
     size_t buffsize = st->st_size;
-    char * buff = new char[buffsize];
+    int8_t* buff = new int8_t[buffsize];
     for (;;)
     {
         ssize_t curr = archive_read_data(ar, buff + full_length, buffsize - full_length);
@@ -89,8 +89,8 @@ extract_to_tmp_dir(archive* ar, const std::string& tempdir)
     std::string rv;
     rv = tempdir + std::string("/zhfstospellXXXXXXXX");
     char* path = strdup(rv.c_str());
-    int temp_fd = mkstemp(path);
-    int rr = archive_read_data_into_fd(ar, temp_fd);
+    int32_t temp_fd = mkstemp(path);
+    int32_t rr = archive_read_data_into_fd(ar, temp_fd);
     if ((rr != ARCHIVE_EOF) && (rr != ARCHIVE_OK))
     {
         throw ZHfstZipReadingError("Archive not EOF'd or OK'd");
@@ -157,7 +157,7 @@ ZHfstOspeller::inject_speller(Speller * s)
 }
 
 void
-ZHfstOspeller::set_queue_limit(unsigned long limit)
+ZHfstOspeller::set_queue_limit(uint64_t limit)
 {
     suggestions_maximum_ = limit;
 }
@@ -180,7 +180,7 @@ ZHfstOspeller::spell(const string& wordform)
     if (can_spell_ && (current_speller_ != 0))
     {
         char* wf = strdup(wordform.c_str());
-        bool rv = current_speller_->check(wf);
+        bool rv = current_speller_->check((int8_t*)wf);
         free(wf);
         return rv;
     }
@@ -194,7 +194,7 @@ ZHfstOspeller::suggest(const string& wordform)
     if ((can_correct_) && (current_sugger_ != 0))
     {
         char* wf = strdup(wordform.c_str());
-        rv = current_sugger_->correct(wf,
+        rv = current_sugger_->correct((int8_t*)wf,
                                       suggestions_maximum_,
                                       maximum_weight_,
                                       beam_);
@@ -211,11 +211,11 @@ ZHfstOspeller::analyse(const string& wordform, bool ask_sugger)
     char* wf = strdup(wordform.c_str());
     if ((can_analyse_) && (!ask_sugger) && (current_speller_ != 0))
     {
-        rv = current_speller_->analyse(wf);
+        rv = current_speller_->analyse((int8_t*)wf);
     }
     else if ((can_analyse_) && (ask_sugger) && (current_sugger_ != 0))
     {
-        rv = current_sugger_->analyse(wf);
+        rv = current_sugger_->analyse((int8_t*)wf);
     }
     free(wf);
     return rv;
@@ -255,7 +255,7 @@ ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, ch
     std::string temporary = extract_to_tmp_dir(ar, tempdir_);
 #elif ZHFST_EXTRACT_TO_MEM
     size_t total_length = 0;
-    char* full_data = extract_to_mem(ar, entry, &total_length);
+    int8_t* full_data = extract_to_mem(ar, entry, &total_length);
 #endif
     const char* p = filename;
     p += strlen("errmodel.");
@@ -274,7 +274,7 @@ ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, ch
     char* descr = hfst_strndup(p, descr_len);
     Transducer* trans;
 #if ZHFST_EXTRACT_TO_TMPDIR
-    int fd = open(temporary.c_str(), O_RDONLY);
+    int32_t fd = open(temporary.c_str(), O_RDONLY);
 
     if (fd == -1)
     {
@@ -316,7 +316,7 @@ ZHfstOspeller::load_acceptor(struct archive* ar, struct archive_entry* entry, ch
     std::string temporary = extract_to_tmp_dir(ar, tempdir_);
 #elif ZHFST_EXTRACT_TO_MEM
     size_t total_length = 0;
-    char* full_data = extract_to_mem(ar, entry, &total_length);
+    int8_t* full_data = extract_to_mem(ar, entry, &total_length);
 #endif
     char* p = filename;
     p += strlen("acceptor.");
@@ -335,7 +335,7 @@ ZHfstOspeller::load_acceptor(struct archive* ar, struct archive_entry* entry, ch
     char* descr = hfst_strndup(p, descr_len);
     Transducer* trans;
 #if ZHFST_EXTRACT_TO_TMPDIR
-    int fd = open(temporary.c_str(), O_RDONLY);
+    int32_t fd = open(temporary.c_str(), O_RDONLY);
 
     if (fd == -1)
     {
@@ -383,12 +383,12 @@ ZHfstOspeller::read_zhfst(const string& filename)
 #endif // USE_LIBARCHIVE_2
 
     archive_read_support_format_all(ar);
-    int rr = archive_read_open_filename(ar, filename.c_str(), 10240);
+    int32_t rr = archive_read_open_filename(ar, filename.c_str(), 10240);
     if (rr != ARCHIVE_OK)
     {
         throw ZHfstZipReadingError("Archive not OK");
     }
-    for (int rr = archive_read_next_header(ar, &entry);
+    for (int32_t rr = archive_read_next_header(ar, &entry);
          rr != ARCHIVE_EOF;
          rr = archive_read_next_header(ar, &entry))
     {
@@ -413,7 +413,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
             metadata_.read_xml(temporary);
         #elif ZHFST_EXTRACT_TO_MEM
             size_t xml_len = 0;
-            char* full_data = extract_to_mem(ar, entry, &xml_len);
+            int8_t* full_data = extract_to_mem(ar, entry, &xml_len);
             metadata_.read_xml(full_data, xml_len);
             delete[] full_data;
         #endif

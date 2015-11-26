@@ -33,10 +33,10 @@ void skip_c_string(int8_t ** raw)
 }
 
 void
-TransducerHeader::read_property(bool& property, char** raw)
+TransducerHeader::read_property(bool& property, int8_t** raw)
 {
-    unsigned int prop = *((unsigned int *) *raw);
-    (*raw) += sizeof(unsigned int);
+    uint32_t prop = *((uint32_t *) *raw);
+    (*raw) += sizeof(uint32_t);
     if (prop == 0)
     {
         property = false;
@@ -49,10 +49,10 @@ TransducerHeader::read_property(bool& property, char** raw)
     }
 }
 
-void TransducerHeader::skip_hfst3_header(char ** raw)
+void TransducerHeader::skip_hfst3_header(int8_t ** raw)
 {
     const char* header1 = "HFST";
-    unsigned int header_loc = 0; // how much of the header has been found
+    uint32_t header_loc = 0; // how much of the header has been found
 
     for(header_loc = 0; header_loc < strlen(header1) + 1; header_loc++)
     {
@@ -64,13 +64,13 @@ void TransducerHeader::skip_hfst3_header(char ** raw)
     }
     if(header_loc == strlen(header1) + 1) // we found it
     {
-        unsigned short remaining_header_len = *((unsigned short *) *raw);
-        (*raw) += sizeof(unsigned short) + 1 + remaining_header_len;
+        uint16_t remaining_header_len = *((uint16_t *) *raw);
+        (*raw) += sizeof(uint16_t) + 1 + remaining_header_len;
     }
     else // nope. put back what we've taken
     {
         --(*raw); // first the non-matching character
-        for(int i = header_loc - 1; i>=0; i--)
+        for(int32_t i = header_loc - 1; i>=0; i--)
         {
             // then the characters that did match (if any)
             --(*raw);
@@ -78,7 +78,7 @@ void TransducerHeader::skip_hfst3_header(char ** raw)
     }
 }
 
-TransducerHeader::TransducerHeader(char** raw)
+TransducerHeader::TransducerHeader(int8_t** raw)
 {
     skip_hfst3_header(raw); // skip header iff it is present
     number_of_input_symbols = *(SymbolNumber*) *raw;
@@ -179,7 +179,7 @@ FlagDiacriticOperation::Value() const
     return value;
 }
 
-void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
+void TransducerAlphabet::read(int8_t ** raw, SymbolNumber number_of_symbols)
 {
     std::map<std::string, SymbolNumber> feature_bucket;
     std::map<std::string, ValueNumber> value_bucket;
@@ -194,9 +194,9 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
     {
 
         // Detect and handle special symbols, which begin and end with @
-        if ((*raw)[0] == '@' && (*raw)[strlen(*raw) - 1] == '@')
+        if ((*raw)[0] == '@' && (*raw)[strlen((char*)*raw) - 1] == '@')
         {
-            if (strlen(*raw) >= 5 && (*raw)[2] == '.')   // flag diacritic
+            if (strlen((char*)*raw) >= 5 && (*raw)[2] == '.')   // flag diacritic
             {
                 std::string feat;
                 std::string val;
@@ -210,16 +210,16 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
                 case 'C': op = C; break;
                 case 'U': op = U; break;
                 }
-                char * c = *raw;
-                for (c +=3; *c != '.' && *c != '@'; c++)
+                int8_t * c = *raw;
+                for (c += 3; *c != '.' && *c != '@'; c++)
                 {
-                    feat.append(c,1);
+                    feat.append((char*)c, 1);
                 }
                 if (*c == '.')
                 {
                     for (++c; *c != '@'; c++)
                     {
-                        val.append(c,1);
+                        val.append((char*)c, 1);
                     }
                 }
                 if (feature_bucket.count(feat) == 0)
@@ -244,14 +244,14 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
                 continue;
 
             }
-            else if (strcmp(*raw, "@_UNKNOWN_SYMBOL_@") == 0)
+            else if (strcmp((char*)*raw, "@_UNKNOWN_SYMBOL_@") == 0)
             {
                 unknown_symbol = k;
                 kt.push_back(std::string(""));
                 skip_c_string(raw);
                 continue;
             }
-            else if (strcmp(*raw, "@_IDENTITY_SYMBOL_@") == 0)
+            else if (strcmp((char*)*raw, "@_IDENTITY_SYMBOL_@") == 0)
             {
                 identity_symbol = k;
                 kt.push_back(std::string(""));
@@ -265,14 +265,14 @@ void TransducerAlphabet::read(char ** raw, SymbolNumber number_of_symbols)
                 continue;
             }
         }
-        kt.push_back(std::string(*raw));
-        string_to_symbol[std::string(*raw)] = k;
+        kt.push_back(std::string((char*)*raw));
+        string_to_symbol[std::string((char*)*raw)] = k;
         skip_c_string(raw);
     }
     flag_state_size = feature_bucket.size();
 }
 
-TransducerAlphabet::TransducerAlphabet(char** raw,
+TransducerAlphabet::TransducerAlphabet(int8_t** raw,
                                        SymbolNumber number_of_symbols) :
     unknown_symbol(NO_SYMBOL),
     identity_symbol(NO_SYMBOL),
@@ -287,9 +287,9 @@ void TransducerAlphabet::add_symbol(std::string & sym)
     kt.push_back(sym);
 }
 
-void TransducerAlphabet::add_symbol(char * sym)
+void TransducerAlphabet::add_symbol(int8_t * sym)
 {
-    std::string s(sym);
+    std::string s((char*)sym);
     add_symbol(s);
 }
 
@@ -345,53 +345,53 @@ TransducerAlphabet::is_flag(SymbolNumber symbol)
     return operations.count(symbol) == 1;
 }
 
-void IndexTable::read(char ** raw,
+void IndexTable::read(int8_t ** raw,
                       TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
-    //indices = (char*)(malloc(table_size));
+    //indices = (int8_t*)(malloc(table_size));
     //memcpy((void *) indices, (const void *) *raw, table_size);
     indices = *raw;
     (*raw) += table_size;
 }
 
-void TransitionTable::read(char ** raw,
+void TransitionTable::read(int8_t ** raw,
                            TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*Transition::SIZE;
-    //transitions = (char*)(malloc(table_size));
+    //transitions = (int8_t*)(malloc(table_size));
     //memcpy((void *) transitions, (const void *) *raw, table_size);
     transitions = *raw;
     (*raw) += table_size;
 }
 
-void LetterTrie::add_string(const char * p, SymbolNumber symbol_key)
+void LetterTrie::add_string(const char* p, SymbolNumber symbol_key)
 {
     if (*(p+1) == 0)
     {
-        symbols[(unsigned char)(*p)] = symbol_key;
+        symbols[(uint8_t)(*p)] = symbol_key;
         return;
     }
-    if (letters[(unsigned char)(*p)] == NULL)
+    if (letters[(uint8_t)(*p)] == NULL)
     {
-        letters[(unsigned char)(*p)] = new LetterTrie();
+        letters[(uint8_t)(*p)] = new LetterTrie();
     }
-    letters[(unsigned char)(*p)]->add_string(p+1,symbol_key);
+    letters[(uint8_t)(*p)]->add_string(p+1,symbol_key);
 }
 
-SymbolNumber LetterTrie::find_key(char ** p)
+SymbolNumber LetterTrie::find_key(int8_t ** p)
 {
-    const char * old_p = *p;
+    const char * old_p = (char*)*p;
     ++(*p);
-    if (letters[(unsigned char)(*old_p)] == NULL)
+    if (letters[(uint8_t)(*old_p)] == NULL)
     {
-        return symbols[(unsigned char)(*old_p)];
+        return symbols[(uint8_t)(*old_p)];
     }
-    SymbolNumber s = letters[(unsigned char)(*old_p)]->find_key(p);
+    SymbolNumber s = letters[(uint8_t)(*old_p)]->find_key(p);
     if (s == NO_SYMBOL)
     {
         --(*p);
-        return symbols[(unsigned char)(*old_p)];
+        return symbols[(uint8_t)(*old_p)];
     }
     return s;
 }
@@ -414,20 +414,20 @@ Encoder::Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols) :
     read_input_symbols(kt, number_of_input_symbols);
 }
 
-void Encoder::read_input_symbol(const char * s, const int s_num)
+void Encoder::read_input_symbol(const char* s, const int32_t s_num)
 {
     if (strlen(s) == 0)   // ignore empty strings
     {
         return;
     }
-    if ((strlen(s) == 1) && (unsigned char)(*s) <= 127)
+    if ((strlen(s) == 1) && (uint8_t)(*s) <= 127)
     {
-        ascii_symbols[(unsigned char)(*s)] = s_num;
+        ascii_symbols[(uint8_t)(*s)] = s_num;
     }
     letters.add_string(s, s_num);
 }
 
-void Encoder::read_input_symbol(std::string const & s, const int s_num)
+void Encoder::read_input_symbol(std::string const & s, const int32_t s_num)
 {
     read_input_symbol(s.c_str(), s_num);
 }
@@ -505,7 +505,7 @@ Transition::final (void) const
            target_index == 1;
 }
 
-IndexTable::IndexTable(char ** raw,
+IndexTable::IndexTable(int8_t ** raw,
                        TransitionTableIndex number_of_table_entries) :
     indices(NULL),
     size(number_of_table_entries)
@@ -571,7 +571,7 @@ IndexTable::final_weight(TransitionTableIndex i) const
     }
 }
 
-TransitionTable::TransitionTable(char ** raw,
+TransitionTable::TransitionTable(int8_t ** raw,
                                  TransitionTableIndex transition_count) :
     transitions(NULL),
     size(transition_count)
@@ -657,13 +657,13 @@ TransitionTable::final (TransitionTableIndex i) const
            target(i) == 1;
 }
 
-SymbolNumber Encoder::find_key(char ** p)
+SymbolNumber Encoder::find_key(int8_t ** p)
 {
-    if (ascii_symbols[(unsigned char)(**p)] == NO_SYMBOL)
+    if (ascii_symbols[(uint8_t)(**p)] == NO_SYMBOL)
     {
         return letters.find_key(p);
     }
-    SymbolNumber s = ascii_symbols[(unsigned char)(**p)];
+    SymbolNumber s = ascii_symbols[(uint8_t)(**p)];
     ++(*p);
     return s;
 }

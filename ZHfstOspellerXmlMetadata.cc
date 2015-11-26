@@ -517,11 +517,11 @@ ZHfstOspellerXmlMetadata::parse_xml(const xmlpp::Document* doc)
 }
 
 void
-ZHfstOspellerXmlMetadata::read_xml(const char* xml_data, size_t xml_len)
+ZHfstOspellerXmlMetadata::read_xml(const int8_t* xml_data, size_t xml_len)
 {
     xmlpp::DomParser parser;
     parser.set_substitute_entities();
-    parser.parse_memory_raw(reinterpret_cast<const unsigned char*>(xml_data),
+    parser.parse_memory_raw(reinterpret_cast<const uint8_t*>(xml_data),
                             xml_len);
     this->parse_xml(parser.get_document());
 }
@@ -905,7 +905,7 @@ ZHfstOspellerXmlMetadata::parse_model(const tinyxml2::XMLElement& modelNode, siz
 }
 
 void
-ZHfstOspellerXmlMetadata::read_xml(const char* xml_data, size_t xml_len)
+ZHfstOspellerXmlMetadata::read_xml(const int8_t* xml_data, size_t xml_len)
 {
     tinyxml2::XMLDocument doc;
     if (doc.Parse(xml_data, xml_len) != tinyxml2::XML_NO_ERROR)
@@ -929,7 +929,7 @@ ZHfstOspellerXmlMetadata::read_xml(const string& filename)
 #error configure found no usable XML library
 #else
 void
-ZHfstOspellerXmlMetadata::read_xml(const char*, size_t)
+ZHfstOspellerXmlMetadata::read_xml(const int8_t*, size_t)
 {
 }
 void
