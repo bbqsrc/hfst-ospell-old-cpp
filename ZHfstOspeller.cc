@@ -188,7 +188,7 @@ ZHfstOspeller::spell(const string& wordform)
 }
 
 CorrectionQueue
-ZHfstOspeller::suggest(const string& wordform)
+ZHfstOspeller::suggest_queue(const string& wordform)
 {
     CorrectionQueue rv;
     if ((can_correct_) && (current_sugger_ != 0))
@@ -204,8 +204,14 @@ ZHfstOspeller::suggest(const string& wordform)
     return rv;
 }
 
+std::vector<StringWeightPair>
+ZHfstOspeller::suggest(const string& wordform)
+{
+    return suggest_queue(wordform).clone_container();
+}
+
 AnalysisQueue
-ZHfstOspeller::analyse(const string& wordform, bool ask_sugger)
+ZHfstOspeller::analyse_queue(const string& wordform, bool ask_sugger)
 {
     AnalysisQueue rv;
     char* wf = strdup(wordform.c_str());
@@ -221,15 +227,21 @@ ZHfstOspeller::analyse(const string& wordform, bool ask_sugger)
     return rv;
 }
 
-AnalysisCorrectionQueue
+std::vector<StringWeightPair>
+ZHfstOspeller::analyse(const string& wordform, bool ask_sugger)
+{
+    return analyse_queue(wordform, ask_sugger).clone_container();
+}
+
+std::vector<StringPairWeightPair>
 ZHfstOspeller::suggest_analyses(const string& wordform)
 {
     AnalysisCorrectionQueue rv;
     // FIXME: should be atomic
-    CorrectionQueue cq = suggest(wordform);
+    CorrectionQueue cq = suggest_queue(wordform);
     while (cq.size() > 0)
     {
-        AnalysisQueue aq = analyse(cq.top().first, true);
+        AnalysisQueue aq = analyse_queue(cq.top().first, true);
         while (aq.size() > 0)
         {
             StringPair sp(cq.top().first, aq.top().first);
@@ -239,7 +251,7 @@ ZHfstOspeller::suggest_analyses(const string& wordform)
         }
         cq.pop();
     }
-    return rv;
+    return rv.clone_container();
 }
 
 void

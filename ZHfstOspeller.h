@@ -73,18 +73,20 @@ public:
     bool spell(const std::string& wordform);
     //! @brief construct an ordered set of corrections for misspelled
     //!        word form.
-    CorrectionQueue suggest(const std::string& wordform);
+    std::vector<StringWeightPair>
+    suggest(const std::string& wordform);
     //! @brief analyse word form morphologically
     //! @param wordform   the string to analyse
     //! @param ask_sugger whether to use the spelling correction model
     //                    instead of the detection model
-    AnalysisQueue analyse(const std::string& wordform,
-                          bool ask_sugger = false);
+    std::vector<StringWeightPair>
+    analyse(const std::string& wordform, bool ask_sugger = false);
     //! @brief construct an ordered set of corrections with analyses
-    AnalysisCorrectionQueue suggest_analyses(const std::string&
-                                             wordform);
+    std::vector<StringPairWeightPair>
+    suggest_analyses(const std::string& wordform);
     //! @brief hyphenate word form
-    HyphenationQueue hyphenate(const std::string& wordform);
+    std::vector<StringWeightPair>
+    hyphenate(const std::string& wordform);
 
     //! @brief get access to metadata read from XML.
     const ZHfstOspellerXmlMetadata& get_metadata() const;
@@ -92,8 +94,6 @@ public:
     //!        programmer to debug
     std::string metadata_dump() const;
 
-    Transducer* load_acceptor(struct archive* ar, struct archive_entry* entry, char* filename);
-    Transducer* load_errmodel(struct archive* ar, struct archive_entry* entry, char* filename);
 private:
     //! @brief file or path where the speller came from
     std::string filename_;
@@ -131,6 +131,11 @@ private:
     ZHfstOspellerXmlMetadata metadata_;
     //! @brief temporary directory for files
     std::string tempdir_;
+
+    CorrectionQueue suggest_queue(const std::string& wordform);
+    AnalysisQueue analyse_queue(const std::string& wordform, bool ask_sugger);
+    Transducer* load_acceptor(struct archive* ar, struct archive_entry* entry, char* filename);
+    Transducer* load_errmodel(struct archive* ar, struct archive_entry* entry, char* filename);
 };
 
 //! @brief Top-level exception for zhfst handling.

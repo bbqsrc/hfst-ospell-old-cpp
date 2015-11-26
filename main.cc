@@ -134,7 +134,7 @@ bool print_usage(void)
         "  -S, --suggest             Suggest corrections to mispellings\n" <<
         "  -X, --real-word           Also suggest corrections to correct words\n" <<
         "  -m, --error-model         Use this error model (must also give lexicon as option)\n" <<
-        "  -l, --lexicon             Use this lexicon (must also give erro model as option)\n" <<
+        "  -l, --lexicon             Use this lexicon (must also give error model as option)\n" <<
 #ifdef WINDOWS
     "  -k, --output-to-console   Print output to console (Windows-specific)" <<
 #endif
@@ -164,35 +164,34 @@ bool print_short_help(void)
 void
 do_suggest(ZHfstOspeller& speller, const std::string& str)
 {
-    hfst_ol::CorrectionQueue corrections = speller.suggest(str);
+    std::vector<hfst_ol::StringWeightPair> corrections = speller.suggest(str);
+
     if (corrections.size() > 0)
     {
         hfst_fprintf(stdout, "Corrections for \"%s\":\n", str.c_str());
-        while (corrections.size() > 0)
+        for (hfst_ol::StringWeightPair corr : corrections)
         {
-            const std::string& corr = corrections.top().first;
             if (analyse)
             {
-                hfst_ol::AnalysisQueue anals = speller.analyse(corr, true);
+                std::vector<hfst_ol::StringWeightPair> analyses = speller.analyse(corr.first, true);
                 bool all_discarded = true;
-                while (anals.size() > 0)
+                for (hfst_ol::StringWeightPair analysis : analyses)
                 {
-                    if (anals.top().first.find("Use/SpellNoSugg") !=
+                    if (analysis.first.find("Use/SpellNoSugg") !=
                         std::string::npos)
                     {
                         hfst_fprintf(stdout, "%s    %f    %s    "
                                      "[DISCARDED BY ANALYSES]\n",
-                                     corr.c_str(), corrections.top().second,
-                                     anals.top().first.c_str());
+                                     corr.first.c_str(), corr.second,
+                                     analysis.first.c_str());
                     }
                     else
                     {
                         all_discarded = false;
                         hfst_fprintf(stdout, "%s    %f    %s\n",
-                                     corr.c_str(), corrections.top().second,
-                                     anals.top().first.c_str());
+                                    corr.first.c_str(), corr.second,
+                                    analysis.first.c_str());
                     }
-                    anals.pop();
                 }
                 if (all_discarded)
                 {
@@ -204,10 +203,9 @@ do_suggest(ZHfstOspeller& speller, const std::string& str)
             else
             {
                 hfst_fprintf(stdout, "%s    %f\n",
-                             corr.c_str(),
-                             corrections.top().second);
+                             corr.first.c_str(),
+                             corr.second);
             }
-            corrections.pop();
         }
         hfst_fprintf(stdout, "\n");
     }
@@ -229,25 +227,24 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
         if (analyse)
         {
             hfst_fprintf(stdout, "analysing:\n");
-            hfst_ol::AnalysisQueue anals = speller.analyse(str, false);
+            std::vector<hfst_ol::StringWeightPair> analyses = speller.analyse(str, false);
             bool all_no_spell = true;
-            while (anals.size() > 0)
+            for (hfst_ol::StringWeightPair analysis : analyses)
             {
-                if (anals.top().first.find("Use/-Spell") != std::string::npos)
+                if (analysis.first.find("Use/-Spell") != std::string::npos)
                 {
                     hfst_fprintf(stdout,
                                  "%s   %f [DISCARDED AS -Spell]\n",
-                                 anals.top().first.c_str(),
-                                 anals.top().second);
+                                 analysis.first.c_str(),
+                                 analysis.second);
                 }
                 else
                 {
                     all_no_spell = false;
                     hfst_fprintf(stdout, "%s   %f\n",
-                                 anals.top().first.c_str(),
-                                 anals.top().second);
+                                 analysis.first.c_str(),
+                                 analysis.second);
                 }
-                anals.pop();
             }
             if (all_no_spell)
             {
