@@ -17,15 +17,13 @@
 
 namespace hfst_ol {
 
-template <typename T>
-inline T hfst_deref(T* ptr)
-{
-    T dest;
-    memcpy(&dest, (char*)ptr, sizeof(dest));
+Weight hfst_deref(const void* ptr) {
+    Weight dest;
+    memcpy(&dest, ptr, 4);
     return dest;
 }
 
-void skip_c_string(char ** raw)
+void skip_c_string(int8_t ** raw)
 {
     while (**raw != 0)
     {
@@ -528,8 +526,8 @@ IndexTable::input_symbol(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return hfst_deref((SymbolNumber *)
-                          (indices + TransitionIndex::SIZE * i));
+        return *((SymbolNumber *)
+                 (indices + TransitionIndex::SIZE * i));
     }
     else
     {
@@ -542,9 +540,9 @@ IndexTable::target(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return hfst_deref((TransitionTableIndex *)
-                          (indices + TransitionIndex::SIZE * i +
-                           sizeof(SymbolNumber)));
+        return *((TransitionTableIndex *)
+                 (indices + TransitionIndex::SIZE * i +
+                  sizeof(SymbolNumber)));
     }
     else
     {
@@ -563,7 +561,9 @@ IndexTable::final_weight(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return hfst_deref((Weight *)(indices + TransitionIndex::SIZE * i + sizeof(SymbolNumber)));
+        return hfst_deref((Weight *)
+                          (indices + TransitionIndex::SIZE * i +
+                           sizeof(SymbolNumber)));
     }
     else
     {
@@ -594,8 +594,8 @@ TransitionTable::input_symbol(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return hfst_deref((SymbolNumber *)
-                          (transitions + Transition::SIZE * i));
+        return *((SymbolNumber *)
+                 (transitions + Transition::SIZE * i));
     }
     else
     {
@@ -608,9 +608,9 @@ TransitionTable::output_symbol(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return hfst_deref((SymbolNumber *)
-                          (transitions + Transition::SIZE * i +
-                           sizeof(SymbolNumber)));
+        return *((SymbolNumber *)
+                 (transitions + Transition::SIZE * i +
+                  sizeof(SymbolNumber)));
     }
     else
     {
@@ -623,9 +623,9 @@ TransitionTable::target(TransitionTableIndex i) const
 {
     if (i < size)
     {
-        return hfst_deref((TransitionTableIndex *)
-                          (transitions + Transition::SIZE * i +
-                           2*sizeof(SymbolNumber)));
+        return *((TransitionTableIndex *)
+                 (transitions + Transition::SIZE * i +
+                  2 * sizeof(SymbolNumber)));
     }
     else
     {
@@ -640,7 +640,7 @@ TransitionTable::weight(TransitionTableIndex i) const
     {
         return hfst_deref((Weight*)
                           (transitions + Transition::SIZE * i +
-                           2*sizeof(SymbolNumber) +
+                           2 * sizeof(SymbolNumber) +
                            sizeof(TransitionTableIndex)));
     }
     else
