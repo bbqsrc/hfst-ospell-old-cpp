@@ -349,9 +349,12 @@ void IndexTable::read(int8_t ** raw,
                       TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*TransitionIndex::SIZE;
-    //indices = (int8_t*)(malloc(table_size));
-    //memcpy((void *) indices, (const void *) *raw, table_size);
+    #if ZHFST_EXTRACT_TO_MEM
+    indices = (int8_t*)(malloc(table_size));
+    memcpy((void *) indices, (const void *) *raw, table_size);
+    #else
     indices = *raw;
+    #endif
     (*raw) += table_size;
 }
 
@@ -359,9 +362,12 @@ void TransitionTable::read(int8_t ** raw,
                            TransitionTableIndex number_of_table_entries)
 {
     size_t table_size = number_of_table_entries*Transition::SIZE;
-    //transitions = (int8_t*)(malloc(table_size));
-    //memcpy((void *) transitions, (const void *) *raw, table_size);
+    #if ZHFST_EXTRACT_TO_MEM
+    transitions = (int8_t*)(malloc(table_size));
+    memcpy((void *) transitions, (const void *) *raw, table_size);
+    #else
     transitions = *raw;
+    #endif
     (*raw) += table_size;
 }
 
@@ -515,10 +521,12 @@ IndexTable::IndexTable(int8_t ** raw,
 
 IndexTable::~IndexTable(void)
 {
-    /*if (indices)
+#if ZHFST_EXTRACT_TO_MEM
+    if (indices)
     {
         free(indices);
-    }*/
+    }
+#endif
 }
 
 SymbolNumber
@@ -581,12 +589,12 @@ TransitionTable::TransitionTable(int8_t ** raw,
 
 TransitionTable::~TransitionTable(void)
 {
-    /*
+#if ZHFST_EXTRACT_TO_MEM
     if (transitions)
     {
         free(transitions);
     }
-    */
+#endif
 }
 
 SymbolNumber
