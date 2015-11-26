@@ -205,6 +205,9 @@ public:
 //! Contains low-level processing stuff.
 class Transducer
 {
+private:
+    int8_t* raw_ = nullptr;
+    size_t len_ = 0;
 protected:
     TransducerHeader header; //!< header data
     TransducerAlphabet alphabet; //!< alphabet data
@@ -212,15 +215,15 @@ protected:
     Encoder encoder; //!< encoder to convert the strings
 
     static const TransitionTableIndex START_INDEX = 0; //!< position of first
-
 public:
     //!
     //! read transducer from file @a f
-    //Transducer(FILE * f);
     static Transducer from_file(std::string& filename);
+    static Transducer* new_from_file(std::string& filename);
     //!
-    //! read transducer from raw dara @a data
+    //! read transducer from raw data @a data
     Transducer(int8_t * raw);
+    ~Transducer();
     IndexTable indices; //!< index table
     TransitionTable transitions; //!< transition table
     //!

@@ -286,31 +286,7 @@ ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, ch
     char* descr = hfst_strndup(p, descr_len);
     Transducer* trans;
 #if ZHFST_EXTRACT_TO_TMPDIR
-    int32_t fd = open(temporary.c_str(), O_RDONLY);
-
-    if (fd == -1)
-    {
-        throw ZHfstTemporaryWritingError("reading errmodel back "
-                                         "from temp file");
-    }
-
-    struct stat statbuf;
-
-    if (stat(temporary.c_str(), &statbuf) == -1) {
-        throw ZHfstTemporaryWritingError("reading errmodel back "
-                                         "from temp file");
-    }
-
-    char* ptr = (char*)mmap(NULL, statbuf.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
-    if (ptr == MAP_FAILED) {
-        throw ZHfstTemporaryWritingError("reading errmodel back "
-                                         "from mmap");
-    }
-    #if __APPLE__
-    madvise(ptr, statbuf.st_size, MADV_WILLNEED | MADV_SEQUENTIAL);
-    #endif
-
-    trans = new Transducer(ptr);
+    trans = Transducer::new_from_file(temporary);
 #elif ZHFST_EXTRACT_TO_MEM
     trans = new Transducer(full_data);
     delete[] full_data;
@@ -347,30 +323,7 @@ ZHfstOspeller::load_acceptor(struct archive* ar, struct archive_entry* entry, ch
     char* descr = hfst_strndup(p, descr_len);
     Transducer* trans;
 #if ZHFST_EXTRACT_TO_TMPDIR
-    int32_t fd = open(temporary.c_str(), O_RDONLY);
-
-    if (fd == -1)
-    {
-        throw ZHfstTemporaryWritingError("reading acceptor back "
-                                         "from temp file");
-    }
-
-    struct stat statbuf;
-
-    if (stat(temporary.c_str(), &statbuf) == -1) {
-        /* check the value of errno */
-        exit(1);
-    }
-
-    char* ptr = (char*)mmap(NULL, statbuf.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
-    if (ptr == MAP_FAILED) {
-        exit(errno);
-    }
-    #if __APPLE__
-    madvise(ptr, statbuf.st_size, MADV_WILLNEED | MADV_SEQUENTIAL);
-    #endif
-
-    trans = new Transducer(ptr);
+    trans = Transducer::new_from_file(temporary);
 #elif ZHFST_EXTRACT_TO_MEM
     trans = new Transducer(full_data);
     delete[] full_data;

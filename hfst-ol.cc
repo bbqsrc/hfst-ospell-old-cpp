@@ -14,6 +14,7 @@
 
 #include "hfst-ol.h"
 #include <string>
+#include <sys/mman.h>
 
 namespace hfst_ol {
 
@@ -354,6 +355,10 @@ void IndexTable::read(int8_t ** raw,
     memcpy((void *) indices, (const void *) *raw, table_size);
     #else
     indices = *raw;
+
+    #if __APPLE__
+    madvise(raw, sizeof(int8_t), MADV_WILLNEED);
+    #endif
     #endif
     (*raw) += table_size;
 }
@@ -367,6 +372,10 @@ void TransitionTable::read(int8_t ** raw,
     memcpy((void *) transitions, (const void *) *raw, table_size);
     #else
     transitions = *raw;
+
+    #if __APPLE__
+    madvise(raw, sizeof(int8_t), MADV_WILLNEED);
+    #endif
     #endif
     (*raw) += table_size;
 }

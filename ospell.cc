@@ -133,8 +133,15 @@ Transducer::Transducer(int8_t* raw) :
 {
 }
 
-Transducer
-Transducer::from_file(std::string &filename)
+Transducer::~Transducer()
+{
+    if (raw_ != nullptr)
+    {
+        munmap(raw_, len_);
+    }
+}
+
+inline int8_t* mmap_file(std::string &filename, size_t sz)
 {
     int32_t fd = open(filename.c_str(), O_RDONLY);
 
@@ -143,22 +150,56 @@ Transducer::from_file(std::string &filename)
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be read.\n");
     }
 
-    struct stat statbuf;
-
-    if (stat(filename.c_str(), &statbuf) == -1) {
-        HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be read.\n");
-    }
-
-    int8_t* ptr = (int8_t*)mmap(NULL, statbuf.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+    int8_t* ptr = (int8_t*)mmap(NULL, sz, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
     if (ptr == MAP_FAILED) {
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be mmapped.\n");
     }
 
     #if __APPLE__
-    madvise(ptr, statbuf.st_size, MADV_WILLNEED | MADV_SEQUENTIAL);
+    madvise(ptr, sz, MADV_SEQUENTIAL);
     #endif
 
-    return Transducer(ptr);
+    return ptr;
+}
+
+inline size_t file_size(std::string &filename)
+{
+    struct stat statbuf;
+
+    if (stat(filename.c_str(), &statbuf) == -1)
+    {
+        HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be read.\n");
+    }
+
+    return statbuf.st_size;
+}
+
+Transducer*
+Transducer::new_from_file(std::string &filename)
+{
+    size_t sz = file_size(filename);
+    int8_t* ptr = mmap_file(filename, sz);
+
+    Transducer* trans = new Transducer(ptr);
+
+    trans->raw_ = ptr;
+    trans->len_ = sz;
+
+    return trans;
+}
+
+Transducer
+Transducer::from_file(std::string &filename)
+{
+    size_t sz = file_size(filename);
+    int8_t* ptr = mmap_file(filename, sz);
+
+    Transducer trans(ptr);
+
+    trans.raw_ = ptr;
+    trans.len_ = sz;
+
+    return trans;
 }
 
 TreeNode TreeNode::update_lexicon(SymbolNumber symbol,
