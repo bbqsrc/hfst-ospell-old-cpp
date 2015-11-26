@@ -357,7 +357,7 @@ void IndexTable::read(int8_t ** raw,
     indices = *raw;
 
     #if __APPLE__
-    madvise(raw, sizeof(int8_t), MADV_WILLNEED);
+    madvise(raw, sizeof(table_size), MADV_WILLNEED);
     #endif
     #endif
     (*raw) += table_size;
@@ -374,7 +374,7 @@ void TransitionTable::read(int8_t ** raw,
     transitions = *raw;
 
     #if __APPLE__
-    madvise(raw, sizeof(int8_t), MADV_WILLNEED);
+    madvise(raw, sizeof(table_size), MADV_WILLNEED);
     #endif
     #endif
     (*raw) += table_size;
