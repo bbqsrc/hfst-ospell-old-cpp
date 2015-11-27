@@ -88,6 +88,11 @@ public:
     std::vector<StringWeightPair>
     hyphenate(const std::string& wordform);
 
+    #if USE_CACHE
+    //! @brief Clears the internal cache (to free up memory)
+    void clear_suggestion_cache(void);
+    #endif
+
     //! @brief get access to metadata read from XML.
     const ZHfstOspellerXmlMetadata& get_metadata() const;
     //! @brief create string representation of the speller for

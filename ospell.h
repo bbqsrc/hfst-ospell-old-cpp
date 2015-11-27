@@ -129,46 +129,6 @@ public:
     }
 };
 
-template<
-    class T,
-    class Container = std::vector<T>,
-    class Compare = std::less<typename Container::value_type>
-    >
-class sized_priority_deque : public priority_queue<T, Container, Compare>
-{
-protected:
-    size_t max_size;
-public:
-    explicit sized_priority_deque(size_t ms) :
-        max_size(ms)
-    {
-    }
-    explicit sized_priority_deque() :
-        max_size(0)
-    {
-    }
-    T bottom(void) const
-    {
-        return this->c.back();
-    }
-    void push(const T& value)
-    {
-        std::priority_queue<T, Container, Compare>::push(value);
-        if (this->max_size > 0 && this->size() > max_size)
-        {
-            this->pop();
-        }
-    }
-    void push_back(const T& value)
-    {
-        std::priority_queue<T, Container, Compare>::push(value);
-        if (this->max_size > 0 && this->size() > max_size)
-        {
-            this->c.pop_back();
-        }
-    }
-};
-
 typedef priority_queue<StringWeightPair,
                             std::vector<StringWeightPair>,
                             StringWeightComparison> CorrectionQueue;
@@ -416,8 +376,10 @@ protected:
     void mutator_epsilons(void);
     //! traverse along input
     void consume_input();
+    #if USE_CACHE
     //! @brief Construct a cache entry for @a first_sym..
     void build_cache(SymbolNumber first_sym);
+    #endif
     //! size of states
     SymbolNumber get_state_size(void);
     //!
@@ -445,7 +407,9 @@ protected:
                             uint32_t mutator_state,
                             Weight mutator_weight = 0.0,
                             int input_increment = 0);
+    #if USE_CACHE
     CorrectionQueue handle_input_size_lt_1(SymbolNumber first_input, int32_t nbest, Weight beam);
+    #endif
 public:
     Transducer * mutator; //!< error model
     Transducer * lexicon; //!< languag model
@@ -457,8 +421,12 @@ public:
     WeightQueue nbest_queue; //!< queue to keep track of current n best results
     SymbolVector alphabet_translator; //!< alphabets in automata
     OperationMap * operations; //!< flags in it
+
+    #if USE_CACHE
     //!< A cache for the result of first symbols
     std::vector<CacheContainer> cache;
+    #endif
+
     //!< what kind of limiting behaviour we have
     enum LimitingBehaviour
     {
@@ -495,8 +463,13 @@ public:
     //! string is in language model and 0 results if it isn't.
     AnalysisQueue analyse(int8_t * line, int32_t nbest = 0);
 
+    #if USE_CACHE
+    //! @brief Clear the cache;
+    void clear_cache(void);
+    #endif
 };
 
+#if USE_CACHE
 struct CacheContainer
 {
     // All the nodes that ultimately result from searching at input depth 1
@@ -529,6 +502,7 @@ struct CacheContainer
         }
     }
 };
+#endif
 
 std::string stringify(KeyTable * key_table,
                       SymbolVector & symbol_vector);

@@ -74,6 +74,13 @@ AC_ARG_ENABLE([tool],
                               [build toy command line tester @<:@default=yes@:>@])],
               [enable_ospell_bin=$enableval], [enable_ospell_bin=yes])
 AM_CONDITIONAL([HFST_OSPELL_BIN], [test x$enable_ospell_bin != xno])
+AC_ARG_ENABLE([caching],
+              [AS_HELP_STRING([--enable-caching],
+                              [use caching in spellers @<:@default=yes@:>@])],
+              [enable_caching=$enableval], [enable_caching=yes])
+AS_IF([test x$enable_caching != xno], [
+  AC_DEFINE([USE_CACHE], [1], [Use caching in spellers])
+])
 AC_ARG_WITH([libxmlpp],
               [AS_HELP_STRING([--with-libxmlpp],
                               [support xml metadata for zipped automaton sets with libxml++-2.6 @<:@default=yes@:>@])],
@@ -192,6 +199,7 @@ cat <<EOF
     * toy command line tool: $enable_ospell_bin
     * hfst-ospell-office: $enable_hfst_ospell_office
     * conference demos: $enable_extra_demos
+    * with caching: $enable_caching
 EOF
 AS_IF([test x$with_libxmlpp != xno -a x$with_tinyxml2 != xno],
       [AC_MSG_WARN([You can only have one xml library (e.g., --with-tinyxml2 --without-libxmlpp)])])

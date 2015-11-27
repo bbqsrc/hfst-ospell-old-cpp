@@ -260,6 +260,14 @@ ZHfstOspeller::set_temporary_dir(const string& tempdir)
     tempdir_ = tempdir;
 }
 
+#if USE_CACHE
+void
+ZHfstOspeller::clear_suggestion_cache(void)
+{
+    current_sugger_->clear_cache();
+}
+#endif
+
 Transducer*
 ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, char* filename)
 {

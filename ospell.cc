@@ -331,8 +331,10 @@ Speller::Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr) :
     if (mutator != NULL)
     {
         build_alphabet_translator();
+        #if USE_CACHE
         cache = std::vector<CacheContainer>(
             mutator->get_key_table()->size(), CacheContainer());
+        #endif
     }
 }
 
@@ -975,6 +977,12 @@ AnalysisQueue Speller::analyse(int8_t * line, int32_t nbest)
     return analyses;
 }
 
+#if USE_CACHE
+void Speller::clear_cache(void)
+{
+    cache.clear();
+}
+
 void Speller::build_cache(SymbolNumber first_sym)
 {
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
@@ -997,8 +1005,7 @@ void Speller::build_cache(SymbolNumber first_sym)
                             lexicon->final_weight(next_node.lexicon_state) +
                             mutator->final_weight(next_node.mutator_state);
             std::string string = stringify(lexicon->get_key_table(), next_node.string);
-            /* if the correction is novel or better than before, insert it
-             */
+            // if the correction is novel or better than before, insert it
             if (next_node.input_state == 0)
             {
                 if (corrections_len_0.count(string) == 0 ||
@@ -1018,7 +1025,7 @@ void Speller::build_cache(SymbolNumber first_sym)
         }
         if (next_node.input_state == 1)
         {
-            cache[first_sym].nodes.push_back(next_node);
+            //cache[first_sym].nodes.push_back(next_node);
         }
         else
         {
@@ -1033,6 +1040,7 @@ void Speller::build_cache(SymbolNumber first_sym)
     cache[first_sym].results_len_1.assign(corrections_len_1.begin(), corrections_len_1.end());
     cache[first_sym].empty = false;
 }
+#endif
 
 std::map<std::string, Weight>
 Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
@@ -1041,16 +1049,18 @@ Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
 
     while (node_queue.size() > 0)
     {
-        /*
-           For depth-first searching, we save the back node now, remove it
-           from the queue and add new nodes to the search at the back.
-         */
+        // For depth-first searching, we save the back node now, remove it
+        // from the queue and add new nodes to the search at the back.
         next_node = node_queue.back();
         node_queue.pop_back();
 
         adjust_weight_limits(nbest, beam);
 
+        #if USE_CACHE
         if (next_node.input_state > 1)
+        #else
+        if (true)
+        #endif
         {
             // Early epsilons were handled during the caching stage
             lexicon_epsilons();
@@ -1059,9 +1069,8 @@ Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
 
         if (next_node.input_state == input.size())
         {
-            /* if our transducers are in final states
-             * we generate the correction
-             */
+            // if our transducers are in final states
+            // we generate the correction
             if (mutator->is_final(next_node.mutator_state) &&
                 lexicon->is_final(next_node.lexicon_state))
             {
@@ -1074,7 +1083,7 @@ Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
                 }
 
                 std::string string = stringify(lexicon->get_key_table(), next_node.string);
-                /* if the correction is novel or better than before, insert it */
+                // if the correction is novel or better than before, insert it
                 if (corrections.count(string) == 0 ||
                     corrections[string] > weight)
                 {
@@ -1096,7 +1105,7 @@ Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
     return corrections;
 }
 
-
+#if USE_CACHE
 CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_t nbest, Weight beam)
 {
     CorrectionQueue correction_queue;
@@ -1125,8 +1134,10 @@ CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_
             correction_queue.push(StringWeightPair(it->first, it->second));
         }
     }
+
     return correction_queue;
 }
+#endif
 
 CorrectionQueue Speller::correct(int8_t * line, int32_t nbest,
                                  Weight maxweight, Weight beam)
@@ -1140,26 +1151,32 @@ CorrectionQueue Speller::correct(int8_t * line, int32_t nbest,
     }
     nbest_queue = WeightQueue(nbest);
 
-    // A placeholding map, only one weight per correction
+    #if USE_CACHE
     SymbolNumber first_input = (input.size() == 0) ? 0 : input[0];
     if (cache[first_input].empty)
     {
         build_cache(first_input);
     }
+    #endif
 
     set_limiting_behaviour(nbest, maxweight, beam);
 
+    #if USE_CACHE
     if (input.size() <= 1)
     {
         return handle_input_size_lt_1(first_input, nbest, beam);
     }
+    #endif
 
     // The queue for our suggestions
     CorrectionQueue correction_queue;
 
+    #if USE_CACHE
     node_queue.assign(cache[first_input].nodes.begin(), cache[first_input].nodes.end());
-    // TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
-    // queue.assign(1, start_node);
+    #else
+    TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
+    node_queue.assign(1, start_node);
+    #endif
 
     std::map<std::string, Weight> corrections = generate_correction_map(nbest, maxweight, beam);
 
@@ -1349,7 +1366,9 @@ bool Speller::init_input(int8_t * line)
                 std::string new_symbol_string(new_symbol);
                 oldpointer += bytes_to_tokenize;
                 *inpointer = oldpointer;
+                #if USE_CACHE
                 cache.push_back(CacheContainer());
+                #endif
                 if (!lexicon->get_alphabet()->has_string(new_symbol_string))
                 {
                     lexicon->get_alphabet()->add_symbol(new_symbol_string);
