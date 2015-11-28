@@ -17,7 +17,7 @@
 
 # autoconf requirements
 AC_PREREQ([2.62])
-AC_INIT([hfstospell], [0.3.1], [hfst-bugs@helsinki.fi], [hfstospell], [http://hfst.sf.net])
+AC_INIT([hfst-ospell], [0.3.1-bbqsrc0.1], [brendan+hfst@bbqsrc.net], [hfst-ospell], [https://github.com/bbqsrc/hfst-ospell])
 
 LT_PREREQ([2.2.6])
 
@@ -31,7 +31,7 @@ AC_CONFIG_SRCDIR([ospell.cc])
 AC_CONFIG_HEADERS([config.h])
 
 # Information on package
-HFSTOSPELL_NAME=hfstospell
+HFSTOSPELL_NAME=hfst-ospell
 HFSTOSPELL_MAJOR=0
 HFSTOSPELL_MINOR=3
 HFSTOSPELL_EXTENSION=.1
