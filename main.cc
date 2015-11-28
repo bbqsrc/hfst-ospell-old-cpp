@@ -61,7 +61,7 @@ static bool suggest_reals = false;
 #ifdef WINDOWS
 static std::string wide_string_to_string(const std::wstring & wstr)
 {
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)§wstr.size(), NULL, 0, NULL, NULL);
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
     std::string str( size_needed, 0 );
     WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &str[0], size_needed, NULL, NULL);
     return str;
@@ -325,12 +325,12 @@ zhfst_spell(char* zhfst_filename)
     speller.set_weight_limit(max_weight);
     if (max_weight >= 0.0 && verbose)
     {
-        hfst_fprintf(stdout, "Not printing suggestions worse than %f\n", suggs);
+        hfst_fprintf(stdout, "Not printing suggestions worse than %f\n", max_weight);
     }
     speller.set_beam(beam);
     if (beam >= 0.0 && verbose)
     {
-        hfst_fprintf(stdout, "Not printing suggestions worse than best by margin %f\n", suggs);
+        hfst_fprintf(stdout, "Not printing suggestions worse than best by margin %f\n", beam);
     }
     char * str = (char*) malloc(2000);
 
@@ -454,9 +454,9 @@ int main(int argc, char **argv)
             {"error-model",  required_argument, 0, 'm'},
             {"lexicon",      required_argument, 0, 'l'},
 #ifdef WINDOWS
-            {"output-to-console",       no_argument,       0, 'k'},
+            {"output-to-console", no_argument,  0, 'k'},
 #endif
-            {0,              0,                 0,  0 }
+            {0, 0, 0, 0}
         };
 
         int option_index = 0;
