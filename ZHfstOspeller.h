@@ -55,7 +55,7 @@ public:
     ~ZHfstOspeller();
 
     //! @brief assign a speller-suggestor circumventing the ZHFST format
-    void inject_speller(Speller * s);
+    void inject_speller(Speller* s);
     //! @brief set upper limit to priority queue when performing
     //         suggestions or analyses.
     void set_queue_limit(uint64_t limit);
@@ -80,7 +80,7 @@ public:
     //! @param ask_sugger whether to use the spelling correction model
     //                    instead of the detection model
     std::vector<StringWeightPair>
-    analyse(const std::string& wordform, bool ask_sugger = false);
+    analyse(const std::string& wordform, bool ask_sugger=false);
     //! @brief construct an ordered set of corrections with analyses
     std::vector<StringPairWeightPair>
     suggest_analyses(const std::string& wordform);

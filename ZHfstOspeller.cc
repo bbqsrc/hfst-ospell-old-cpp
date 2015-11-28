@@ -79,7 +79,7 @@ extract_to_mem(archive* ar, archive_entry* entry, size_t* n)
     *n = full_length;
     return buff;
 }
-#endif
+#endif // if ZHFST_EXTRACT_TO_MEM
 
 #if ZHFST_EXTRACT_TO_TMPDIR
 static
@@ -148,7 +148,7 @@ ZHfstOspeller::~ZHfstOspeller()
 }
 
 void
-ZHfstOspeller::inject_speller(Speller * s)
+ZHfstOspeller::inject_speller(Speller* s)
 {
     current_speller_ = s;
     current_sugger_ = s;
@@ -180,7 +180,7 @@ ZHfstOspeller::spell(const string& wordform)
     if (can_spell_ && (current_speller_ != 0))
     {
         char* wf = strdup(wordform.c_str());
-        bool rv = current_speller_->check((int8_t*)wf);
+        bool rv = current_speller_->check((int8_t*) wf);
         free(wf);
         return rv;
     }
@@ -194,7 +194,7 @@ ZHfstOspeller::suggest_queue(const string& wordform)
     if ((can_correct_) && (current_sugger_ != 0))
     {
         char* wf = strdup(wordform.c_str());
-        rv = current_sugger_->correct((int8_t*)wf,
+        rv = current_sugger_->correct((int8_t*) wf,
                                       suggestions_maximum_,
                                       maximum_weight_,
                                       beam_);
@@ -217,11 +217,11 @@ ZHfstOspeller::analyse_queue(const string& wordform, bool ask_sugger)
     char* wf = strdup(wordform.c_str());
     if ((can_analyse_) && (!ask_sugger) && (current_speller_ != 0))
     {
-        rv = current_speller_->analyse((int8_t*)wf);
+        rv = current_speller_->analyse((int8_t*) wf);
     }
     else if ((can_analyse_) && (ask_sugger) && (current_sugger_ != 0))
     {
-        rv = current_sugger_->analyse((int8_t*)wf);
+        rv = current_sugger_->analyse((int8_t*) wf);
     }
     free(wf);
     return rv;

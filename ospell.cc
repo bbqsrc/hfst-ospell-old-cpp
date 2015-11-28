@@ -26,8 +26,8 @@ namespace hfst_ol {
 
 int32_t nByte_utf8(uint8_t c)
 {
-    /* utility function to determine how many bytes to peel off as
-       a utf-8 character for representing as unknown symbol */
+    // utility function to determine how many bytes to peel off as
+    // a utf-8 character for representing as unknown symbol
     if (c <= 127)
     {
         return 1;
@@ -79,7 +79,8 @@ StringPairWeightComparison::operator()(StringPairWeightPair lhs,
 
 void WeightQueue::prune()
 {
-    if (max_size > 0 && size() > max_size) {
+    if (max_size > 0 && size() > max_size)
+    {
         pop_back();
     }
 }
@@ -127,9 +128,9 @@ Transducer::Transducer(int8_t* raw) :
     header(TransducerHeader(&raw)),
     alphabet(TransducerAlphabet(&raw, header.symbol_count())),
     keys(alphabet.get_key_table()),
-    encoder(keys,header.input_symbol_count()),
-    indices(&raw,header.index_table_size()),
-    transitions(&raw,header.target_table_size())
+    encoder(keys, header.input_symbol_count()),
+    indices(&raw, header.index_table_size()),
+    transitions(&raw, header.target_table_size())
 {
 }
 
@@ -150,8 +151,9 @@ inline int8_t* mmap_file(std::string &filename, size_t sz)
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be read.\n");
     }
 
-    int8_t* ptr = (int8_t*)mmap(NULL, sz, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
-    if (ptr == MAP_FAILED) {
+    int8_t* ptr = (int8_t*) mmap(NULL, sz, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+    if (ptr == MAP_FAILED)
+    {
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be mmapped.\n");
     }
 
@@ -277,7 +279,7 @@ bool TreeNode::try_compatible_with(FlagDiacriticOperation op)
         return true;
 
     case N: // negative set (literally, in this implementation)
-        flag_state[op.Feature()] = -1*op.Value();
+        flag_state[op.Feature()] = -1 * op.Value();
         return true;
 
     case R: // require
@@ -299,8 +301,8 @@ bool TreeNode::try_compatible_with(FlagDiacriticOperation op)
         return true;
 
     case U: // unification
-        /* if the feature is unset OR the feature is to this value already OR
-           the feature is negatively set to something else than this value */
+        // if the feature is unset OR the feature is to this value already OR
+        // the feature is negatively set to something else than this value
         if (flag_state[op.Feature()] == 0 ||
             flag_state[op.Feature()] == op.Value() ||
             (flag_state[op.Feature()] < 0 &&
@@ -393,8 +395,8 @@ void Speller::lexicon_consume(void)
         return;
     }
     SymbolNumber this_input = alphabet_translator[input[input_state]];
-    if(!lexicon->has_transitions(
-           next_node.lexicon_state + 1, this_input))
+    if (!lexicon->has_transitions(
+            next_node.lexicon_state + 1, this_input))
     {
         // we have no regular transitions for this
         if (this_input >= lexicon->get_alphabet()->get_orig_symbol_count())
@@ -614,13 +616,13 @@ void Speller::queue_mutator_arcs(SymbolNumber input_sym)
 }
 
 bool Transducer::initialize_input_vector(SymbolVector & input_vector,
-                                         Encoder * encoder,
-                                         int8_t * line)
+                                         Encoder* encoder,
+                                         int8_t* line)
 {
     input_vector.clear();
     SymbolNumber k = NO_SYMBOL;
-    int8_t ** inpointer = &line;
-    int8_t * oldpointer;
+    int8_t** inpointer = &line;
+    int8_t* oldpointer;
     while (**inpointer != '\0')
     {
         oldpointer = *inpointer;
@@ -635,7 +637,7 @@ bool Transducer::initialize_input_vector(SymbolVector & input_vector,
     return true;
 }
 
-AnalysisQueue Transducer::lookup(int8_t * line)
+AnalysisQueue Transducer::lookup(int8_t* line)
 {
     std::map<std::string, Weight> outputs;
     AnalysisQueue analyses;
@@ -661,7 +663,7 @@ AnalysisQueue Transducer::lookup(int8_t * line)
                             final_weight(next_node.lexicon_state);
             std::string output = stringify(get_key_table(),
                                            next_node.string);
-            /* if the result is novel or lower weighted than before, insert it */
+            // if the result is novel or lower weighted than before, insert it
             if (outputs.count(output) == 0 ||
                 outputs[output] > weight)
             {
@@ -808,7 +810,7 @@ TransitionTableIndex Transducer::next(const TransitionTableIndex i,
     }
     else
     {
-        return indices.target(i+1+symbol) - TARGET_TABLE;
+        return indices.target(i + 1 + symbol) - TARGET_TABLE;
     }
 }
 
@@ -825,7 +827,7 @@ bool Transducer::has_transitions(const TransitionTableIndex i,
     }
     else
     {
-        return (indices.input_symbol(i+symbol) == symbol);
+        return (indices.input_symbol(i + symbol) == symbol);
     }
 }
 
@@ -833,7 +835,7 @@ bool Transducer::has_epsilons_or_flags(const TransitionTableIndex i)
 {
     if (i >= TARGET_TABLE)
     {
-        return(transitions.input_symbol(i - TARGET_TABLE) == 0||
+        return(transitions.input_symbol(i - TARGET_TABLE) == 0 ||
                is_flag(transitions.input_symbol(i - TARGET_TABLE)));
     }
     else
@@ -936,7 +938,7 @@ Transducer::is_weighted(void)
 }
 
 
-AnalysisQueue Speller::analyse(int8_t * line, int32_t nbest)
+AnalysisQueue Speller::analyse(int8_t* line, int32_t nbest)
 {
     mode = Lookup;
     if (!init_input(line))
@@ -959,7 +961,7 @@ AnalysisQueue Speller::analyse(int8_t * line, int32_t nbest)
                             lexicon->final_weight(next_node.lexicon_state);
             std::string output = stringify(lexicon->get_key_table(),
                                            next_node.string);
-            /* if the result is novel or lower weighted than before, insert it */
+            // if the result is novel or lower weighted than before, insert it
             if (outputs.count(output) == 0 ||
                 outputs[output] > weight)
             {
@@ -1040,7 +1042,7 @@ void Speller::build_cache(SymbolNumber first_sym)
     cache[first_sym].results_len_1.assign(corrections_len_1.begin(), corrections_len_1.end());
     cache[first_sym].empty = false;
 }
-#endif
+#endif // if USE_CACHE
 
 std::map<std::string, Weight>
 Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
@@ -1111,10 +1113,10 @@ CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_
     CorrectionQueue correction_queue;
 
     // get the cached results and we're done
-    StringWeightVector * results = &cache[first_input].get(input.size());
+    StringWeightVector* results = &cache[first_input].get(input.size());
 
-    for(StringWeightVector::const_iterator it = results->begin();
-        it != results->end(); ++it)
+    for (StringWeightVector::const_iterator it = results->begin();
+         it != results->end(); ++it)
     {
         // First get the correct weight limit
         best_suggestion = std::min(best_suggestion, it->second);
@@ -1125,8 +1127,8 @@ CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_
     }
 
     adjust_weight_limits(nbest, beam);
-    for(StringWeightVector::const_iterator it = results->begin();
-        it != results->end(); ++it)
+    for (StringWeightVector::const_iterator it = results->begin();
+         it != results->end(); ++it)
     {
         // Then collect the results
         if (it->second <= limit)
@@ -1137,9 +1139,9 @@ CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_
 
     return correction_queue;
 }
-#endif
+#endif // if USE_CACHE
 
-CorrectionQueue Speller::correct(int8_t * line, int32_t nbest,
+CorrectionQueue Speller::correct(int8_t* line, int32_t nbest,
                                  Weight maxweight, Weight beam)
 {
     mode = Correct;
@@ -1215,7 +1217,7 @@ void Speller::set_limiting_behaviour(int32_t nbest, Weight maxweight, Weight bea
         limiting_ |= Beam;
     }
 
-    limiting = (LimitingBehaviour)limiting_;
+    limiting = (LimitingBehaviour) limiting_;
 }
 
 void Speller::adjust_weight_limits(int32_t nbest, Weight beam)
@@ -1266,7 +1268,7 @@ void Speller::adjust_weight_limits(int32_t nbest, Weight beam)
     }
 }
 
-bool Speller::check(int8_t * line)
+bool Speller::check(int8_t* line)
 {
     mode = Check;
     if (!init_input(line))
@@ -1292,7 +1294,7 @@ bool Speller::check(int8_t * line)
     return false;
 }
 
-std::string stringify(KeyTable * key_table,
+std::string stringify(KeyTable* key_table,
                       SymbolVector & symbol_vector)
 {
     std::string s;
@@ -1309,10 +1311,10 @@ std::string stringify(KeyTable * key_table,
 
 void Speller::build_alphabet_translator(void)
 {
-    TransducerAlphabet * from = mutator->get_alphabet();
-    TransducerAlphabet * to = lexicon->get_alphabet();
-    KeyTable * from_keys = from->get_key_table();
-    StringSymbolMap * to_symbols = to->get_string_to_symbol();
+    TransducerAlphabet* from = mutator->get_alphabet();
+    TransducerAlphabet* to = lexicon->get_alphabet();
+    KeyTable* from_keys = from->get_key_table();
+    StringSymbolMap* to_symbols = to->get_string_to_symbol();
     alphabet_translator.push_back(0); // zeroth element is always epsilon
     for (SymbolNumber i = 1; i < from_keys->size(); ++i)
     {
@@ -1335,7 +1337,7 @@ void Speller::build_alphabet_translator(void)
     }
 }
 
-bool Speller::init_input(int8_t * line)
+bool Speller::init_input(int8_t* line)
 {
     // Initialize the symbol vector to the tokenization given by encoder.
     // In the case of tokenization failure, valid utf-8 characters
@@ -1344,8 +1346,8 @@ bool Speller::init_input(int8_t * line)
     // empty vector; there is no end marker.
     input.clear();
     SymbolNumber k = NO_SYMBOL;
-    int8_t ** inpointer = &line;
-    int8_t * oldpointer;
+    int8_t** inpointer = &line;
+    int8_t* oldpointer;
 
     while (**inpointer != '\0')
     {
@@ -1409,7 +1411,7 @@ void Speller::add_symbol_to_alphabet_translator(SymbolNumber to_sym)
 char*
 hfst_strndup(const char* s, size_t n)
 {
-    char* rv = static_cast<char*>(malloc(sizeof(char)*n+1));
+    char* rv = static_cast<char*>(malloc(sizeof(char) * n + 1));
     if (rv == NULL)
     {
         return rv;

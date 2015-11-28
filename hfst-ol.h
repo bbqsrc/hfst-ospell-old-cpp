@@ -65,15 +65,15 @@ const TransitionTableIndex TARGET_TABLE = 2147483648u;
 
 // the flag diacritic operators as given in
 // Beesley & Karttunen, Finite State Morphology (U of C Press 2003)
-enum FlagDiacriticOperator {P, N, R, D, C, U};
+enum FlagDiacriticOperator { P, N, R, D, C, U };
 
-enum HeaderFlag {Weighted, Deterministic, Input_deterministic, Minimized,
-                 Cyclic, Has_epsilon_epsilon_transitions,
-                 Has_input_epsilon_transitions, Has_input_epsilon_cycles,
-                 Has_unweighted_input_epsilon_cycles};
+enum HeaderFlag { Weighted, Deterministic, Input_deterministic, Minimized,
+                  Cyclic, Has_epsilon_epsilon_transitions,
+                  Has_input_epsilon_transitions, Has_input_epsilon_cycles,
+                  Has_unweighted_input_epsilon_cycles };
 
 // Utility function for dealing with raw memory
-void skip_c_string(int8_t ** raw);
+void skip_c_string(int8_t** raw);
 
 //! Internal class for Transducer processing.
 
@@ -99,20 +99,20 @@ private:
     bool has_input_epsilon_cycles;
     bool has_unweighted_input_epsilon_cycles;
     //void read_property(bool &property, FILE * f);
-    void read_property(bool &property, int8_t ** raw);
+    void read_property(bool &property, int8_t** raw);
     //void skip_hfst3_header(FILE * f);
-    void skip_hfst3_header(int8_t ** f);
+    void skip_hfst3_header(int8_t** f);
 
 public:
     //!
     //! @brief read header from file @a f
     /*
-    TransducerHeader(FILE * f);
-    */
+     * TransducerHeader(FILE * f);
+     */
 
     //!
     //! read header from raw memory data @a raw
-    TransducerHeader(int8_t ** raw);
+    TransducerHeader(int8_t** raw);
     //!
     //! count symbols
     SymbolNumber symbol_count(void);
@@ -183,29 +183,29 @@ private:
     SymbolNumber flag_state_size;
     SymbolNumber orig_symbol_count;
     StringSymbolMap string_to_symbol;
-    void process_symbol(int8_t * line);
+    void process_symbol(int8_t* line);
 
     //void read(FILE * f, SymbolNumber number_of_symbols);
-    void read(int8_t ** raw, SymbolNumber number_of_symbols);
+    void read(int8_t** raw, SymbolNumber number_of_symbols);
 
 public:
     //!
     //! read alphabets from file @a f
     /*
-    TransducerAlphabet(FILE *f, SymbolNumber number_of_symbols);
-    */
+     * TransducerAlphabet(FILE *f, SymbolNumber number_of_symbols);
+     */
     //!
     //! read alphabes from raw data @a raw
-    TransducerAlphabet(int8_t ** raw, SymbolNumber number_of_symbols);
+    TransducerAlphabet(int8_t** raw, SymbolNumber number_of_symbols);
 
     void add_symbol(std::string & sym);
-    void add_symbol(int8_t * sym);
+    void add_symbol(int8_t* sym);
     //!
     //! get alphabet's keytable mapping
-    KeyTable * get_key_table(void);
+    KeyTable* get_key_table(void);
     //!
     //! get flag operation map stuff
-    OperationMap * get_operation_map(void);
+    OperationMap* get_operation_map(void);
     //!
     //! get state's size
     SymbolNumber get_state_size(void);
@@ -217,7 +217,7 @@ public:
     SymbolNumber get_orig_symbol_count(void) const;
     //!
     //! get mapping from strings to symbols
-    StringSymbolMap * get_string_to_symbol(void);
+    StringSymbolMap* get_string_to_symbol(void);
     bool has_string(std::string const & s) const;
     //!
     //! get if given symbol is a flag
@@ -239,15 +239,15 @@ private:
 public:
     LetterTrie(void) :
         letters(UCHAR_MAX, static_cast<LetterTrie*>(NULL)),
-        symbols(UCHAR_MAX,NO_SYMBOL)
+        symbols(UCHAR_MAX, NO_SYMBOL)
     {
     }
     //!
     //! add a string to alphabets with a key
-    void add_string(const char * p,SymbolNumber symbol_key);
+    void add_string(const char* p, SymbolNumber symbol_key);
     //!
     //! find a key for string or add it
-    SymbolNumber find_key(int8_t ** p);
+    SymbolNumber find_key(int8_t** p);
     ~LetterTrie();
 };
 
@@ -260,14 +260,14 @@ private:
     LetterTrie letters;
     SymbolVector ascii_symbols;
 
-    void read_input_symbols(KeyTable * kt, SymbolNumber number_of_input_symbols);
+    void read_input_symbols(KeyTable* kt, SymbolNumber number_of_input_symbols);
 
 public:
     //!
     //! create encoder from keytable
-    Encoder(KeyTable * kt, SymbolNumber number_of_input_symbols);
-    SymbolNumber find_key(int8_t ** p);
-    void read_input_symbol(const char * s, const int32_t s_num);
+    Encoder(KeyTable* kt, SymbolNumber number_of_input_symbols);
+    SymbolNumber find_key(int8_t** p);
+    void read_input_symbol(const char* s, const int32_t s_num);
     void read_input_symbol(std::string const & s, const int32_t s_num);
 };
 
@@ -376,10 +376,10 @@ private:
     const int8_t* indices;
 
     /*
-    void read(FILE * f,
-              TransitionTableIndex number_of_table_entries);
-    */
-    void read(int8_t ** raw,
+     * void read(FILE * f,
+     *        TransitionTableIndex number_of_table_entries);
+     */
+    void read(int8_t** raw,
               TransitionTableIndex number_of_table_entries);
     TransitionTableIndex size;
 
@@ -387,12 +387,12 @@ public:
     //!
     //! read index table from file @a f.
     /*
-    IndexTable(FILE * f,
-               TransitionTableIndex number_of_table_entries);
-    */
+     * IndexTable(FILE * f,
+     *         TransitionTableIndex number_of_table_entries);
+     */
     //!
     //! read index table from raw data @a raw.
-    IndexTable(int8_t ** raw,
+    IndexTable(int8_t** raw,
                TransitionTableIndex number_of_table_entries);
     ~IndexTable(void);
     //!
@@ -422,23 +422,23 @@ protected:
     //!
     //! read known amount of transitions from file @a f
     /*
-    void read(FILE * f,
-              TransitionTableIndex number_of_table_entries);
-    */
+     * void read(FILE * f,
+     *        TransitionTableIndex number_of_table_entries);
+     */
     //! read known amount of transitions from raw dara @a data
-    void read(int8_t ** raw,
+    void read(int8_t** raw,
               TransitionTableIndex number_of_table_entries);
     TransitionTableIndex size;
 public:
     //!
     //! read transition table from file @a f
     /*
-    TransitionTable(FILE * f,
-                    TransitionTableIndex transition_count);
-    */
+     * TransitionTable(FILE * f,
+     *              TransitionTableIndex transition_count);
+     */
     //!
     //! read transition table from raw data @a raw
-    TransitionTable(int8_t ** raw,
+    TransitionTable(int8_t** raw,
                     TransitionTableIndex transition_count);
 
     ~TransitionTable(void);

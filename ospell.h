@@ -74,8 +74,8 @@ struct STransition
 //! weight logic of tropical semiring that is present in most weighted
 //! finite-state spell-checking automata.
 class StringWeightComparison
-    /* results are reversed by default because greater weights represent
-       worse results - to reverse the reversal, give a true argument*/
+    // results are reversed by default because greater weights represent
+    // worse results - to reverse the reversal, give a true argument
 
 {
     bool reverse;
@@ -89,7 +89,7 @@ public:
 
     //!
     //! compare two string weight pairs for weights
-    bool operator() (StringWeightPair lhs, StringWeightPair rhs);
+    bool operator()(StringWeightPair lhs, StringWeightPair rhs);
 };
 
 //! @brief comparison for complex analysis queues
@@ -110,7 +110,7 @@ public:
 
     //!
     //! compare two analysis corrections for weights
-    bool operator() (StringPairWeightPair lhs, StringPairWeightPair rhs);
+    bool operator()(StringPairWeightPair lhs, StringPairWeightPair rhs);
 };
 
 template<
@@ -130,17 +130,17 @@ public:
 };
 
 typedef priority_queue<StringWeightPair,
-                            std::vector<StringWeightPair>,
-                            StringWeightComparison> CorrectionQueue;
+                       std::vector<StringWeightPair>,
+                       StringWeightComparison> CorrectionQueue;
 typedef priority_queue<StringWeightPair,
-                            std::vector<StringWeightPair>,
-                            StringWeightComparison> AnalysisQueue;
+                       std::vector<StringWeightPair>,
+                       StringWeightComparison> AnalysisQueue;
 typedef priority_queue<StringWeightPair,
-                            std::vector<StringWeightPair>,
-                            StringWeightComparison> HyphenationQueue;
+                       std::vector<StringWeightPair>,
+                       StringWeightComparison> HyphenationQueue;
 typedef priority_queue<StringPairWeightPair,
-                            std::vector<StringPairWeightPair>,
-                            StringPairWeightComparison> AnalysisCorrectionQueue;
+                       std::vector<StringPairWeightPair>,
+                       StringPairWeightComparison> AnalysisCorrectionQueue;
 
 class WeightQueue : public std::list<Weight>
 {
@@ -171,7 +171,7 @@ private:
 protected:
     TransducerHeader header; //!< header data
     TransducerAlphabet alphabet; //!< alphabet data
-    KeyTable * keys; //!< key symbol mappings
+    KeyTable* keys; //!< key symbol mappings
     Encoder encoder; //!< encoder to convert the strings
 
     static const TransitionTableIndex START_INDEX = 0; //!< position of first
@@ -182,7 +182,7 @@ public:
     static Transducer* new_from_file(std::string& filename);
     //!
     //! read transducer from raw data @a data
-    Transducer(int8_t * raw);
+    Transducer(int8_t* raw);
     ~Transducer();
     IndexTable indices; //!< index table
     TransitionTable transitions; //!< transition table
@@ -190,9 +190,9 @@ public:
     //! Deprecated functions for single-tranducer lookup
     //! Speller::analyse() is recommended
     bool initialize_input_vector(SymbolVector & input_vector,
-                                 Encoder * encoder,
-                                 int8_t * line);
-    AnalysisQueue lookup(int8_t * line);
+                                 Encoder* encoder,
+                                 int8_t* line);
+    AnalysisQueue lookup(int8_t* line);
     //!
     //! whether it's final transition in this transducer
     bool final_transition(TransitionTableIndex i);
@@ -201,13 +201,13 @@ public:
     bool final_index(TransitionTableIndex i);
     //!
     //! get transducers symbol table mapping
-    KeyTable * get_key_table(void);
+    KeyTable* get_key_table(void);
     //!
     //! find key for string or create it
-    SymbolNumber find_next_key(int8_t ** p);
+    SymbolNumber find_next_key(int8_t** p);
     //!
     //! get encoder for mapping sttrings and symbols
-    Encoder * get_encoder(void);
+    Encoder* get_encoder(void);
     //!
     //! get size of a state
     uint32_t get_state_size(void);
@@ -217,10 +217,10 @@ public:
     SymbolNumber get_identity(void) const;
     //!
     //! get alphabet of automaton
-    TransducerAlphabet * get_alphabet(void);
+    TransducerAlphabet* get_alphabet(void);
     //!
     //! get flag stuff of automaton
-    OperationMap * get_operations(void);
+    OperationMap* get_operations(void);
     //!
     //! follow epsilon transitions from index
     STransition take_epsilons(const TransitionTableIndex i) const;
@@ -388,7 +388,7 @@ protected:
     void add_symbol_to_alphabet_translator(SymbolNumber to_sym);
     //!
     //! initialize input string
-    bool init_input(int8_t * line);
+    bool init_input(int8_t* line);
     //!
     //! travers epsilons in language model
     void lexicon_epsilons(void);
@@ -405,14 +405,14 @@ protected:
     void queue_mutator_arcs(SymbolNumber input);
     void queue_lexicon_arcs(SymbolNumber input,
                             uint32_t mutator_state,
-                            Weight mutator_weight = 0.0,
-                            int input_increment = 0);
+                            Weight mutator_weight=0.0,
+                            int input_increment=0);
     #if USE_CACHE
     CorrectionQueue handle_input_size_lt_1(SymbolNumber first_input, int32_t nbest, Weight beam);
     #endif
 public:
-    Transducer * mutator; //!< error model
-    Transducer * lexicon; //!< languag model
+    Transducer* mutator; //!< error model
+    Transducer* lexicon; //!< languag model
     SymbolVector input; //!< current input
     TreeNodeQueue node_queue; //!< current traversal fifo stack
     TreeNode next_node;  //!< current next node
@@ -420,7 +420,7 @@ public:
     Weight best_suggestion; //!< best suggestion so far
     WeightQueue nbest_queue; //!< queue to keep track of current n best results
     SymbolVector alphabet_translator; //!< alphabets in automata
-    OperationMap * operations; //!< flags in it
+    OperationMap* operations; //!< flags in it
 
     #if USE_CACHE
     //!< A cache for the result of first symbols
@@ -444,24 +444,24 @@ public:
 
     //!
     //! Create a speller object form error model and language automata.
-    Speller(Transducer * mutator_ptr, Transducer * lexicon_ptr);
+    Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr);
 
     //! @brief Check if the given string is accepted by the speller
-    bool check(int8_t * line);
+    bool check(int8_t* line);
     //! @brief suggest corrections for given string @a line.
     //
     //! The number of corrections given and stored at any given time
     //! is limited by @a nbest if ≥ 0.
-    CorrectionQueue correct(int8_t * line, int32_t nbest = 0,
-                            Weight maxweight = -1.0,
-                            Weight beam = -1.0);
+    CorrectionQueue correct(int8_t* line, int32_t nbest=0,
+                            Weight maxweight=-1.0,
+                            Weight beam=-1.0);
 
     //! @brief analyse given string @a line.
     //
     //! If language model is two-tape, give a list of analyses for string.
     //! If not, this should return queue of one result @a line if the
     //! string is in language model and 0 results if it isn't.
-    AnalysisQueue analyse(int8_t * line, int32_t nbest = 0);
+    AnalysisQueue analyse(int8_t* line, int32_t nbest=0);
 
     #if USE_CACHE
     //! @brief Clear the cache;
@@ -502,9 +502,9 @@ struct CacheContainer
         }
     }
 };
-#endif
+#endif // if USE_CACHE
 
-std::string stringify(KeyTable * key_table,
+std::string stringify(KeyTable* key_table,
                       SymbolVector & symbol_vector);
 
 } // namespace hfst_ol
