@@ -100,6 +100,79 @@ extract_to_tmp_dir(archive* ar, const std::string& tempdir)
 }
 #endif
 
+Transducer*
+ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, char* filename)
+{
+#if ZHFST_EXTRACT_TO_TMPDIR
+    std::string temporary = extract_to_tmp_dir(ar, tempdir_);
+#elif ZHFST_EXTRACT_TO_MEM
+    size_t total_length = 0;
+    int8_t* full_data = extract_to_mem(ar, entry, &total_length);
+#endif
+    const char* p = filename;
+    p += strlen("errmodel.");
+    size_t descr_len = 0;
+    for (const char* q = p; *q != '\0'; q++)
+    {
+        if (*q == '.')
+        {
+            break;
+        }
+        else
+        {
+            descr_len++;
+        }
+    }
+    char* descr = hfst_strndup(p, descr_len);
+    Transducer* trans;
+#if ZHFST_EXTRACT_TO_TMPDIR
+    trans = Transducer::new_from_file(temporary);
+#elif ZHFST_EXTRACT_TO_MEM
+    trans = new Transducer(full_data);
+    delete[] full_data;
+#endif
+    errmodels_[descr] = trans;
+    free(descr);
+
+    return trans;
+}
+
+Transducer*
+ZHfstOspeller::load_acceptor(struct archive* ar, struct archive_entry* entry, char* filename)
+{
+#if ZHFST_EXTRACT_TO_TMPDIR
+    std::string temporary = extract_to_tmp_dir(ar, tempdir_);
+#elif ZHFST_EXTRACT_TO_MEM
+    size_t total_length = 0;
+    int8_t* full_data = extract_to_mem(ar, entry, &total_length);
+#endif
+    char* p = filename;
+    p += strlen("acceptor.");
+    size_t descr_len = 0;
+    for (const char* q = p; *q != '\0'; q++)
+    {
+        if (*q == '.')
+        {
+            break;
+        }
+        else
+        {
+            descr_len++;
+        }
+    }
+    char* descr = hfst_strndup(p, descr_len);
+    Transducer* trans;
+#if ZHFST_EXTRACT_TO_TMPDIR
+    trans = Transducer::new_from_file(temporary);
+#elif ZHFST_EXTRACT_TO_MEM
+    trans = new Transducer(full_data);
+    delete[] full_data;
+#endif
+    acceptors_[descr] = trans;
+    free(descr);
+
+    return trans;
+}
 #endif // HAVE_LIBARCHIVE
 
 ZHfstOspeller::ZHfstOspeller() :
@@ -267,80 +340,6 @@ ZHfstOspeller::clear_suggestion_cache(void)
     current_sugger_->clear_cache();
 }
 #endif
-
-Transducer*
-ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, char* filename)
-{
-#if ZHFST_EXTRACT_TO_TMPDIR
-    std::string temporary = extract_to_tmp_dir(ar, tempdir_);
-#elif ZHFST_EXTRACT_TO_MEM
-    size_t total_length = 0;
-    int8_t* full_data = extract_to_mem(ar, entry, &total_length);
-#endif
-    const char* p = filename;
-    p += strlen("errmodel.");
-    size_t descr_len = 0;
-    for (const char* q = p; *q != '\0'; q++)
-    {
-        if (*q == '.')
-        {
-            break;
-        }
-        else
-        {
-            descr_len++;
-        }
-    }
-    char* descr = hfst_strndup(p, descr_len);
-    Transducer* trans;
-#if ZHFST_EXTRACT_TO_TMPDIR
-    trans = Transducer::new_from_file(temporary);
-#elif ZHFST_EXTRACT_TO_MEM
-    trans = new Transducer(full_data);
-    delete[] full_data;
-#endif
-    errmodels_[descr] = trans;
-    free(descr);
-
-    return trans;
-}
-
-Transducer*
-ZHfstOspeller::load_acceptor(struct archive* ar, struct archive_entry* entry, char* filename)
-{
-#if ZHFST_EXTRACT_TO_TMPDIR
-    std::string temporary = extract_to_tmp_dir(ar, tempdir_);
-#elif ZHFST_EXTRACT_TO_MEM
-    size_t total_length = 0;
-    int8_t* full_data = extract_to_mem(ar, entry, &total_length);
-#endif
-    char* p = filename;
-    p += strlen("acceptor.");
-    size_t descr_len = 0;
-    for (const char* q = p; *q != '\0'; q++)
-    {
-        if (*q == '.')
-        {
-            break;
-        }
-        else
-        {
-            descr_len++;
-        }
-    }
-    char* descr = hfst_strndup(p, descr_len);
-    Transducer* trans;
-#if ZHFST_EXTRACT_TO_TMPDIR
-    trans = Transducer::new_from_file(temporary);
-#elif ZHFST_EXTRACT_TO_MEM
-    trans = new Transducer(full_data);
-    delete[] full_data;
-#endif
-    acceptors_[descr] = trans;
-    free(descr);
-
-    return trans;
-}
 
 void
 ZHfstOspeller::read_zhfst(const string& filename)
