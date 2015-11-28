@@ -188,6 +188,38 @@ ZHfstOspeller::ZHfstOspeller() :
 {
 }
 
+ZHfstOspeller::ZHfstOspeller(const std::string& filename) :
+    suggestions_maximum_(0),
+    maximum_weight_(-1.0),
+    beam_(-1.0),
+    can_spell_(false),
+    can_correct_(false),
+    can_analyse_(true),
+    current_speller_(0),
+    current_sugger_(0),
+    tempdir_("/tmp")
+{
+    read_zhfst(filename);
+}
+
+ZHfstOspeller::ZHfstOspeller(const std::string& acceptorFn,
+                             const std::string& errmodelFn) :
+    suggestions_maximum_(0),
+    maximum_weight_(-1.0),
+    beam_(-1.0),
+    can_spell_(false),
+    can_correct_(false),
+    can_analyse_(true),
+    current_speller_(0),
+    current_sugger_(0),
+    tempdir_("/tmp")
+{
+    Transducer acceptor = Transducer::from_file(acceptorFn);
+    Transducer errmodel = Transducer::from_file(errmodelFn);
+    Speller* speller = new Speller(&errmodel, &acceptor);
+    inject_speller(speller);
+}
+
 ZHfstOspeller::~ZHfstOspeller()
 {
     if ((current_speller_ != NULL) && (current_sugger_ != NULL))

@@ -51,6 +51,15 @@ public:
     //! @brief create speller with default values for undefined
     //!        language.
     ZHfstOspeller();
+
+    //! @brief construct speller from named file containing valid
+    //!        zhfst archive.
+    ZHfstOspeller(const std::string& filename);
+
+    //! @brief construct speller from acceptor and error model files.
+    ZHfstOspeller(const std::string& acceptorFn,
+                  const std::string& errmodelFn);
+
     //! @brief destroy all automata used by the speller.
     ~ZHfstOspeller();
 

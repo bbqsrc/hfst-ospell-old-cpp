@@ -178,8 +178,8 @@ protected:
 public:
     //!
     //! read transducer from file @a f
-    static Transducer from_file(std::string& filename);
-    static Transducer* new_from_file(std::string& filename);
+    static Transducer from_file(const std::string& filename);
+    static Transducer* new_from_file(const std::string& filename);
     //!
     //! read transducer from raw data @a data
     Transducer(int8_t* raw);
@@ -412,7 +412,7 @@ protected:
     #endif
 public:
     Transducer* mutator; //!< error model
-    Transducer* lexicon; //!< languag model
+    Transducer* lexicon; //!< language model
     SymbolVector input; //!< current input
     TreeNodeQueue node_queue; //!< current traversal fifo stack
     TreeNode next_node;  //!< current next node
@@ -443,7 +443,7 @@ public:
     enum Mode { Check, Correct, Lookup } mode;
 
     //!
-    //! Create a speller object form error model and language automata.
+    //! Create a speller object from error model and language automata.
     Speller(Transducer* mutator_ptr, Transducer* lexicon_ptr);
 
     //! @brief Check if the given string is accepted by the speller

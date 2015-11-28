@@ -142,7 +142,7 @@ Transducer::~Transducer()
     }
 }
 
-inline int8_t* mmap_file(std::string &filename, size_t sz)
+inline int8_t* mmap_file(const std::string &filename, const size_t sz)
 {
     int32_t fd = open(filename.c_str(), O_RDONLY);
 
@@ -164,7 +164,7 @@ inline int8_t* mmap_file(std::string &filename, size_t sz)
     return ptr;
 }
 
-inline size_t file_size(std::string &filename)
+inline size_t file_size(const std::string &filename)
 {
     struct stat statbuf;
 
@@ -177,7 +177,7 @@ inline size_t file_size(std::string &filename)
 }
 
 Transducer*
-Transducer::new_from_file(std::string &filename)
+Transducer::new_from_file(const std::string &filename)
 {
     size_t sz = file_size(filename);
     int8_t* ptr = mmap_file(filename, sz);
@@ -191,7 +191,7 @@ Transducer::new_from_file(std::string &filename)
 }
 
 Transducer
-Transducer::from_file(std::string &filename)
+Transducer::from_file(const std::string &filename)
 {
     size_t sz = file_size(filename);
     int8_t* ptr = mmap_file(filename, sz);
