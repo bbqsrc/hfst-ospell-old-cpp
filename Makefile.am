@@ -221,3 +221,10 @@ if CAN_DOXYGEN
 doxygen:
 	$(DOXYGEN)
 endif
+
+java:
+	mkdir -p $(srcdir)/java/fi/helsinki/hfst
+	swig -c++ -java -package fi.helsinki.hfst -outdir $(srcdir)/java/fi/helsinki/hfst -o $(srcdir)/java/jni_wrap.cpp $(srcdir)/ZHfstOspeller.i
+
+clean-java:
+	rm -r java
