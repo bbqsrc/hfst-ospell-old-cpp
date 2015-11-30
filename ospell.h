@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <cstdint>
 #include <limits>
+#include <algorithm>
 #include "hfst-ol.h"
 
 namespace hfst_ol {
@@ -366,10 +367,10 @@ public:
 class Speller
 {
 protected:
-    std::map<std::string, Weight> generate_correction_map(int32_t nbest, Weight maxweight, Weight beam);
-    void set_limiting_behaviour(int32_t nbest, Weight maxweight, Weight beam);
+    std::map<std::string, Weight> generate_correction_map(size_t nbest, Weight beam);
+    void set_limiting_behaviour(size_t nbest, Weight maxweight, Weight beam);
     bool is_under_weight_limit(Weight w) const;
-    void adjust_weight_limits(int32_t nbest, Weight beam);
+    void adjust_weight_limits(size_t nbest, Weight beam);
     void lexicon_consume(void);
     //!
     //! traverse epsilons in error model
@@ -408,7 +409,7 @@ protected:
                             Weight mutator_weight=0.0,
                             int input_increment=0);
     #if USE_CACHE
-    CorrectionQueue handle_input_size_lt_1(SymbolNumber first_input, int32_t nbest, Weight beam);
+    CorrectionQueue handle_input_size_lt_1(SymbolNumber first_input, size_t nbest, Weight beam);
     #endif
 public:
     Transducer* mutator; //!< error model
@@ -452,7 +453,7 @@ public:
     //
     //! The number of corrections given and stored at any given time
     //! is limited by @a nbest if ≥ 0.
-    CorrectionQueue correct(int8_t* line, int32_t nbest=0,
+    CorrectionQueue correct(int8_t* line, size_t nbest=0,
                             Weight maxweight=-1.0,
                             Weight beam=-1.0);
 
@@ -461,7 +462,7 @@ public:
     //! If language model is two-tape, give a list of analyses for string.
     //! If not, this should return queue of one result @a line if the
     //! string is in language model and 0 results if it isn't.
-    AnalysisQueue analyse(int8_t* line, int32_t nbest=0);
+    AnalysisQueue analyse(int8_t* line);
 
     #if USE_CACHE
     //! @brief Clear the cache;

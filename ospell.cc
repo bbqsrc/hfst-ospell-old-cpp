@@ -938,7 +938,7 @@ Transducer::is_weighted(void)
 }
 
 
-AnalysisQueue Speller::analyse(int8_t* line, int32_t nbest)
+AnalysisQueue Speller::analyse(int8_t* line)
 {
     mode = Lookup;
     if (!init_input(line))
@@ -946,7 +946,6 @@ AnalysisQueue Speller::analyse(int8_t* line, int32_t nbest)
         return AnalysisQueue();
     }
     std::map<std::string, Weight> outputs;
-    AnalysisQueue analyses;
     TreeNode start_node(FlagDiacriticState(get_state_size(), 0));
     node_queue.assign(1, start_node);
     while (node_queue.size() > 0)
@@ -971,11 +970,14 @@ AnalysisQueue Speller::analyse(int8_t* line, int32_t nbest)
         lexicon_epsilons();
         lexicon_consume();
     }
+
+    AnalysisQueue analyses;
     std::map<std::string, Weight>::const_iterator it;
     for (it = outputs.begin(); it != outputs.end(); ++it)
     {
         analyses.push(StringWeightPair(it->first, it->second));
     }
+
     return analyses;
 }
 
@@ -1045,7 +1047,7 @@ void Speller::build_cache(SymbolNumber first_sym)
 #endif // if USE_CACHE
 
 std::map<std::string, Weight>
-Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
+Speller::generate_correction_map(size_t nbest, Weight beam)
 {
     std::map<std::string, Weight> corrections;
 
@@ -1108,7 +1110,7 @@ Speller::generate_correction_map(int32_t nbest, Weight maxweight, Weight beam)
 }
 
 #if USE_CACHE
-CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_t nbest, Weight beam)
+CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, size_t nbest, Weight beam)
 {
     CorrectionQueue correction_queue;
 
@@ -1141,7 +1143,7 @@ CorrectionQueue Speller::handle_input_size_lt_1(SymbolNumber first_input, int32_
 }
 #endif // if USE_CACHE
 
-CorrectionQueue Speller::correct(int8_t* line, int32_t nbest,
+CorrectionQueue Speller::correct(int8_t* line, size_t nbest,
                                  Weight maxweight, Weight beam)
 {
     mode = Correct;
@@ -1180,7 +1182,7 @@ CorrectionQueue Speller::correct(int8_t* line, int32_t nbest,
     node_queue.assign(1, start_node);
     #endif
 
-    std::map<std::string, Weight> corrections = generate_correction_map(nbest, maxweight, beam);
+    std::map<std::string, Weight> corrections = generate_correction_map(nbest, beam);
 
     adjust_weight_limits(nbest, beam);
     for (std::map<std::string, Weight>::iterator it = corrections.begin();
@@ -1195,7 +1197,7 @@ CorrectionQueue Speller::correct(int8_t* line, int32_t nbest,
     return correction_queue;
 }
 
-void Speller::set_limiting_behaviour(int32_t nbest, Weight maxweight, Weight beam)
+void Speller::set_limiting_behaviour(size_t nbest, Weight maxweight, Weight beam)
 {
     int8_t limiting_ = 0;
     limit = std::numeric_limits<Weight>::max();
@@ -1220,7 +1222,7 @@ void Speller::set_limiting_behaviour(int32_t nbest, Weight maxweight, Weight bea
     limiting = (LimitingBehaviour) limiting_;
 }
 
-void Speller::adjust_weight_limits(int32_t nbest, Weight beam)
+void Speller::adjust_weight_limits(size_t nbest, Weight beam)
 {
     if (limiting == Nbest && nbest_queue.size() >= nbest)
     {

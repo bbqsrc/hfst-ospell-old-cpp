@@ -17,6 +17,7 @@
 # to silence:
 # libtoolize: Consider adding `-I m4' to ACLOCAL_AMFLAGS in Makefile.am.
 ACLOCAL_AMFLAGS=-I m4
+AM_CXXFLAGS = -Wall -Wextra
 
 # targets
 if EXTRA_DEMOS
@@ -45,7 +46,7 @@ endif
 
 if WANT_LIBXMLPP
 PKG_LIBS+=$(LIBXMLPP_LIBS)
-PKG_CXXFLAGS+=$(LIBXMLPP_CFLAGS)
+PKG_CXXFLAGS+=$(LIBXMLPP_CFLAGS) -Wno-mismatched-tags -Wno-inconsistent-missing-override
 endif
 
 if WANT_TINYXML2
