@@ -35,6 +35,8 @@
 #   Note: This macro can work with the autoconf M4 macros for Java programs.
 #   This particular macro is not part of the original set of macros.
 #
+#   If Android is detected, this script will exit early.
+#
 # LICENSE
 #
 #   Copyright (c) 2008 Don Anderson <dda@sleepycat.com>
@@ -43,6 +45,10 @@
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
+#
+#   Copyright (c) 2015 Brendan Molloy <brendan@bbqsrc.net>
+#
+#   As above.
 
 #serial 11
 
@@ -66,14 +72,21 @@ else
 fi
 
 case "$host_os" in
-        darwin*)        # Apple JDK is at /System location and has headers symlinked elsewhere
-                        case "$_JTOPDIR" in
-                        /System/Library/Frameworks/JavaVM.framework/*)
-				_JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
-				_JINC="$_JTOPDIR/Headers";;
-			*)      _JINC="$_JTOPDIR/include";;
-                        esac;;
-        *)              _JINC="$_JTOPDIR/include";;
+    linux-android*) ax_jni_include_dir_exit=0;;
+    *) ax_jni_include_dir_exit=1;;
+esac
+
+AS_IF([test "x$ax_jni_include_dir_exit" = "x1"],
+[
+case "$host_os" in
+        darwin*) # Apple JDK is at /System location and has headers symlinked elsewhere
+            case "$_JTOPDIR" in
+                /System/Library/Frameworks/JavaVM.framework/*)
+                        _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
+                        _JINC="$_JTOPDIR/Headers";;
+                *) _JINC="$_JTOPDIR/include";;
+            esac;;
+        *) _JINC="$_JTOPDIR/include";;
 esac
 _AS_ECHO_LOG([_JTOPDIR=$_JTOPDIR])
 _AS_ECHO_LOG([_JINC=$_JINC])
@@ -81,12 +94,12 @@ _AS_ECHO_LOG([_JINC=$_JINC])
 # On Mac OS X 10.6.4, jni.h is a symlink:
 # /System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers/jni.h
 # -> ../../CurrentJDK/Headers/jni.h.
-AC_CHECK_FILE([$_JINC/jni.h],
+AS_IF([test -f $_JINC/jni.h],
 	[JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JINC"],
 	[_JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
-	 AC_CHECK_FILE([$_JTOPDIR/include/jni.h],
+	 AS_IF([test -f $_JTOPDIR/include/jni.h],
 		[JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include"],
-                AC_MSG_ERROR([cannot find JDK header files]))
+                AC_MSG_ERROR([cannot find JDK header files for $host_os]))
 	])
 
 # get the likely subdirectories for system specific java includes
@@ -109,6 +122,7 @@ do
          JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include/$JINCSUBDIR"
     fi
 done
+])
 ])
 
 # _ACJNI_FOLLOW_SYMLINKS <path>
