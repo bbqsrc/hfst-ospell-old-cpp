@@ -19,6 +19,8 @@
 ACLOCAL_AMFLAGS=-I m4
 AM_CXXFLAGS = -Wall -Wextra
 
+.PHONY: test
+
 # targets
 if EXTRA_DEMOS
 CONFERENCE_DEMOS=hfst-ospell-norvig hfst-ospell-fsmnlp-2012 hfst-ospell-cicling\
@@ -238,10 +240,12 @@ java/jni_wrap.cc:
 		-o $(srcdir)/java/jni_wrap.cc \
 		$(srcdir)/src/ZHfstOspeller.i
 
+if WANT_TESTS
 bin_PROGRAMS+=test-runner
 test_runner_SOURCES=test/test.cc
 test_runner_LDADD=libhfstospell.la
 test_runner_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
+endif
 
 test: test-runner
 	$(srcdir)/test-runner

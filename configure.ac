@@ -82,9 +82,16 @@ AS_IF([test x$enable_caching != xno], [
   AC_DEFINE([USE_CACHE], [1], [Use caching in spellers])
 ])
 AC_ARG_ENABLE([jni_bindings],
-			  [AS_HELP_STRING([--enable-jni-bindings],
-							  [build Java (JNI) bindings @<:@default=no@:>@])],
-			  [enable_jni=$enableval], [enable_jni=no])
+      			  [AS_HELP_STRING([--enable-jni-bindings],
+      							  [build Java (JNI) bindings @<:@default=no@:>@])],
+      			  [enable_jni=$enableval], [enable_jni=no])
+
+AC_ARG_ENABLE([tests],
+              [AS_HELP_STRING([--enable-tests],
+                      [build test runner @<:@default=no@:>@])],
+              [enable_tests=$enableval], [with_tests=no])
+AM_CONDITIONAL([WANT_TESTS],
+			         [test x$enable_tests = xyes])
 AC_ARG_WITH([libxmlpp],
               [AS_HELP_STRING([--with-libxmlpp],
                               [support xml metadata for zipped automaton sets with libxml++-2.6 @<:@default=yes@:>@])],
@@ -104,6 +111,7 @@ AS_IF([test "x$with_extract" = xmem], [AC_DEFINE([ZHFST_EXTRACT_TO_MEM], [1],
                  [AC_DEFINE([ZHFST_EXTRACT_TO_TMPDIR], [1],
                             [Define to extract zhfst to tmp dir])],
           [AC_MSG_ERROR([Use with-extract to mem or tmpdir])])])
+
 
 # Checks for programs
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
@@ -213,6 +221,7 @@ cat <<EOF
     * conference demos: $enable_extra_demos
     * with caching: $enable_caching
     * with JNI bindings: $enable_jni
+    * with test runner: $enable_tests
 EOF
 AS_IF([test x$with_libxmlpp != xno -a x$with_tinyxml2 != xno],
       [AC_MSG_WARN([You can only have one xml library (e.g., --with-tinyxml2 --without-libxmlpp)])])
