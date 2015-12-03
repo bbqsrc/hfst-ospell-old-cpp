@@ -56,10 +56,14 @@ endif
 
 # library parts
 libhfstospell_la_SOURCES=hfst-ol.cc ospell.cc \
-						 ZHfstOspeller.cc ZHfstOspellerXmlMetadata.cc
+			 ZHfstOspeller.cc ZHfstOspellerXmlMetadata.cc
 libhfstospell_la_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
 libhfstospell_la_LDFLAGS=-no-undefined -version-info 4:0:0 \
-						 $(PKG_LIBS)
+			 $(PKG_LIBS)
+
+if WANT_JNI_BINDINGS
+libhfstospell_la_SOURCES+= | java/jni_wrap.cc
+endif
 
 # link sample program against library here
 
@@ -223,9 +227,12 @@ doxygen:
 	$(DOXYGEN)
 endif
 
-java:
+java/jni_wrap.cc:
 	mkdir -p $(srcdir)/java/fi/helsinki/hfst
-	swig -c++ -java -package fi.helsinki.hfst -outdir $(srcdir)/java/fi/helsinki/hfst -o $(srcdir)/java/jni_wrap.cpp $(srcdir)/ZHfstOspeller.i
+	swig -c++ -java -package fi.helsinki.hfst \
+		-outdir $(srcdir)/java/fi/helsinki/hfst \
+		-o $(srcdir)/java/jni_wrap.cc \
+		$(srcdir)/ZHfstOspeller.i
 
 clean-java:
 	rm -r java

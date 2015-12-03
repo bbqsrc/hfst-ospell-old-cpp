@@ -23,7 +23,7 @@ LT_PREREQ([2.2.6])
 
 # init
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules])
+AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
 AC_REVISION([$Revision$])
 AC_CONFIG_MACRO_DIR([m4])
@@ -81,6 +81,10 @@ AC_ARG_ENABLE([caching],
 AS_IF([test x$enable_caching != xno], [
   AC_DEFINE([USE_CACHE], [1], [Use caching in spellers])
 ])
+AC_ARG_ENABLE([jni_bindings],
+			  [AS_HELP_STRING([--enable-jni-bindings],
+							  [build Java (JNI) bindings @<:@default=no@:>@])],
+			  [enable_jni=$enableval], [enable_jni=no])
 AC_ARG_WITH([libxmlpp],
               [AS_HELP_STRING([--with-libxmlpp],
                               [support xml metadata for zipped automaton sets with libxml++-2.6 @<:@default=yes@:>@])],
@@ -143,6 +147,14 @@ AS_IF([test x$enable_xml != xno], [
                            [AC_MSG_ERROR([tinyxml missing])
                             xml_lib=no])])
 ])
+
+AX_JNI_INCLUDE_DIR
+  for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
+  do
+          CPPFLAGS="$CPPFLAGS -I$JNI_INCLUDE_DIR"
+  done
+
+AM_CONDITIONAL([WANT_JNI_BINDINGS], [test x$enable_jni = xyes])
 AM_CONDITIONAL([WANT_LIBXMLPP], [test x$xml_lib = xlibxmlpp])
 AM_CONDITIONAL([WANT_TINYXML2], [test x$xml_lib = xtinyxml2])
 
@@ -200,6 +212,7 @@ cat <<EOF
     * hfst-ospell-office: $enable_hfst_ospell_office
     * conference demos: $enable_extra_demos
     * with caching: $enable_caching
+    * with JNI bindings: $enable_jni
 EOF
 AS_IF([test x$with_libxmlpp != xno -a x$with_tinyxml2 != xno],
       [AC_MSG_WARN([You can only have one xml library (e.g., --with-tinyxml2 --without-libxmlpp)])])
