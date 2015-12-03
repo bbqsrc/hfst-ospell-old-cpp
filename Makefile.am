@@ -19,6 +19,10 @@
 ACLOCAL_AMFLAGS=-I m4
 AM_CXXFLAGS = -Wall -Wextra
 
+AM_V_SWIG    = $(AM_V_SWIG_@AM_V@)
+AM_V_SWIG_   = $(AM_V_SWIG_@AM_DEFAULT_V@)
+AM_V_SWIG_0  = @echo "  SWIG     $@";
+
 .PHONY: test
 
 # targets
@@ -65,7 +69,7 @@ libhfstospell_la_LDFLAGS=-no-undefined -version-info 4:0:0 \
 			 $(PKG_LIBS)
 
 if WANT_JNI_BINDINGS
-libhfstospell_la_SOURCES+= java/jni_wrap.cc
+libhfstospell_la_SOURCES+= src/jni_wrap.cc
 endif
 
 # link sample program against library here
@@ -233,11 +237,11 @@ doxygen:
 	$(DOXYGEN)
 endif
 
-java/jni_wrap.cc:
-	mkdir -p $(srcdir)/java/fi/helsinki/hfst
-	swig -c++ -java -package fi.helsinki.hfst \
+src/jni_wrap.cc:
+	$(AM_V_SWIG)mkdir -p $(srcdir)/java/fi/helsinki/hfst && \
+		swig -c++ -java -package fi.helsinki.hfst \
 		-outdir $(srcdir)/java/fi/helsinki/hfst \
-		-o $(srcdir)/java/jni_wrap.cc \
+		-o $(srcdir)/src/jni_wrap.cc \
 		$(srcdir)/src/ZHfstOspeller.i
 
 if WANT_TESTS
