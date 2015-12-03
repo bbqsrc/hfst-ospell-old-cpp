@@ -5,6 +5,7 @@
 //%include <std_string.i>
 
 %include <stl.i>
+%include <exception.i>
 
 #define int64_t long long
 #define uint64_t long long
@@ -25,6 +26,25 @@
 #include "ZHfstOspeller.h"
 %}
 
+%typemap(javabase) hfst_ol::ZHfstException "java.lang.Exception";
+
+%typemap(javacode) hfst_ol::ZHfstException %{
+    public String getMessage() {
+        return what();
+    }
+%}
+
+%exception {
+    try {
+        $action
+    } catch (hfst_ol::ZHfstException& e) {
+        jclass ex = jenv->FindClass("fi/helsinki/hfst/ZHfstException");
+        jenv->ThrowNew(ex, e.what());
+    } catch (const std::exception& e) {
+        SWIG_exception(SWIG_UnknownError, e.what());
+    }
+}
+
 %rename("%(lowercamelcase)s") "";
 %rename("%(titlecase)s", %$isclass) "";
 
@@ -35,3 +55,4 @@
 %ignore hfst_ol::ZHfstOspeller::hyphenate(const std::string& wordform);
 
 %include "ZHfstOspeller.h"
+
