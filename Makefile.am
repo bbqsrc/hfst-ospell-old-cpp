@@ -32,7 +32,7 @@ endif # HFST_OSPELL_OFFICE
 bin_PROGRAMS=
 if HFST_OSPELL_BIN
 bin_PROGRAMS+=hfst-ospell $(MAYBE_HFST_OSPELL_OFFICE) $(CONFERENCE_DEMOS)
-man1_MANS=hfst-ospell.1
+man1_MANS=doc/hfst-ospell.1
 endif
 
 lib_LTLIBRARIES=libhfstospell.la
@@ -56,21 +56,21 @@ PKG_CXXFLAGS+=$(TINYXML2_CFLAGS)
 endif
 
 # library parts
-libhfstospell_la_SOURCES=hfst-ol.cc ospell.cc \
-			 ZHfstOspeller.cc ZHfstOspellerXmlMetadata.cc
+libhfstospell_la_SOURCES=src/hfst-ol.cc src/ospell.cc \
+			 src/ZHfstOspeller.cc src/ZHfstOspellerXmlMetadata.cc
 libhfstospell_la_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
 libhfstospell_la_LDFLAGS=-no-undefined -version-info 4:0:0 \
 			 $(PKG_LIBS)
 
 if WANT_JNI_BINDINGS
-libhfstospell_la_SOURCES+= | java/jni_wrap.cc
+libhfstospell_la_SOURCES+= java/jni_wrap.cc
 endif
 
 # link sample program against library here
 
 if HFST_OSPELL_BIN
 
-hfst_ospell_SOURCES=main.cc
+hfst_ospell_SOURCES=src/main.cc
 hfst_ospell_LDADD=libhfstospell.la
 hfst_ospell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 					 $(PKG_CXXFLAGS)
@@ -79,7 +79,7 @@ endif
 
 if HFST_OSPELL_OFFICE
 
-hfst_ospell_office_SOURCES=office.cpp
+hfst_ospell_office_SOURCES=src/office.cpp
 hfst_ospell_office_LDADD=libhfstospell.la
 hfst_ospell_office_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
 
@@ -87,27 +87,27 @@ endif # HFST_OSPELL_OFFICE
 
 if EXTRA_DEMOS
 
-hfst_ospell_norvig_SOURCES=main-norvig.cc
+hfst_ospell_norvig_SOURCES=demo/main-norvig.cc
 hfst_ospell_norvig_LDADD=libhfstospell.la
 hfst_ospell_norvig_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 							$(PKG_CXXFLAGS)
 
-hfst_ospell_cicling_SOURCES=main-cicling.cc
+hfst_ospell_cicling_SOURCES=demo/main-cicling.cc
 hfst_ospell_cicling_LDADD=libhfstospell.la
 hfst_ospell_cicling_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 							 $(PKG_CXXFLAGS)
 
-hfst_ospell_lrec2013_SOURCES=main-lrec2013.cc
+hfst_ospell_lrec2013_SOURCES=demo/main-lrec2013.cc
 hfst_ospell_lrec2013_LDADD=libhfstospell.la
 hfst_ospell_lrec2013_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 							$(PKG_CXXFLAGS)
 
-hfst_ospell_survey_SOURCES=main-survey.cc
+hfst_ospell_survey_SOURCES=demo/main-survey.cc
 hfst_ospell_survey_LDADD=libhfstospell.la
 hfst_ospell_survey_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 							$(PKG_CXXFLAGS)
 
-hfst_ospell_fsmnlp_2012_SOURCES=main-fsmnlp-2012.cc
+hfst_ospell_fsmnlp_2012_SOURCES=demo/main-fsmnlp-2012.cc
 hfst_ospell_fsmnlp_2012_LDADD=libhfstospell.la
 hfst_ospell_fsmnlp_2012_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 								 $(PKG_CXXFLAGS)
@@ -115,7 +115,7 @@ endif # EXTRA_DEMOS
 
 if EXTRA_DEMOS
 
-hfst_ispell_SOURCES=main-ispell.cc
+hfst_ispell_SOURCES=demo/main-ispell.cc
 hfst_ispell_LDADD=libhfstospell.la
 hfst_ispell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 							$(PKG_CXXFLAGS)
@@ -123,8 +123,8 @@ hfst_ispell_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) \
 endif # EXTRA_DEMOS
 
 # install headers for library in hfst's includedir
-include_HEADERS=hfst-ol.h ospell.h ol-exceptions.h \
-				ZHfstOspeller.h ZHfstOspellerXmlMetadata.h
+include_HEADERS=src/hfst-ol.h src/ospell.h src/ol-exceptions.h \
+		src/ZHfstOspeller.h src/ZHfstOspellerXmlMetadata.h
 
 # pkgconfig
 pkgconfigdir=$(libdir)/pkgconfig
@@ -132,8 +132,9 @@ pkgconfig_DATA=hfstospell.pc
 
 # tests
 if CAN_TEST
-TXTS=acceptor.basic.txt analyser.default.txt \
-	 errmodel.basic.txt errmodel.extrachars.txt errmodel.edit1.txt
+TXTS=scripts/acceptor.basic.txt scripts/analyser.default.txt \
+	 scripts/errmodel.basic.txt scripts/errmodel.extrachars.txt \
+	 scripts/errmodel.edit1.txt
 check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
 		   empty_titles.zhfst empty_locale.zhfst \
 		   trailing_spaces.zhfst \
@@ -142,15 +143,17 @@ check_DATA=speller_basic.zhfst empty_descriptions.zhfst \
 		   speller_analyser.zhfst no_errormodel.zhfst \
 		   speller_edit1.zhfst
 # Actual test scripts:
-TESTS=basic-zhfst.sh basic-edit1.sh \
-	  empty-descriptions.sh empty-titles.sh empty-locale.sh \
-	  trailing-spaces.sh bad-errormodel.sh empty-zhfst.sh \
-	  analyse-spell.sh no-errormodel.sh
-XFAIL_TESTS=empty-descriptions.sh empty-titles.sh empty-locale.sh empty-zhfst.sh
+TESTS=scripts/basic-zhfst.sh scripts/basic-edit1.sh \
+	  scripts/empty-descriptions.sh scripts/empty-titles.sh scripts/empty-locale.sh \
+	  scripts/trailing-spaces.sh scripts/bad-errormodel.sh scripts/empty-zhfst.sh \
+	  scripts/analyse-spell.sh scripts/no-errormodel.sh
+XFAIL_TESTS=scripts/empty-descriptions.sh scripts/empty-titles.sh \
+	    scripts/empty-locale.sh scripts/empty-zhfst.sh
 EXTRA_DIST=$(TXTS) $(TESTS) $(man1_MANS)\
-			basic_test.xml empty_descriptions.xml empty_titles.xml \
-			empty_locale.xml trailing_spaces.xml no_errmodel.xml \
-			test.strings
+		scripts/basic_test.xml scripts/empty_descriptions.xml \
+		scripts/empty_titles.xml scripts/empty_locale.xml \
+		scripts/trailing_spaces.xml scripts/no_errmodel.xml \
+		scripts/test.strings
 
 clean-local:
 	-rm -rf $(check_DATA) index.xml
@@ -233,7 +236,7 @@ java/jni_wrap.cc:
 	swig -c++ -java -package fi.helsinki.hfst \
 		-outdir $(srcdir)/java/fi/helsinki/hfst \
 		-o $(srcdir)/java/jni_wrap.cc \
-		$(srcdir)/ZHfstOspeller.i
+		$(srcdir)/src/ZHfstOspeller.i
 
 bin_PROGRAMS+=test-runner
 test_runner_SOURCES=test/test.cc

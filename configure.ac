@@ -27,7 +27,7 @@ AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules
 AM_SILENT_RULES([yes])
 AC_REVISION([$Revision$])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([ospell.cc])
+AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 
 # Information on package
