@@ -18,4 +18,3 @@ addons:
       - bison
 os:
   - linux
-  - osx
