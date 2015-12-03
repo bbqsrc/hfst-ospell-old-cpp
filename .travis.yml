@@ -1,0 +1,16 @@
+language: cpp
+compiler:
+  - clang
+  - gcc
+script: ./autogen.sh && ./configure && make test
+addons:
+  apt:
+    packages:
+      - libxml++2.6-dev
+      - libarchive-dev
+      - autoconf
+      - automake
+      - bison
+os:
+  - linux
+  - osx
