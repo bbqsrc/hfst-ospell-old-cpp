@@ -29,8 +29,9 @@ if HFST_OSPELL_OFFICE
 MAYBE_HFST_OSPELL_OFFICE=hfst-ospell-office
 endif # HFST_OSPELL_OFFICE
 
+bin_PROGRAMS=
 if HFST_OSPELL_BIN
-bin_PROGRAMS=hfst-ospell $(MAYBE_HFST_OSPELL_OFFICE) $(CONFERENCE_DEMOS)
+bin_PROGRAMS+=hfst-ospell $(MAYBE_HFST_OSPELL_OFFICE) $(CONFERENCE_DEMOS)
 man1_MANS=hfst-ospell.1
 endif
 
@@ -233,6 +234,14 @@ java/jni_wrap.cc:
 		-outdir $(srcdir)/java/fi/helsinki/hfst \
 		-o $(srcdir)/java/jni_wrap.cc \
 		$(srcdir)/ZHfstOspeller.i
+
+bin_PROGRAMS+=test-runner
+test_runner_SOURCES=test/test.cc
+test_runner_LDADD=libhfstospell.la
+test_runner_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
+
+test: test-runner
+	$(srcdir)/test-runner
 
 clean-java:
 	rm -r java
