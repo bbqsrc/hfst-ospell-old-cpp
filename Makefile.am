@@ -23,6 +23,14 @@ AM_V_SWIG    = $(AM_V_SWIG_@AM_V@)
 AM_V_SWIG_   = $(AM_V_SWIG_@AM_DEFAULT_V@)
 AM_V_SWIG_0  = @echo "  SWIG     $@";
 
+AM_V_JAVAC   = $(AM_V_JAVAC_@AM_V@)
+AM_V_JAVAC_  = $(AM_V_JAVAC_@AM_DEFAULT_V@)
+AM_V_JAVAC_0 = @echo "  JAVAC    $@";
+
+AM_V_JAR     = $(AM_V_JAR_@AM_V@)
+AM_V_JAR_    = $(AM_V_JAR_@AM_DEFAULT_V@)
+AM_V_JAR_0   = @echo "  JAR      $@";
+
 .PHONY: test
 
 # targets
@@ -70,6 +78,7 @@ libhfstospell_la_LDFLAGS=-no-undefined -version-info 4:0:0 \
 
 if WANT_JNI_BINDINGS
 libhfstospell_la_SOURCES+= src/jni_wrap.cc
+noinst_DATA = libhfstospell.jar
 endif
 
 # link sample program against library here
@@ -136,6 +145,8 @@ include_HEADERS=src/hfst-ol.h src/ospell.h src/ol-exceptions.h \
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA=hfstospell.pc
 
+cleanup=
+
 # tests
 if CAN_TEST
 TXTS=scripts/acceptor.basic.txt scripts/analyser.default.txt \
@@ -161,8 +172,7 @@ EXTRA_DIST=$(TXTS) $(TESTS) $(man1_MANS)\
 		scripts/trailing_spaces.xml scripts/no_errmodel.xml \
 		scripts/test.strings
 
-clean-local:
-	-rm -rf $(check_DATA) index.xml
+cleanup += $(check_DATA) index.xml
 endif # CAN_TEST
 
 # N.B. Do not parallel test, race condition exists
@@ -237,15 +247,21 @@ doxygen:
 	$(DOXYGEN)
 endif
 
+javasrcdir = $(srcdir)/java/fi/helsinki/hfst
+
 src/jni_wrap.cc:
-	$(AM_V_SWIG)mkdir -p $(srcdir)/java/fi/helsinki/hfst && \
+	$(AM_V_SWIG)mkdir -p $(javasrcdir) && \
 		swig -c++ -java -package fi.helsinki.hfst \
-		-outdir $(srcdir)/java/fi/helsinki/hfst \
+		-outdir $(javasrcdir) \
 		-o $(srcdir)/src/jni_wrap.cc \
 		$(srcdir)/src/ZHfstOspeller.i
 
+libhfstospell.jar: src/jni_wrap.cc
+	$(AM_V_JAVAC)javac -Xlint:-options -target 7 -source 7 $(javasrcdir)/*.java
+	$(AM_V_JAR)jar cf $@ -C java .
+
 if WANT_TESTS
-bin_PROGRAMS+=test-runner
+noinst_PROGRAMS=test-runner
 test_runner_SOURCES=test/test.cc
 test_runner_LDADD=libhfstospell.la
 test_runner_CXXFLAGS=$(AM_CXXFLAGS) $(CXXFLAGS) $(PKG_CXXFLAGS)
@@ -254,5 +270,5 @@ endif
 test: test-runner
 	$(srcdir)/test-runner
 
-clean-java:
-	rm -r java
+clean-local:
+	-rm -rf $(cleanup) src/jni_wrap.cc java libhfstospell.jar
