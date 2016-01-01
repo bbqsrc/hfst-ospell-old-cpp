@@ -82,29 +82,49 @@ extract_to_mem(archive* ar, archive_entry* entry, size_t* n)
 #endif // if ZHFST_EXTRACT_TO_MEM
 
 #if ZHFST_EXTRACT_TO_TMPDIR
+
 static
 std::string
-extract_to_tmp_dir(archive* ar, const std::string& tempdir)
+create_tmp_dir(const std::string& tempdir)
 {
     std::string rv;
     rv = tempdir + std::string("/zhfstospellXXXXXXXX");
     char* path = strdup(rv.c_str());
-    int32_t temp_fd = mkstemp(path);
-    int32_t rr = archive_read_data_into_fd(ar, temp_fd);
+    char* result = mkdtemp(path);
+    if (result == NULL)
+    {
+        throw ZHfstZipReadingError("Could not create temporary directory");
+    }
+    return std::string(result);
+}
+
+static
+std::string
+extract_to_tmp_dir(archive* ar, const char* filename, const std::string& tempdir)
+{
+    std::string rv = tempdir + "/" + std::string(filename);
+    char* path = strdup(rv.c_str());
+    int32_t fd = open(path, O_WRONLY | O_CREAT);
+    if (fd < 0)
+    {
+        throw ZHfstZipReadingError("Failed to open file descriptor");
+    }
+    int32_t rr = archive_read_data_into_fd(ar, fd);
     if ((rr != ARCHIVE_EOF) && (rr != ARCHIVE_OK))
     {
         throw ZHfstZipReadingError("Archive not EOF'd or OK'd");
     }
-    close(temp_fd);
-    return std::string(path);
+    close(fd);
+    return rv;
 }
 #endif
 
 Transducer*
-ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, char* filename)
+ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry,
+    const char* filename, const std::string& tempdir)
 {
 #if ZHFST_EXTRACT_TO_TMPDIR
-    std::string temporary = extract_to_tmp_dir(ar, tempdir_);
+    std::string temporary = extract_to_tmp_dir(ar, filename, tempdir);
 #elif ZHFST_EXTRACT_TO_MEM
     size_t total_length = 0;
     int8_t* full_data = extract_to_mem(ar, entry, &total_length);
@@ -138,15 +158,16 @@ ZHfstOspeller::load_errmodel(struct archive* ar, struct archive_entry* entry, ch
 }
 
 Transducer*
-ZHfstOspeller::load_acceptor(struct archive* ar, struct archive_entry* entry, char* filename)
+ZHfstOspeller::load_acceptor(struct archive* ar, struct archive_entry* entry,
+    const char* filename, const std::string& tempdir)
 {
 #if ZHFST_EXTRACT_TO_TMPDIR
-    std::string temporary = extract_to_tmp_dir(ar, tempdir_);
+    std::string temporary = extract_to_tmp_dir(ar, filename, tempdir);
 #elif ZHFST_EXTRACT_TO_MEM
     size_t total_length = 0;
     int8_t* full_data = extract_to_mem(ar, entry, &total_length);
 #endif
-    char* p = filename;
+    const char* p = filename;
     p += strlen("acceptor.");
     size_t descr_len = 0;
     for (const char* q = p; *q != '\0'; q++)
@@ -184,7 +205,7 @@ ZHfstOspeller::ZHfstOspeller() :
     can_analyse_(true),
     current_speller_(0),
     current_sugger_(0),
-    tempdir_("/tmp")
+    tmp_prefix_("/tmp")
 {
 }
 
@@ -197,7 +218,7 @@ ZHfstOspeller::ZHfstOspeller(const std::string& filename) :
     can_analyse_(true),
     current_speller_(0),
     current_sugger_(0),
-    tempdir_("/tmp")
+    tmp_prefix_("/tmp")
 {
     read_zhfst(filename);
 }
@@ -212,7 +233,7 @@ ZHfstOspeller::ZHfstOspeller(const std::string& acceptorFn,
     can_analyse_(true),
     current_speller_(0),
     current_sugger_(0),
-    tempdir_("/tmp")
+    tmp_prefix_("/tmp")
 {
     Transducer acceptor = Transducer::from_file(acceptorFn);
     Transducer errmodel = Transducer::from_file(errmodelFn);
@@ -362,7 +383,7 @@ ZHfstOspeller::suggest_analyses(const string& wordform)
 void
 ZHfstOspeller::set_temporary_dir(const string& tempdir)
 {
-    tempdir_ = tempdir;
+    tmp_prefix_ = tempdir;
 }
 
 #if USE_CACHE
@@ -373,7 +394,7 @@ ZHfstOspeller::clear_suggestion_cache(void)
 }
 #endif
 
-void
+std::string
 ZHfstOspeller::read_zhfst(const string& filename)
 {
 #if HAVE_LIBARCHIVE
@@ -392,6 +413,11 @@ ZHfstOspeller::read_zhfst(const string& filename)
     {
         throw ZHfstZipReadingError("Archive not OK");
     }
+    #if ZHFST_EXTRACT_TO_TMPDIR
+    std::string tempdir = create_tmp_dir(tmp_prefix_);
+    #else
+    std::string tempdir;
+    #endif
     for (int32_t rr = archive_read_next_header(ar, &entry);
          rr != ARCHIVE_EOF;
          rr = archive_read_next_header(ar, &entry))
@@ -402,18 +428,19 @@ ZHfstOspeller::read_zhfst(const string& filename)
             throw ZHfstZipReadingError("Archive not OK");
         }
         char* filename = strdup(archive_entry_pathname(entry));
+        // TODO(bbqsrc): convert these strings into const's
         if (strncmp(filename, "acceptor.", strlen("acceptor.")) == 0)
         {
-            trans = load_acceptor(ar, entry, filename);
+            trans = load_acceptor(ar, entry, filename, tempdir);
         }
         else if (strncmp(filename, "errmodel.", strlen("errmodel.")) == 0)
         {
-            trans = load_errmodel(ar, entry, filename);
+            trans = load_errmodel(ar, entry, filename, tempdir);
         }
         else if (strcmp(filename, "index.xml") == 0)
         {
         #if ZHFST_EXTRACT_TO_TMPDIR
-            std::string temporary = extract_to_tmp_dir(ar, tempdir_);
+            std::string temporary = extract_to_tmp_dir(ar, filename, tempdir);
             metadata_.read_xml(temporary);
         #elif ZHFST_EXTRACT_TO_MEM
             size_t xml_len = 0;
@@ -480,6 +507,9 @@ ZHfstOspeller::read_zhfst(const string& filename)
         throw ZHfstZipReadingError("No automata found in zip");
     }
     can_analyse_ = can_spell_ | can_correct_;
+
+    std::cout << tempdir << std::endl;
+    return tempdir;
 #else
     throw ZHfstZipReadingError("Zip support was disabled");
 #endif // HAVE_LIBARCHIVE

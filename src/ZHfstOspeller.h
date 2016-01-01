@@ -73,8 +73,8 @@ public:
     //! @brief set search beam
     void set_beam(Weight beam);
     //! @brief construct speller from named file containing valid
-    //!        zhfst archive.
-    void read_zhfst(const std::string& filename);
+    //!        zhfst archive. Returns temp directory.
+    std::string read_zhfst(const std::string& filename);
 
     void set_temporary_dir(const std::string& tempdir);
 
@@ -144,12 +144,12 @@ private:
     //! @brief the metadata of loaded speller
     ZHfstOspellerXmlMetadata metadata_;
     //! @brief temporary directory for files
-    std::string tempdir_;
+    std::string tmp_prefix_;
 
     CorrectionQueue suggest_queue(const std::string& wordform);
     AnalysisQueue analyse_queue(const std::string& wordform, bool ask_sugger);
-    Transducer* load_acceptor(struct archive* ar, struct archive_entry* entry, char* filename);
-    Transducer* load_errmodel(struct archive* ar, struct archive_entry* entry, char* filename);
+    Transducer* load_acceptor(struct archive* ar, struct archive_entry* entry, const char* filename, const std::string& tempdir);
+    Transducer* load_errmodel(struct archive* ar, struct archive_entry* entry, const char* filename, const std::string& tempdir);
 };
 
 //! @brief Top-level exception for zhfst handling.
