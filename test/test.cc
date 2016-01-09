@@ -3,6 +3,11 @@
 
 #include "../src/ZHfstOspeller.h"
 
-TEST_CASE("ZHfstOspeller", "[ZHfst]") {
-    REQUIRE(new hfst_ol::ZHfstOspeller() != NULL);
+TEST_CASE("ZHfstOspeller functions", "[ZHfstOspeller]") {
+    hfst_ol::ZHfstOspeller sp;
+
+    SECTION("Suggest with no spellers should be empty") {
+	auto vec = sp.suggest("test");
+	REQUIRE(vec.size() == 0);
+    }
 }
