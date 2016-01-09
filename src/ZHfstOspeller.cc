@@ -104,7 +104,8 @@ extract_to_tmp_dir(archive* ar, const char* filename, const std::string& tempdir
 {
     std::string rv = tempdir + "/" + std::string(filename);
     char* path = strdup(rv.c_str());
-    int32_t fd = open(path, O_WRONLY | O_CREAT);
+    // Create the file with read-only permissions for the current user (and process).
+    int32_t fd = open(path, O_WRONLY | O_CREAT, S_IRUSR);
     if (fd < 0)
     {
         throw ZHfstZipReadingError("Failed to open file descriptor");
