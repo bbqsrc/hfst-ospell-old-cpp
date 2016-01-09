@@ -2,7 +2,13 @@ language: cpp
 compiler:
   - gcc
 before_install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" -a "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then
+        export CXX="clang++";
+        export CC="clang";
+        brew update;
+        brew install autoconf automake libarchive bison libxml++;
+    fi
 script: ./autogen.sh && ./configure --enable-tests && make test
 addons:
   apt:
@@ -18,3 +24,5 @@ addons:
       - bison
 os:
   - linux
+  - osx
+osx_image: xcode7.2
