@@ -2,10 +2,13 @@ language: cpp
 compiler:
   - gcc
 before_install:
-  - if [ "$TRAVIS_OS_NAME" = "linux" -a "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" -a "$CXX" = "g++" ];
+        then export CXX="g++-4.8" CC="gcc-4.8";
+    fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then
         export CXX="clang++";
         export CC="clang";
+        export PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig";
         brew update;
         brew install autoconf automake libarchive bison libxml++;
     fi
