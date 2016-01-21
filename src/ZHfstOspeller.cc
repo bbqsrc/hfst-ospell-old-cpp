@@ -412,7 +412,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
     int32_t rr = archive_read_open_filename(ar, filename.c_str(), 10240);
     if (rr != ARCHIVE_OK)
     {
-        throw ZHfstZipReadingError("Archive not OK");
+        throw ZHfstZipReadingError(archive_error_string(ar));
     }
     #if ZHFST_EXTRACT_TO_TMPDIR
     std::string tempdir = create_tmp_dir(tmp_prefix_);
@@ -426,7 +426,7 @@ ZHfstOspeller::read_zhfst(const string& filename)
         Transducer* trans;
         if (rr != ARCHIVE_OK)
         {
-            throw ZHfstZipReadingError("Archive not OK");
+            throw ZHfstZipReadingError(archive_error_string(ar));
         }
         char* filename = strdup(archive_entry_pathname(entry));
         // TODO(bbqsrc): convert these strings into const's
