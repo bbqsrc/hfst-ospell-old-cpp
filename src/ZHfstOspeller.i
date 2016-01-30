@@ -40,8 +40,10 @@
     } catch (hfst_ol::ZHfstException& e) {
         jclass ex = jenv->FindClass("fi/helsinki/hfst/ZHfstException");
         jenv->ThrowNew(ex, e.what());
+        return $null;
     } catch (const std::exception& e) {
         SWIG_exception(SWIG_UnknownError, e.what());
+        return $null;
     }
 }
 
