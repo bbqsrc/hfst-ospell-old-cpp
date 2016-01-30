@@ -88,12 +88,12 @@ std::string
 create_tmp_dir(const std::string& tempdir)
 {
     std::string rv;
-    rv = tempdir + std::string("/zhfstospellXXXXXXXX");
+    rv = tempdir + std::string("/zhfstospell-XXXXXX");
     char* path = strdup(rv.c_str());
     char* result = mkdtemp(path);
     if (result == NULL)
     {
-        throw ZHfstZipReadingError("Could not create temporary directory");
+        throw ZHfstZipReadingError("Could not create temporary directory at '" + path + "'");
     }
     return std::string(result);
 }
@@ -395,6 +395,11 @@ ZHfstOspeller::clear_suggestion_cache(void)
 }
 #endif
 
+#if USE_LIBARCHIVE_2
+#define archive_read_support_filter_all(x) archive_read_support_compression_all(x)
+#define archive_read_finish(x) archive_read_free(x)
+#endif
+
 std::string
 ZHfstOspeller::read_zhfst(const string& filename)
 {
@@ -402,13 +407,9 @@ ZHfstOspeller::read_zhfst(const string& filename)
     struct archive* ar = archive_read_new();
     struct archive_entry* entry = 0;
 
-#if USE_LIBARCHIVE_2
-    archive_read_support_compression_all(ar);
-#else
     archive_read_support_filter_all(ar);
-#endif // USE_LIBARCHIVE_2
-
     archive_read_support_format_all(ar);
+
     int32_t rr = archive_read_open_filename(ar, filename.c_str(), 10240);
     if (rr != ARCHIVE_OK)
     {
@@ -456,13 +457,9 @@ ZHfstOspeller::read_zhfst(const string& filename)
         }
         free(filename);
     }   // while r != ARCHIVE_EOF
-    archive_read_close(ar);
 
-#if USE_LIBARCHIVE_2
-    archive_read_finish(ar);
-#else
+    archive_read_close(ar);
     archive_read_free(ar);
-#endif // USE_LIBARCHIVE_2
 
     if ((errmodels_.find("default") != errmodels_.end()) &&
         (acceptors_.find("default") != acceptors_.end()))
@@ -509,7 +506,6 @@ ZHfstOspeller::read_zhfst(const string& filename)
     }
     can_analyse_ = can_spell_ | can_correct_;
 
-    std::cout << tempdir << std::endl;
     return tempdir;
 #else
     throw ZHfstZipReadingError("Zip support was disabled");
