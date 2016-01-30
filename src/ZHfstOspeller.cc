@@ -93,7 +93,9 @@ create_tmp_dir(const std::string& tempdir)
     char* result = mkdtemp(path);
     if (result == NULL)
     {
-        throw ZHfstZipReadingError("Could not create temporary directory at '" + path + "'");
+        std::string msg = std::string("Could not create temporary directory at: ") +
+            std::string(path);
+        throw ZHfstZipReadingError(msg);
     }
     return std::string(result);
 }
