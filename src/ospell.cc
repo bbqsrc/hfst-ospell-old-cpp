@@ -151,7 +151,7 @@ inline int8_t* mmap_file(const std::string &filename, const size_t sz)
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be read.\n");
     }
 
-    int8_t* ptr = (int8_t*) mmap(NULL, sz, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+    int8_t* ptr = (int8_t*) mmap(NULL, sz, PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
     if (ptr == MAP_FAILED)
     {
         HFST_THROW_MESSAGE(TransducerReadError, "the file '" + filename + "' could not be mmapped.\n");
