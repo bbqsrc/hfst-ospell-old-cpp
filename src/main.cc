@@ -222,7 +222,7 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
 {
     if (speller.spell(str))
     {
-        hfst_fprintf(stdout, "\"%s\" is in the lexicon...\n",
+        hfst_fprintf(stdout, "\"%s\" is in the lexicon.\n",
                      str.c_str());
         if (analyse)
         {
@@ -261,7 +261,7 @@ do_spell(ZHfstOspeller& speller, const std::string& str)
     }
     else
     {
-        hfst_fprintf(stdout, "\"%s\" is NOT in the lexicon:\n",
+        hfst_fprintf(stdout, "\"%s\" is NOT in the lexicon.\n",
                      str.c_str());
         if (suggest)
         {
