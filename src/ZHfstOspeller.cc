@@ -238,8 +238,12 @@ ZHfstOspeller::ZHfstOspeller(const std::string& acceptorFn,
     current_sugger_(0),
     tmp_prefix_("/tmp")
 {
-    Transducer acceptor = Transducer::from_file(acceptorFn);
-    Transducer errmodel = Transducer::from_file(errmodelFn);
+    Transducer* acceptor = Transducer::new_from_file(acceptorFn);
+    Transducer* errmodel = Transducer::new_from_file(errmodelFn);
+
+    acceptors_["default"] = acceptor;
+    errmodels_["default"] = errmodel;
+
     Speller* speller = new Speller(&errmodel, &acceptor);
     inject_speller(speller);
 }
