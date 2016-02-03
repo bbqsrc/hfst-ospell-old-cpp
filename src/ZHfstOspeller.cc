@@ -244,7 +244,7 @@ ZHfstOspeller::ZHfstOspeller(const std::string& acceptorFn,
     acceptors_["default"] = acceptor;
     errmodels_["default"] = errmodel;
 
-    Speller* speller = new Speller(&errmodel, &acceptor);
+    Speller* speller = new Speller(errmodel, acceptor);
     inject_speller(speller);
 }
 
