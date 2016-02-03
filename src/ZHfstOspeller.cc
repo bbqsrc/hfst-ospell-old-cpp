@@ -13,7 +13,9 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-#include "config.h"
+#if HAVE_CONFIG_H
+#  include <config.h>
+#endif
 
 // C
 #if HAVE_LIBARCHIVE
