@@ -104,7 +104,10 @@ AC_ARG_WITH([tinyxml2],
               [AS_HELP_STRING([--with-tinyxml2],
                               [support xml metadata for zipped automaton sets with tinyxml2 @<:@default=no@:>@])],
               [with_tinyxml2=$withval], [with_tinyxml2=no])
-
+AC_ARG_WITH([icu],
+	      [AS_HELP_STRING([--with-icu],
+			      [support ICU @<:@default=yes@:>@])],
+              [with_icu=$withval], [with_icu=no])
 AC_ARG_WITH([extract],
             [AS_HELP_STRING([--with-extract=TARGET],
                            [extract zhfst archives to tmpdir or mem @<:@default=mem@:>@])],
@@ -171,14 +174,15 @@ AM_CONDITIONAL([WANT_LIBXMLPP], [test x$xml_lib = xlibxmlpp])
 AM_CONDITIONAL([WANT_TINYXML2], [test x$xml_lib = xtinyxml2])
 
 # Find ICU in the new and old way
-PKG_CHECK_MODULES(ICU, [icu-uc >= 4], [], [
- AC_PATH_PROG([ICU_CONFIG], [icu-config], [false])
- AS_IF([test x$ICU_CONFIG != xfalse], [
-  ICU_LIBS=$($ICU_CONFIG --ldflags)
- ])
+AS_IF([test x$with_icu = xyes], [
+  PKG_CHECK_MODULES(ICU, [icu-uc >= 4], [], [
+   AC_PATH_PROG([ICU_CONFIG], [icu-config], [false])
+   AS_IF([test x$ICU_CONFIG != xfalse], [
+    ICU_LIBS=$($ICU_CONFIG --ldflags)
+   ])
+  ])
+  LIBS="$LIBS $ICU_LIBS"
 ])
-LIBS="$LIBS $ICU_LIBS"
-
 # Checks for header files
 AC_CHECK_HEADERS([getopt.h error.h])
 
