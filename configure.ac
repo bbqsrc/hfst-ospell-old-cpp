@@ -25,14 +25,14 @@ LT_PREREQ([2.2.6])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign check-news color-tests silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
-AM_EXTRA_RECURSIVE_TARGETS([test])
+#AM_EXTRA_RECURSIVE_TARGETS([test])
 AC_REVISION([$Revision$])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 
 # config files
-AC_CONFIG_FILES([test/Makefile Makefile hfstospell.pc])
+AC_CONFIG_FILES([Makefile hfstospell.pc])
 
 # Information on package
 HFSTOSPELL_NAME=hfst-ospell

@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS= test
+#SUBDIRS= test
 
 # to silence:
 # libtoolize: Consider adding `-I m4' to ACLOCAL_AMFLAGS in Makefile.am.
